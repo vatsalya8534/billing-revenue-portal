@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  PENDING
+  CLOSED
+}
+
+enum PaymentReceived {
+  YES
+  NO
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  roleName    String   @unique
+  createdDate DateTime @default(now())
+  lastUpdated DateTime @updatedAt
+  createdBy   String
+  remark      String?
+
+  users       User[]
+}
+
+
+model User {
+  id          Int      @id @default(autoincrement())
+  username    String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  status      Status   @default(ACTIVE)
+  createdDate DateTime @default(now())
+  lastUpdated DateTime @updatedAt
+  createdBy   String
+  remark      String?
+  roleId      Int
+  role        Role     @relation(fields: [roleId], references: [id])
+
+  clients         Client[]
+  purchaseOrders  PurchaseOrder[]
+  bills           Bill[]
+  payments        Payment[]
+}
+
+model Client {
+  id                 Int      @id @default(autoincrement())
+  clientName         String
+  contactPersonName  String
+  contactPersonPhone String
+  contactPersonEmail String
+  clientAddress      String
+  status             Status   @default(ACTIVE)
+  createdDate        DateTime @default(now())
+  lastUpdated        DateTime @updatedAt
+  createdBy          String
+  remark             String?
+
+  createdByUserId Int
+  createdByUser   User @relation(fields: [createdByUserId], references: [id])
+
+  // Removed purchaseOrders relation since PurchaseOrder no longer has clientId
+  // purchaseOrders PurchaseOrder[]
+}
+
+model PurchaseOrder {
+  id               Int      @id @default(autoincrement())
+  poNumber         String   @unique
+  serviceType      String
+  startFrom        DateTime
+  endDate          DateTime
+  contractType     String
+  contractDuration String
+  paymentTerms     String
+  billingPlan      String
+  poAmount         Float
+  status           Status   @default(ACTIVE)
+  createdDate      DateTime @default(now())
+  lastUpdated      DateTime @updatedAt
+  remark           String?
+
+  // Removed clientId and client relation
+  // clientId Int
+  // client   Client @relation(fields: [clientId], references: [id])
+
+  createdByUserId  Int
+  createdByUser    User @relation(fields: [createdByUserId], references: [id])
+
+  bills Bill[]
+}
+
+
+model Bill {
+  id               Int      @id @default(autoincrement())
+  billNumber       String   @unique
+  billDate         DateTime
+  billingAmount    Float
+  billSubmittedDate DateTime
+  status           Status   @default(PENDING)
+  createdDate      DateTime @default(now())
+  remark           String?
+
+  poId Int
+  purchaseOrder PurchaseOrder @relation(fields: [poId], references: [id])
+
+  createdByUserId Int
+  createdByUser   User @relation(fields: [createdByUserId], references: [id])
+
+  payments Payment[]
+}
+
+
+model Payment {
+  id                    Int      @id @default(autoincrement())
+  paymentReceived       PaymentReceived @default(NO)
+  paymentReceivedDate   DateTime?
+  paymentReceivedAmount Float
+  remark                String?
+  createdDate           DateTime @default(now())
+
+  billId Int
+  bill   Bill @relation(fields: [billId], references: [id])
+
+  createdByUserId Int
+  createdByUser   User @relation(fields: [createdByUserId], references: [id])
+}
