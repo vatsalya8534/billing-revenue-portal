@@ -19,7 +19,6 @@ const RoleCreatePage = async () => {
 
       <CardContent>
         <RoleForm update={false} />
-        
       </CardContent>
     </Card>
   );

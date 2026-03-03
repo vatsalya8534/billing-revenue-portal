@@ -6,28 +6,18 @@ import UserForm from "@/components/user/user-form"
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { getUserById } from "@/lib/actions/users"
+import { User } from "@/types"
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
 
   const { id } = await params
 
-  if (!id) return notFound()
 
-  const numericId = Number(id)
-  if (isNaN(numericId)) return notFound()
+  const user = await getUserById(id);
 
-  const user = await prisma.user.findUnique({ where: { id: numericId } })
-  if (!user) return notFound()
+  if (!user.success) notFound()
 
-  const userFormData = {
-    id: user.id,
-    username: user.username,
-    firstName: user.firstName,
-    lastName: user.lastName,
-    roleId: user.roleId,
-    status: user.status,
-    remark: user.remark ?? "",
-  }
 
   return (
     <div className="p-6 space-y-6">
@@ -41,7 +31,7 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
           </div>
         </CardHeader>
         <CardContent>
-          <UserForm data={userFormData} roles={[]} update />
+          <UserForm data={user.data as User} update={true} />
         </CardContent>
       </Card>
     </div>

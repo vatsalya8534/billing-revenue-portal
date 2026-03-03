@@ -1,16 +1,13 @@
-"use client";
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import UserForm from "@/components/user/user-form"; 
 import Link from "next/link";
 import { Role } from "@prisma/client";
+import { getRoles } from "@/lib/actions/role";
 
-interface UserCreatePageProps {
-  roles: Role[];
-}
+const UserCreatePage  = async  () => {
+  const roles = await getRoles();
 
-const UserCreatePage: React.FC<UserCreatePageProps> = ({ roles }) => {
   return (
     <Card>
       <CardHeader>
@@ -25,7 +22,7 @@ const UserCreatePage: React.FC<UserCreatePageProps> = ({ roles }) => {
       </CardHeader>
 
       <CardContent>
-        <UserForm roles={roles} update={false} />
+        <UserForm update={false} />
       </CardContent>
     </Card>
   );

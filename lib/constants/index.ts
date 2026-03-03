@@ -1,4 +1,4 @@
-import { Status } from "@prisma/client";
+import { PaymentReceived, POStatus, Status } from "@prisma/client";
 
 /* ================= APP CONFIG ================= */
 
@@ -13,20 +13,23 @@ export const SERVER_URL =
   process.env.NEXT_APP_SERVER_URL ?? "http://localhost:3000";
 
 export const roleDefaultValues = {
-  roleName: "",
-  createdBy: "",
+  name: "",
   remark: "",
+  status: Status.ACTIVE
 };
+
+
+export const formatDate = (date?: Date | null) => date ? date.toISOString().split("T")[0] : "";
 
 export const userDefaultValues = {
   username: "",
   password: "",
   firstName: "",
   lastName: "",
-  // roleName: "",
-  roleId: 0,
+  email: "",
   status: Status.ACTIVE,
   remark: "",
+  roleId: ""
 };
 
 export const clientDefaultValues = {
@@ -38,51 +41,26 @@ export const clientDefaultValues = {
   status: Status.ACTIVE,
 };
 
-// export const purchaseOrderDefaultValues = {
-//   poNumber: "",
-//   serviceType: "",
-//   contractType: "",
-//   contractDuration: "",
-//   startFrom: null as Date | null,
-//   endDate: null as Date | null,
-//   paymentTerms: "",
-//   billingPlan: "",
-//   poAmount: 0,
-//   remark: "",
-//   clientId: "",
-//   createdByUserId: "",
-//   status: Status.ACTIVE,
-// };
-
 export const purchaseOrderDefaultValues = {
-  poNumber: "",
+  customerPONumber: "",
+  poAmount: 0,
   serviceType: "",
-  contractType: "",
   contractDuration: "",
-  startFrom: "",
-  endDate: "",
+
+  contractType: "",
+  startFrom: new Date(),
+  endDate: new Date(),
   paymentTerms: "",
   billingPlan: "",
-  poAmount: 0,
-  remark: "",
-  clientId: 0,
-  createdByUserId: 0,
-  status: Status.ACTIVE,
-};
 
-export const billDefaultValues = {
-  billNumber: "",
-  billAmount: 0,
-  billDate: null as Date | null,
-  billSubmittedDate: null as Date | null,
-  purchaseOrderId: "",
-  clientId: "",
-  status: Status.ACTIVE,
-};
+  billingNumber: "",
+  customerName: "",
+  billDate: new Date(),
+  billSubmittedDate: new Date(),
+  paymentReceived: PaymentReceived.NO,
+  paymentReceivedDate: new Date(),
+  paymentReceivedAmount: 0,
 
-export const paymentDefaultValues = {
-  billId: "",
-  receivedAmount: 0,
-  receivedDate: null as Date | null,
+  status: POStatus.PENDING,
   remark: "",
 };

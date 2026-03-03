@@ -1,161 +1,177 @@
-// "use server"
+"use server";
 
-// import { prisma } from "@/lib/prisma"
-// import { revalidatePath } from "next/cache"
-// import { Status } from "@prisma/client"
-// import bcrypt from "bcryptjs"
+import { User } from "@/types";
+import { prisma } from "../prisma";
+import { createUserSchema, loginFormSchema, userSchema } from "../validators";
+import { formatError } from "../utils";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { signIn, signOut } from "@/auth";
+import bcrypt from "bcrypt";
 
-// // Create User
-// export async function createUser(data: {
-//   username: string
-//   password: string
-//   firstName: string
-//   lastName: string
-//   roleId: number   // <-- use roleId instead of roleName
-//   createdBy: string
-//   remark?: string
-//   status?: Status
-// }) {
-//   const user = await prisma.user.create({
-//     data: {
-//       username: data.username,
-//       password: data.password,
-//       firstName: data.firstName,
-//       lastName: data.lastName,
-//       roleId: data.roleId, 
-//       createdBy: data.createdBy,
-//       remark: data.remark,
-//       status: data.status ?? Status.ACTIVE,
-//     },
-//   })
-
-//   revalidatePath("/users")
-//   return user
-// }
-
-// // GET USERS
-// export async function getUsers() {
-//   return prisma.user.findMany({
-//     orderBy: { createdDate: "desc" },
-//   })
-// }
-
-
-// // UPDATE USER
-// export async function updateUser(
-//   id: number,
-//   data: {
-//     username?: string;
-//     password?: string;
-//     firstName?: string;
-//     lastName?: string;
-//     roleId?: number;
-//     status?: Status;
-//     remark?: string;
-//   }
-// ) {
-//   // Hash password if provided
-//   if (data.password) {
-//     data.password = await bcrypt.hash(data.password, 10);
-//   }
-
-//   const updated = await prisma.user.update({
-//     where: { id },
-//     data,
-//   });
-
-//   // Revalidate users page
-//   revalidatePath("/admin/users");
-
-//   return updated;
-// }
-
-
-// // DELETE USER
-
-// export async function deleteUser(id: number) {
-//   await prisma.user.delete({
-//     where: { id },
-//   })
-
-//   revalidatePath("/users")
-// }
-
-// users/actions.ts
-"use server"; // ⚠️ Important for server actions
-
-import { prisma } from "@/lib/prisma";
-import { Status } from "@prisma/client";
-import bcrypt from "bcryptjs";
-import { revalidatePath } from "next/cache";
-
-// CREATE USER
-export async function createUser(data: {
-  username: string;
-  password: string;
-  firstName: string;
-  lastName: string;
-  roleId: number;
-  createdBy: string;
-  status?: Status;
-  remark?: string;
-}) {
-  const user = await prisma.user.create({
-    data: {
-      username: data.username,
-      password: await bcrypt.hash(data.password, 10),
-      firstName: data.firstName,
-      lastName: data.lastName,
-      roleId: data.roleId,
-      createdBy: data.createdBy,
-      status: data.status ?? Status.ACTIVE,
-      remark: data.remark,
-    },
-  });
-
-  revalidatePath("/admin/users");
-  return user;
-}
-
-// // GET USERS
 export async function getUsers() {
-  return prisma.user.findMany({
-    orderBy: { createdDate: "desc" },
+  return await prisma.user.findMany({
+    orderBy: {
+      createdAt: 'desc'
+    },
+    include: { role: true }
   })
 }
 
-// UPDATE USER (Server Action)
-export async function updateUser(
-  id: number,
-  data: {
-    username?: string;
-    password?: string;
-    firstName?: string;
-    lastName?: string;
-    roleId?: number;
-    status?: Status;
-    remark?: string;
-  }
-) {
-  if (data.password) {
-    data.password = await bcrypt.hash(data.password, 10);
-  }
+export async function createUser(data: User) {
 
-  const updated = await prisma.user.update({
-    where: { id },
-    data,
-  });
+  try {
+    const user = createUserSchema.parse(data)
 
-  revalidatePath("/admin/users");
-  return updated;
+    const hashedPassword = await bcrypt.hash(user.password, 10);
+
+    await prisma.user.create({
+      data: {
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        password: hashedPassword,
+        status: user.status,
+        roleId: user.roleId,
+        remark: user.remark,
+      }
+    })
+
+    return {
+      success: true,
+      message: "User created successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+export async function getUserById(id: string) {
+  try {
+
+    let user = await prisma.user.findFirst({
+      where: { id }
+    })
+
+    if (user) {
+      return {
+        success: true,
+        data: user,
+        message: "User fetched successfully"
+      }
+    }
+
+    return {
+      success: false,
+      message: "User not found"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
 }
 
-// // DELETE USER
 
-export async function deleteUser(id: number) {
-  await prisma.user.delete({
-    where: { id },
+export async function updateUser(data: User, id: string) {
+  try {
+
+    const user = userSchema.parse(data)
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        username: user.username,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        status: user.status,
+        roleId: user.roleId,
+        remark: user.remark,
+      }
+    })
+
+    return {
+      success: true,
+      message: "User updated successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+
+export async function deleteUser(id: any) {
+  try {
+    await prisma.user.delete({
+      where: { id }
+    })
+
+    return {
+      success: true,
+      message: "User deleted successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+
+export async function loginFormUser(prevState: unknown, formData: FormData) {
+
+  const user = loginFormSchema.parse({
+    username: formData.get("username"),
+    password: formData.get("password")
   })
 
-  revalidatePath("/users")
+  try {
+    await signIn("credentials", user)
+
+    return {
+      success: true,
+      message: "Login successfully"
+    }
+
+  } catch (error) {
+
+    if (isRedirectError(error)) {
+      throw error
+    }
+
+    return {
+      success: false,
+      message: "Invalid username and password"
+    }
+  }
+}
+
+// logout user
+export async function logoutUser() {
+  try {
+    await signOut()
+    return {
+      success: true,
+      message: "logout successfully"
+    }
+  } catch (error) {
+    if (isRedirectError(error)) {
+      throw error
+    }
+
+    return {
+      success: false,
+      message: "Something went wrong"
+    }
+  }
 }

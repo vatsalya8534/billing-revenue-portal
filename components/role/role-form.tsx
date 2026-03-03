@@ -1,8 +1,7 @@
 "use client";
 
 import React from "react";
-import { z } from "zod";
-import { useForm, SubmitHandler, ControllerRenderProps } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -11,60 +10,46 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { roleSchema } from "@/lib/validators";
 import { roleDefaultValues } from "@/lib/constants";
 import { createRole, updateRole } from "@/lib/actions/role";
-import { Role } from "@prisma/client";
+import { Role, Status } from "@prisma/client";
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
-type RoleFormType = z.infer<typeof roleSchema>;
+import { z } from "zod";
 
-const RoleForm = ({
-  data,
-  update = false,
-}: {
-  data?: Role;
-  update: boolean;
-}) => {
+const RoleForm = ({ data, update = false }: { data?: Role; update: boolean; }) => {
   const router = useRouter();
   const id = data?.id;
 
-  const form = useForm<RoleFormType>({
+  const form = useForm<z.infer<typeof roleSchema>>({
     resolver: zodResolver(roleSchema),
-    defaultValues: data
-      ? {
-          roleName: data.roleName,
-          createdBy: data.createdBy,
-          remark: data.remark ?? "",
-        }
-      : roleDefaultValues,
+    defaultValues: data || roleDefaultValues,
   });
 
   const [isPending, startTransition] = React.useTransition();
 
-  const onSubmit: SubmitHandler<RoleFormType> = (values) => {
+  const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values: any) => {
     startTransition(async () => {
-      try {
-        if (update && id) {
-          await updateRole(id, values);
-        } else {
-          await createRole(values);
-        }
+      let res;
 
-        toast.success("Role saved successfully");
+      const payload = {
+        ...values,
+      };
+
+      if (update && id) {
+        res = await updateRole(payload, id);
+      } else {
+        res = await createRole(payload);
+      }
+
+      if (!res?.success) {
+        toast.error("Error", {
+          description: res?.message,
+        });
+      } else {
         router.push("/admin/roles");
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-        toast.error("Something went wrong");
       }
     });
   };
@@ -76,8 +61,8 @@ const RoleForm = ({
           {/* Role Name */}
           <FormField
             control={form.control}
-            name="roleName"
-            render={({ field }: { field: ControllerRenderProps<RoleFormType, "roleName"> }) => (
+            name="name"
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Role Name</FormLabel>
                 <FormControl>
@@ -87,16 +72,17 @@ const RoleForm = ({
               </FormItem>
             )}
           />
-
-          {/* Created By */}
           <FormField
             control={form.control}
-            name="createdBy"
-            render={({ field }: { field: ControllerRenderProps<RoleFormType, "createdBy"> }) => (
+            name="status"
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Created By</FormLabel>
+                <FormLabel>Status</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter creator name" {...field} />
+                  <select {...field} className="border rounded px-3 py-2 w-full">
+                    <option value={Status.ACTIVE}>Active</option>
+                    <option value={Status.INACTIVE}>Inactive</option>
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -108,14 +94,15 @@ const RoleForm = ({
         <FormField
           control={form.control}
           name="remark"
-          render={({ field }: { field: ControllerRenderProps<RoleFormType, "remark"> }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Remark</FormLabel>
               <FormControl>
                 <Textarea
-                  placeholder="Additional notes about this role"
-                  className="h-32"
+                  className="h-40"
+                  placeholder="Enter Notes"
                   {...field}
+                  value={field.value ?? ""}
                 />
               </FormControl>
               <FormMessage />

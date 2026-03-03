@@ -2,12 +2,10 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPurchaseOrders } from "@/lib/actions/purschase-order";
-import { PurchaseOrder } from "@prisma/client";
-import { DataTable } from "@/components/ui/data-table";
-import { columns } from "./column";
+import { PoDataTable } from "./po-datatable";
 
 const PurchaseOrdersPage = async () => {
-  const purchaseOrders: PurchaseOrder[] = await getPurchaseOrders();
+  const purchaseOrders = await getPurchaseOrders();
 
   return (
     <Card>
@@ -19,7 +17,7 @@ const PurchaseOrdersPage = async () => {
       </CardHeader>
 
       <CardContent>
-        <DataTable columns={columns} data={purchaseOrders} />
+        <PoDataTable data={purchaseOrders} />
       </CardContent>
     </Card>
   );

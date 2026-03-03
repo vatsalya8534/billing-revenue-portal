@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useForm, SubmitHandler, ControllerRenderProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -14,114 +14,89 @@ import { Loader2, ArrowRight } from "lucide-react";
 
 import { z } from "zod";
 import { Status } from "@prisma/client";
-import { userSchema } from "@/lib/validators";
+import { createUserSchema, userSchema } from "@/lib/validators";
 
-import { createUser } from "@/lib/actions/users";
+import { createUser, updateUser } from "@/lib/actions/users";
+import { getRoles } from "@/lib/actions/role";
+import { Role, User } from "@/types";
+import { userDefaultValues } from "@/lib/constants";
 
-export type UserFormType = z.infer<typeof userSchema>;
-
-interface UserFormProps {
-  data?: {
-    id: number;
-    username: string;
-    firstName: string;
-    lastName: string;
-    status: Status;
-    roleId?: number;
-    remark?: string;
-  };
-  roles: { id: number }[];
-  update?: boolean;
-
-  updateUserAction?: (id: number, data: {
-    username?: string;
-    password?: string;
-    firstName?: string;
-    lastName?: string;
-    roleId?: number;
-    status?: Status;
-    remark?: string;
-  }) => Promise<any>;
-}
-
-const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
+const UserForm = ({ data, update = false }: { data?: User, update: boolean }) => {
   const router = useRouter();
 
-  const form = useForm<UserFormType>({
-    resolver: zodResolver(userSchema),
-    defaultValues: {
-      username: data?.username ?? "",
-      password: "",
-      firstName: data?.firstName ?? "",
-      lastName: data?.lastName ?? "",
-      status: data?.status ?? Status.ACTIVE,
-      roleId: data?.roleId ?? 0,
-      remark: data?.remark ?? "",
-    },
+  const id = data?.id;
+
+  const currentSchema = update ? userSchema : createUserSchema;
+
+  const currentData = update
+    ? (({ password, ...rest }) => rest)(userDefaultValues)
+    : userDefaultValues
+
+  const form = useForm<z.infer<typeof currentSchema>>({
+    resolver: zodResolver(currentSchema),
+    defaultValues: data || (currentData)
   });
 
-  const [isPending, setIsPending] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
+  const [allRole, setAllRole] = React.useState<any>([]);
 
-  const onSubmit: SubmitHandler<UserFormType> = async (values) => {
-    setIsPending(true);
-    try {
-      if (update && data?.id) {
-        const res = await fetch(`/api/users/${data.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            username: values.username,
-            password: values.password || undefined,
-            firstName: values.firstName,
-            lastName: values.lastName,
-            roleId: Number(values.roleId),
-            status: values.status,
-            remark: values.remark,
-          }),
-        });
+  const onSubmit: SubmitHandler<z.infer<typeof currentSchema>> = async (values) => {
+    startTransition(async () => {
+      let res;
 
-        if (!res.ok) {
-          const err = await res.json();
-          throw new Error(err.error || "Failed to update user");
-        }
+      const payload = {
+        ...values,
+      };
 
-        toast.success("User updated successfully");
+      if (update && id) {
+        res = await updateUser(payload, id);
       } else {
-        await createUser({
-          username: values.username,
-          password: values.password ?? "",
-          firstName: values.firstName,
-          lastName: values.lastName,
-          roleId: Number(values.roleId),
-          status: values.status,
-          remark: values.remark,
-          createdBy: "admin",
-        });
-        toast.success("User created successfully");
+        res = await createUser(payload);
       }
 
-      router.push("/admin/users");
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || "Failed to save user");
-    } finally {
-      setIsPending(false);
-    }
+      if (!res?.success) {
+        toast.error("Error", {
+          description: res?.message,
+        });
+      } else {
+        router.push("/admin/users");
+      }
+    });
   };
+
+  useEffect(() => {
+    getRoles().then((res) => {
+      setAllRole(res);
+    })
+  }, [])
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))} className="space-y-6">
         <div className="grid grid-cols-2 gap-6">
           {/* Username */}
           <FormField
             control={form.control}
             name="username"
-            render={({ field }: { field: ControllerRenderProps<UserFormType, "username"> }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter username" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -133,7 +108,7 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
             <FormField
               control={form.control}
               name="password"
-              render={({ field }: { field: ControllerRenderProps<UserFormType, "password"> }) => (
+              render={({ field }) => (
                 <FormItem>
                   <FormLabel>Password</FormLabel>
                   <FormControl>
@@ -149,7 +124,7 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
           <FormField
             control={form.control}
             name="firstName"
-            render={({ field }: { field: ControllerRenderProps<UserFormType, "firstName"> }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>First Name</FormLabel>
                 <FormControl>
@@ -164,7 +139,7 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
           <FormField
             control={form.control}
             name="lastName"
-            render={({ field }: { field: ControllerRenderProps<UserFormType, "lastName"> }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Last Name</FormLabel>
                 <FormControl>
@@ -175,21 +150,21 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
             )}
           />
 
-          {/* Role Id */}
           <FormField
             control={form.control}
             name="roleId"
-            render={({ field }: { field: ControllerRenderProps<UserFormType, "roleId"> }) => (
+            render={({ field }) => (
               <FormItem>
-                <FormLabel>Role Id</FormLabel>
+                <FormLabel>Role</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="Enter role ID"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
-                    onBlur={field.onBlur}
-                  />
+                  <select {...field} className="border rounded px-3 py-2 w-full">
+                    <option value="" hidden>Select Role</option>
+                    {
+                      allRole.length > 0 && allRole.map((role: any, index: number) => (
+                        <option value={role.id} key={index}>{role.name}</option>
+                      ))
+                    }
+                  </select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -200,7 +175,7 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
           <FormField
             control={form.control}
             name="status"
-            render={({ field }: { field: ControllerRenderProps<UserFormType, "status"> }) => (
+            render={({ field }) => (
               <FormItem>
                 <FormLabel>Status</FormLabel>
                 <FormControl>
@@ -219,7 +194,7 @@ const UserForm: React.FC<UserFormProps> = ({ data, roles, update = false }) => {
         <FormField
           control={form.control}
           name="remark"
-          render={({ field }: { field: ControllerRenderProps<UserFormType, "remark"> }) => (
+          render={({ field }) => (
             <FormItem>
               <FormLabel>Remark</FormLabel>
               <FormControl>

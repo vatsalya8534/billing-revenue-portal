@@ -12,7 +12,7 @@ export interface UserRow {
   username: string
   firstName: string
   lastName: string
-  roleId: number
+  role: string
   status: string
   remark?: string
   createdDate: string
@@ -24,7 +24,7 @@ export const columns: ColumnDef<UserRow>[] = [
   { accessorKey: "username", header: "Username" },
   { accessorKey: "firstName", header: "First Name" },
   { accessorKey: "lastName", header: "Last Name" },
-  { accessorKey: "roleId", header: "Role Id" },
+  { accessorKey: "role", header: "Role" },
   { accessorKey: "status", header: "Status" },
   { accessorKey: "remark", header: "Remark" },
   { accessorKey: "createdDate", header: "Created Date" },
@@ -35,24 +35,24 @@ export const columns: ColumnDef<UserRow>[] = [
       const router = useRouter()
 
       const handleDelete = async () => {
-  try {
-    const res = await fetch(`/api/users/delete?id=${row.original.id}`, {
-      method: "DELETE",
-    })
+        try {
+          const res = await fetch(`/api/users/delete?id=${row.original.id}`, {
+            method: "DELETE",
+          })
 
-    const data = await res.json()
+          const data = await res.json()
 
-    if (!res.ok) {
-      throw new Error(data.error || "Delete failed")
-    }
+          if (!res.ok) {
+            throw new Error(data.error || "Delete failed")
+          }
 
-    toast.success("User deleted successfully")
+          toast.success("User deleted successfully")
 
-    router.refresh() 
-  } catch (error: any) {
-    toast.error(error.message || "Failed to delete role")
-  }
-}
+          router.refresh()
+        } catch (error: any) {
+          toast.error(error.message || "Failed to delete role")
+        }
+      }
 
       return (
         <div className="flex gap-2">

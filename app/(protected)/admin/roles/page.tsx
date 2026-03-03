@@ -1,13 +1,14 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { getRoles } from "@/lib/actions/role"
 import { Role } from "@prisma/client"
-import { DataTable } from "@/components/ui/data-table"
-import { columns } from "./column"
+import { getRoles } from "@/lib/actions/role"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { RoleDataTable } from "./role-datatable"
 
 const RolesPage = async () => {
   const roles: Role[] = await getRoles()
+  console.log(roles);
+
 
   return (
     <Card>
@@ -18,7 +19,7 @@ const RolesPage = async () => {
         </Link>
       </CardHeader>
       <CardContent>
-        <DataTable columns={columns} data={roles} />
+        <RoleDataTable data={roles as Role[]} />
       </CardContent>
     </Card>
   )

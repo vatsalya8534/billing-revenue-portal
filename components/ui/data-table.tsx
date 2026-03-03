@@ -37,8 +37,10 @@ export function DataTable<TData, TValue>({
       .includes(filterValue.toLowerCase())
   }
 
+  const [currentData, setCurrentData] = React.useState<any>([...data]);
+
   const table = useReactTable({
-    data,
+    data: currentData,
     columns,
     state: {
       sorting,
@@ -51,6 +53,10 @@ export function DataTable<TData, TValue>({
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   })
+
+  React.useEffect(() => {
+    
+  }, [data.length])
 
   return (
     <div className="space-y-4">

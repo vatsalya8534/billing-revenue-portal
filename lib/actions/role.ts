@@ -1,66 +1,114 @@
-"use server"
+"use server";
 
-import { prisma } from "@/lib/prisma"
-import { revalidatePath } from "next/cache"
-
-export async function createRole(data: {
-  roleName: string
-  createdBy: string
-  remark?: string
-}) {
-  const role = await prisma.role.create({
-    data: {
-      roleName: data.roleName,
-      createdBy: data.createdBy,
-      remark: data.remark,
-    },
-  })
-
-  revalidatePath("/roles")
-  return role
-}
+import { Role } from "@/types";
+import { prisma } from "../prisma";
+import { roleSchema } from "../validators";
+import { formatError } from "../utils";
 
 export async function getRoles() {
-  return prisma.role.findMany({
-    orderBy: { createdDate: "desc" },
-    include: {
-      users: true, 
+  return await prisma.role.findMany({
+    orderBy: {
+      createdAt: 'desc'
     },
   })
 }
 
-export async function getRoleById(id: number) {
-  return prisma.role.findUnique({
-    where: { id },
-    include: {
-      users: true,
-    },
-  })
-}
+export async function createRole(data: Role) {
 
-export async function updateRole(
-  id: number,
-  data: {
-    roleName?: string
-    remark?: string
+  try {
+    const role = roleSchema.parse(data)
+
+    await prisma.role.create({
+      data: {
+        name: role.name,
+        remark: role.remark,
+        status: role.status
+      }
+    })
+
+    return {
+      success: true,
+      message: "role created successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
   }
-) {
-  const updatedRole = await prisma.role.update({
-    where: { id },
-    data: {
-      roleName: data.roleName,
-      remark: data.remark,
-    },
-  })
+}
+export async function getRoleById(id: string) {
+  try {
 
-  revalidatePath("/roles")
-  return updatedRole
+    let role = await prisma.role.findFirst({
+      where: { id }
+    })
+
+    if (role) {
+      return {
+        success: true,
+        data: role,
+        message: "Role fetched successfully"
+      }
+    }
+
+    return {
+      success: false,
+      message: "Role not found"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
 }
 
-export async function deleteRole(id: number) {
-  await prisma.role.delete({
-    where: { id },
-  })
 
-  revalidatePath("/roles")
+export async function updateRole(data: Role, id: string) {
+  try {
+
+    const role = roleSchema.parse(data)
+
+    await prisma.role.update({
+      where: { id },
+      data: {
+        name: role.name,
+        remark: role.remark,
+        status: role.status
+      }
+    })
+
+    return {
+      success: true,
+      message: "Role updated successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+
+export async function deleteRole(id: any) {
+  try {
+    await prisma.role.delete({
+      where: { id }
+    })
+
+    return {
+      success: true,
+      message: "Role deleted successfully"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
 }

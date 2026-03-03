@@ -4,20 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DataTable } from "@/components/ui/data-table"
 import { columns } from "./column"
 import { getUsers } from "@/lib/actions/users"
+import { UserDataTable } from "./user-datatable"
+import { User } from "@/types"
 
 export default async function UsersPage() {
-  const res = await getUsers() 
-  const users = res.map((u: any) => ({
-    id: u.id,
-    username: u.username,
-    firstName: u.firstName,
-    lastName: u.lastName,
-    roleId: u.roleId,
-    status: u.status,
-    remark: u.remark,
-    createdDate: u.createdDate,
-    createdBy: u.createdBy,
-  }))
+  const users = await getUsers() 
 
   return (
     <Card>
@@ -29,7 +20,7 @@ export default async function UsersPage() {
       </CardHeader>
 
       <CardContent>
-        <DataTable columns={columns} data={users} />
+        <UserDataTable data={users as User[]} />
       </CardContent>
     </Card>
   )
