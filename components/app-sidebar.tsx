@@ -7,6 +7,8 @@ import {
   IconFileDescription,
   IconInnerShadowTop,
   IconSettings,
+  IconUser,
+  IconUserCog,
 
 } from "@tabler/icons-react"
 
@@ -30,69 +32,21 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
-{
-  title: "Purchase Orders",
-  url: "/admin/purchase-orders",
-  // icon: FileText,
-},
-
-{
-  title: "Users",
-  url: "/admin/users",
-  // icon: User,
-},
-{
-  title: "Roles",
-  url: "/admin/roles",
-  // icon: Shield,
-},
-  ],
-  navClouds: [
     {
-      title: "Capture",
-      icon: IconCamera,
-      isActive: true,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Proposal",
+      title: "Purchase Orders",
+      url: "/admin/purchase-orders",
       icon: IconFileDescription,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+    },
+
+    {
+      title: "Users",
+      url: "/admin/users",
+      icon: IconUser,
     },
     {
-      title: "Prompts",
-      icon: IconFileAi,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
-          url: "#",
-        },
-      ],
+      title: "Roles",
+      url: "/admin/roles",
+      icon: IconUserCog,
     },
   ],
   navSecondary: [
@@ -106,7 +60,7 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

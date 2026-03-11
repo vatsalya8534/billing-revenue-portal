@@ -18,10 +18,7 @@ export function LoginForm({
   let [data, action] = useActionState(loginFormUser, {
     success: false,
     message: ''
-  })
-
-  console.log(data);
-  
+  })  
 
   const [mounted, setMounted] = useState<Boolean>(false)
 

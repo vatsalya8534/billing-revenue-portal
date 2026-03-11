@@ -8,7 +8,7 @@ export const metadata: Metadata = {
     title: "SignIn"
 }
 
-async function SignInPage({ searchParams }: { searchParams: Promise<{callbackUrl: string}>}) {
+async function SignInPage() {
     const session = await auth()
   
     if(session) {

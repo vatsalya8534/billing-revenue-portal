@@ -5,6 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials"
 import bycrpt from "bcrypt"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+    secret: process.env.AUTH_SECRET,
     pages: {
         signIn: "/",
         error: "/"
@@ -22,7 +23,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             },
             async authorize(credentials) {
                 if (credentials == null) return null;
-      
+
                 // find user in database
                 const user = await prisma.user.findFirst({
                     where: { username: credentials.username as string },
