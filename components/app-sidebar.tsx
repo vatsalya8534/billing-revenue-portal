@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import {
-  IconCamera,
-  IconFileAi,
+  IconContract,
   IconFileDescription,
-  IconInnerShadowTop,
+  IconReceipt,
   IconSettings,
+  IconTypeface,
   IconUser,
   IconUserCog,
 
@@ -36,6 +36,24 @@ const data = {
       title: "Purchase Orders",
       url: "/admin/purchase-orders",
       icon: IconFileDescription,
+    },
+
+    {
+      title: "Contract Type",
+      url: "/admin/contract-type",
+      icon: IconContract,
+    },
+
+    {
+      title: "Service Type",
+      url: "/admin/service-type",
+      icon: IconTypeface,
+    },
+
+    {
+      title: "Billing Plan",
+      url: "/admin/billing-plans",
+      icon: IconReceipt,
     },
 
     {
