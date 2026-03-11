@@ -78,6 +78,7 @@ model PurchaseOrder {
 
 model BillingCycle {
   id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  billingNumber         String
   billingAmount         Float?
   billingDate           DateTime?
   billingSubmittedDate  DateTime?
