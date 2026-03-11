@@ -90,9 +90,33 @@ export const contractTypeSchema = z.object({
 export const billingPlanSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Name is required"),
-   totalBillingCycles: z.coerce.number(),
-  status: z.enum(["ACTIVE", "INACTIVE"]),
+  totalBillingCycles: z.coerce.number(),
+  status: z.enum(Object.values(Status)),
   remark: z.string().nullable().optional(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional()
+})
+
+export const customerSchema = z.object({
+  id: z.string().optional(),
+  customerCode: z.string().min(1, "Customer code is required"),
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  phone: z.string().min(1, "Phone number is required"),
+  companyName: z.string().min(1, "Company name is required"),
+  alternatePhone: z.string().optional(),
+  email: z.string().min(1, "Invalid email address"),
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  country: z.string().min(1, "Country is required"),
+  postalCode: z.string().min(1, "Postal code is required"),
+  gstNumber: z.string().min(1, "GST number is required"),
+  panNumber: z.string().optional(),
+  website: z.string().optional(),
+  remark: z.string().nullable().optional(),
+  status: z.enum(Object.values(Status)),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional(),
 })

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
-import CustomerForm from "../../customer-form"
+import CustomerForm from "../../../../../../components/customer/customer-form"
 
 export default async function EditCustomerPage({
   params,

@@ -1,4 +1,5 @@
 import { PaymentReceived, POStatus, Status } from "@prisma/client";
+import { custom, email } from "zod";
 
 export const APP_NAME = process.env.NEXT_APP_APP_NAME ?? "Billing & Revenue Portal";
 
@@ -71,6 +72,27 @@ export const billingPlanDefaultValues = {
 
 export const contractTypeDefaultValues = {
   name: "",
+  remark: "",
+  status: Status.ACTIVE
+}
+
+export const customerDefaultValues = {
+  customerCode: "",
+  phone: "",
+  firstName: "",
+  lastName: "",
+  companyName: "",
+  alternatePhone: "",
+  email: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  country: "",
+  postalCode: "",
+  gstNumber: "",
+  panNumber: "",
+  website: "",
   remark: "",
   status: Status.ACTIVE
 }

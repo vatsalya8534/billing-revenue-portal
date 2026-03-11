@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import CustomerForm from "../customer-form";
+import CustomerForm from "../../../../../components/customer/customer-form";
 
 export default function CreateCustomerPage() {
   async function createCustomer(formData: FormData) {

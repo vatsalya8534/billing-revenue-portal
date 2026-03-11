@@ -8,6 +8,7 @@ import {
   IconSettings,
   IconTypeface,
   IconUser,
+  IconUserCircle,
   IconUserCog,
 
 } from "@tabler/icons-react"
@@ -54,6 +55,11 @@ const data = {
       title: "Billing Plan",
       url: "/admin/billing-plan",
       icon: IconReceipt,
+    },
+    {
+      title: "Customer",
+      url: "/admin/customer",
+      icon: IconUserCircle,
     },
 
     {
