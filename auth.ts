@@ -1,5 +1,5 @@
 import NextAuth from "next-auth"
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from "./lib/prisma"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bycrpt from "bcrypt"
@@ -14,7 +14,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         strategy: "jwt" as const,
         maxAge: 30 * 24 * 60 * 60
     },
-    adapter: PrismaAdapter(prisma),
+    adapter: PrismaAdapter(prisma) as any,
     providers: [
         CredentialsProvider({
             credentials: {

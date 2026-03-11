@@ -5,8 +5,8 @@ export const statusEnum = z.nativeEnum(Status)
 export const paymentReceivedEnum = z.nativeEnum(PaymentReceived)
 
 export const loginFormSchema = z.object({
-    username: z.string("Invalid username"),
-    password: z.string().min(6, "Password should be at least 6 characters long")
+  username: z.string("Invalid username"),
+  password: z.string().min(6, "Password should be at least 6 characters long")
 })
 
 export const roleSchema = z.object({
@@ -68,3 +68,31 @@ export const purchaseOrderSchema = z.object({
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
 });
+
+export const serviceTypeSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, "Service Type name is required"),
+  remark: z.string().nullable().optional(),
+  status: z.enum(Object.values(Status)),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().nullable().optional(),
+});
+
+export const contractTypeSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(2, "Contract Type name is required"),
+  remark: z.string().nullable().optional(),
+  status: z.enum(Object.values(Status)),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().nullable().optional(),
+});
+
+export const billingPlanSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+   totalBillingCycles: z.coerce.number(),
+  status: z.enum(["ACTIVE", "INACTIVE"]),
+  remark: z.string().nullable().optional(),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional()
+})

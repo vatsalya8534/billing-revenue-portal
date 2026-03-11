@@ -52,7 +52,7 @@ const data = {
 
     {
       title: "Billing Plan",
-      url: "/admin/billing-plans",
+      url: "/admin/billing-plan",
       icon: IconReceipt,
     },
 
