@@ -52,26 +52,107 @@ model User {
 }
 
 model PurchaseOrder {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerPONumber  String
-  poAmount          Float
-  serviceType       String
-  contractDuration  String
-  contractType      String
-  startFrom         DateTime?
-  endDate           DateTime?
-  paymentTerms      String
-  billingPlan       String
-  billingNumber     String?
-  customerName      String?
-  billDate          DateTime?
-  billSubmittedDate DateTime?
-  paymentReceived       PaymentReceived @default(NO)
-  paymentReceivedDate   DateTime?
-  paymentReceivedAmount Float
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerPONumber String
+  poAmount         Float
+  serviceType      String
+  contractDuration String
+  contractId       String    @db.Uuid
+  startFrom        DateTime?
+  endDate          DateTime?
+  paymentTerms     String
+  customerId       String?   @db.Uuid
+  billingPlanId    String?   @db.Uuid
+  poOwner          String
+  remark           String?
 
   status    POStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  remark    String?
+
+  billingCycles BillingCycle[]
+  customer      Customer?      @relation(fields: [customerId], references: [id])
+  contract      ContractType?  @relation(fields: [contractId], references: [id])
+  billingPlan   BillingPlan?   @relation(fields: [billingPlanId], references: [id])
+}
+
+model BillingCycle {
+  id                    String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  billingAmount         Float?
+  billingDate           DateTime?
+  billingSubmittedDate  DateTime?
+  paymentReceived       PaymentReceived @default(NO)
+  paymentReceivedDate   DateTime?
+  paymentReceivedAmount Float?
+  billingRemark         String?
+  purchaseOrderId       String          @db.Uuid
+  purchaseOrder         PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceType {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique
+
+  remark String?
+  status Status  @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model BillingPlan {
+  id                 String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String  @unique
+  totalBillingCycles Int
+  remark             String?
+  status             Status  @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+model ContractType {
+  id   String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name String @unique
+
+  remark String?
+  status Status  @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+model Customer {
+  id String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+
+  customerCode   String  @unique
+  firstName      String
+  lastName       String?
+  companyName    String?
+  email          String? @unique
+  phone          String
+  alternatePhone String?
+  addressLine1   String?
+  addressLine2   String?
+  city           String?
+  state          String?
+  country        String?
+  postalCode     String?
+  gstNumber      String? @unique
+  panNumber      String?
+  website        String?
+  status         Status  @default(ACTIVE)
+  remark         String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
 }

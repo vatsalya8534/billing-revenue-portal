@@ -47,7 +47,6 @@ const POForm = ({ data, update = false }: { data?: PurchaseOrder, update: boolea
   const [isPending, startTransition] = React.useTransition();
 
   const onSubmit: SubmitHandler<z.infer<typeof purchaseOrderSchema>> = (values) => {
-    console.log(values);
 
     startTransition(async () => {
       let res;
@@ -61,9 +60,6 @@ const POForm = ({ data, update = false }: { data?: PurchaseOrder, update: boolea
       } else {
         res = await createPurchaseOrder(payload);
       }
-
-      console.log(res);
-
 
       if (!res?.success) {
         toast.error("Error", {

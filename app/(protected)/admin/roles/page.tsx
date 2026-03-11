@@ -7,8 +7,6 @@ import { RoleDataTable } from "./role-datatable"
 
 const RolesPage = async () => {
   const roles: Role[] = await getRoles()
-  console.log(roles);
-
 
   return (
     <Card>
