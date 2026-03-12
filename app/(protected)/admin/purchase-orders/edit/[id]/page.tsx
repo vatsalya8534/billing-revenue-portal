@@ -4,13 +4,23 @@ import POForm from "@/components/purchase-order/purchase-order-form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPurchaseOrderById } from "@/lib/actions/purschase-order";
+import { getBillingPlans } from "@/lib/actions/billing-plan";
+import { getContractTypes } from "@/lib/actions/contract-type";
+import { getServiceTypes } from "@/lib/actions/service-type";
+import { getCustomers } from "@/lib/actions/customer";
+import { Customer } from "@/types";
 
 interface EditPOPageProps {
   params: Promise<{ id: string }>; // params is now a Promise
 }
 
 const EditPOPage = async ({ params }: EditPOPageProps) => {
-  const { id } = await params; 
+  const billingPlan = await getBillingPlans()
+  const contractType = await getContractTypes()
+  const serviceType = await getServiceTypes()
+  const customers = await getCustomers()
+
+  const { id } = await params;
 
   const po = await getPurchaseOrderById(id);
 
@@ -23,7 +33,7 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
         </Link>
       </CardHeader>
       <CardContent>
-        <POForm data={po.data} update={true} />
+        <POForm data={po.data} update={true} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />
       </CardContent>
     </Card>
   );

@@ -2,8 +2,19 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import POForm from "@/components/purchase-order/purchase-order-form";
 import Link from "next/link";
+import { getBillingPlans } from "@/lib/actions/billing-plan";
+import { getContractTypes } from "@/lib/actions/contract-type";
+import { getServiceTypes } from "@/lib/actions/service-type";
+import { getCustomers } from "@/lib/actions/customer";
+import { Customer } from "@/types";
 
-const POCreatePage = () => {
+const POCreatePage = async () => {
+  const billingPlan = await getBillingPlans()
+  const contractType = await getContractTypes()
+  const serviceType = await getServiceTypes()
+  const customers = await getCustomers()
+  
+
   return (
     <Card>
       <CardHeader>
@@ -16,7 +27,7 @@ const POCreatePage = () => {
       </CardHeader>
 
       <CardContent>
-        <POForm update={false} />
+        <POForm update={false} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />
       </CardContent>
     </Card>
   );

@@ -1,62 +1,28 @@
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import CustomerForm from "../../../../../components/customer/customer-form";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function CreateCustomerPage() {
-  async function createCustomer(formData: FormData) {
-    "use server";
-
-    const firstName = formData.get("firstName") as string;
-    const lastName = formData.get("lastName") as string;
-    const companyName = formData.get("companyName") as string;
-    const email = formData.get("email") as string;
-    const phone = formData.get("phone") as string;
-    const city = formData.get("city") as string;
-    const alternatePhone = formData.get("alternatePhone") as string;
-    const addressLine1 = formData.get("addressLine1") as string;
-    const addressLine2 = formData.get("addressLine2") as string;
-    const state = formData.get("state") as string;
-    const country = formData.get("country") as string;
-    const postalCode = formData.get("postalCode") as string;
-    const gstNumber = formData.get("gstNumber") as string;
-    const panNumber = formData.get("panNumber") as string;
-    const website = formData.get("website") as string;
-    const remark = formData.get("remark") as string;
-
-    const count = await prisma.customer.count();
-
-    const customerCode = `CUST-${String(count + 1).padStart(4, "0")}`;
-
-    await prisma.customer.create({
-      data: {
-        customerCode,
-        firstName,
-        lastName,
-        companyName,
-        email,
-        phone,
-        city,
-        alternatePhone,
-        addressLine1,
-        addressLine2,
-        state,
-        country,
-        postalCode,
-        gstNumber,
-        panNumber,
-        website,
-        remark,
-      },
-    });
-
-    redirect("/admin/customer");
-  }
 
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-6">Create Customer</h1>
+   <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Add Customer</CardTitle>
+          <Link href="/admin/customer">
+            <Button className="bg-blue-500 hover:bg-blue-600">
+              Back
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
 
-      <CustomerForm action={createCustomer} />
-    </div>
+      <CardContent>
+         <CustomerForm  update={false} />
+      </CardContent>
+    </Card>
   );
 }

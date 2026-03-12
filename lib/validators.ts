@@ -43,26 +43,17 @@ export const purchaseOrderSchema = z.object({
     (val) => Number(val),
     z.number().min(0, "PO Amount must be positive")
   ),
-  serviceType: z.string().min(1, "Service Type is required"),
+  serviceTypeId: z.string().min(1, "Service Type is required"),
   contractDuration: z.string().min(1, "Contract Duration is required"),
 
-  contractType: z.string().min(1, "Contract Type is required"),
+  contractId: z.string().min(1, "Contract Type is required"),
   startFrom: z.union([z.date(), z.string()]).nullable().optional(),
   endDate: z.union([z.date(), z.string()]).nullable().optional(),
   paymentTerms: z.string().min(1, "Payment Terms are required"),
-  billingPlan: z.string().min(1, "Billing Plan is required"),
-
-  billingNumber: z.string().min(1, "Billing Number is required"),
-  customerName: z.string().min(1, "Billing Number is required"),
-  billDate: z.union([z.date(), z.string()]).nullable().optional(),
-  billSubmittedDate: z.union([z.date(), z.string()]).nullable().optional(),
-  paymentReceived: z.enum(Object.values(PaymentReceived)),
-  paymentReceivedDate: z.union([z.date(), z.string()]).nullable().optional(),
-  paymentReceivedAmount: z.preprocess(
-    (val) => Number(val),
-    z.number().min(0, "PO Amount must be positive")
-  ),
-
+  billingPlanId: z.string().min(1, "Billing Plan is required"),
+  customerId: z.string().min(1, "Customer is required"),
+  poOwner: z.string().min(1, "PO owner is required"),
+  
   status: z.enum(Object.values(POStatus)),
   remark: z.string().optional(),
   createdAt: z.date().nullable().optional(),
@@ -99,7 +90,7 @@ export const billingPlanSchema = z.object({
 
 export const customerSchema = z.object({
   id: z.string().optional(),
-  customerCode: z.string().min(1, "Customer code is required"),
+  customerCode: z.string().optional(),
   firstName: z.string().min(1, "First name is required"),
   lastName: z.string().min(1, "Last name is required"),
   phone: z.string().min(1, "Phone number is required"),

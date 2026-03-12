@@ -38,22 +38,17 @@ export const clientDefaultValues = {
 export const purchaseOrderDefaultValues = {
   customerPONumber: "",
   poAmount: 0,
-  serviceType: "",
+  serviceTypeId: "",
   contractDuration: "",
-  contractType: "",
+  contractId: "",
   startFrom: new Date(),
   endDate: new Date(),
   paymentTerms: "",
-  billingPlan: "",
-  billingNumber: "",
-  customerName: "",
-  billDate: new Date(),
-  billSubmittedDate: new Date(),
-  paymentReceived: PaymentReceived.NO,
-  paymentReceivedDate: new Date(),
-  paymentReceivedAmount: 0,
+  billingPlanId: "",
+  customerId: "",
   status: POStatus.PENDING,
   remark: "",
+  poOwner: ""
 };
 
 export const serviceTypeDefaultValues = {

@@ -74,6 +74,20 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
         <div className="grid grid-cols-2 gap-6">
           <FormField
             control={form.control}
+            name="customerCode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Customer Code</FormLabel>
+                <FormControl>
+                  <Input placeholder="Enter Customer Code" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="firstName"
             render={({ field }) => (
               <FormItem>

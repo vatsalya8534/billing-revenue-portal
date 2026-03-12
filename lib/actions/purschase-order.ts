@@ -22,25 +22,18 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
       data: {
         customerPONumber: purchaseOrder.customerPONumber,
         poAmount: purchaseOrder.poAmount,
-        serviceType: purchaseOrder.serviceType,
+        serviceTypeId: purchaseOrder.serviceTypeId,
         contractDuration: purchaseOrder.contractDuration,
 
-        contractType: purchaseOrder.contractType,
-        startFrom: purchaseOrder.startFrom,
-        endDate: purchaseOrder.endDate,
+        contractId: purchaseOrder.contractId,
+        startFrom: purchaseOrder.startFrom ? new Date(purchaseOrder.startFrom) : undefined,
+        endDate: purchaseOrder.endDate ? new Date(purchaseOrder.endDate) : undefined,
         paymentTerms: purchaseOrder.paymentTerms,
-        billingPlan: purchaseOrder.billingPlan,
-
-        billingNumber: purchaseOrder.billingNumber,
-        customerName: purchaseOrder.customerName,
-        billDate: purchaseOrder.billDate,
-        billSubmittedDate: purchaseOrder.billSubmittedDate,
-        paymentReceived: purchaseOrder.paymentReceived,
-        paymentReceivedDate: purchaseOrder.paymentReceivedDate,
-        paymentReceivedAmount: purchaseOrder.paymentReceivedAmount,
-
+        customerId: purchaseOrder.customerId,
+        billingPlanId: purchaseOrder.billingPlanId,
         status: purchaseOrder.status,
         remark: purchaseOrder.remark,
+        poOwner: purchaseOrder.poOwner,
       }
     })
 
@@ -95,25 +88,19 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
       data: {
         customerPONumber: purchaseOrder.customerPONumber,
         poAmount: purchaseOrder.poAmount,
-        serviceType: purchaseOrder.serviceType,
+        serviceTypeId: purchaseOrder.serviceTypeId,
         contractDuration: purchaseOrder.contractDuration,
 
-        contractType: purchaseOrder.contractType,
-        startFrom: purchaseOrder.startFrom,
-        endDate: purchaseOrder.endDate,
+        contractId: purchaseOrder.contractId,
+        startFrom: purchaseOrder.startFrom ? new Date(purchaseOrder.startFrom) : undefined,
+        endDate: purchaseOrder.endDate ? new Date(purchaseOrder.endDate) : undefined,
+
+        customerId: purchaseOrder.customerId,
         paymentTerms: purchaseOrder.paymentTerms,
-        billingPlan: purchaseOrder.billingPlan,
-
-        billingNumber: purchaseOrder.billingNumber,
-        customerName: purchaseOrder.customerName,
-        billDate: purchaseOrder.billDate,
-        billSubmittedDate: purchaseOrder.billSubmittedDate,
-        paymentReceived: purchaseOrder.paymentReceived,
-        paymentReceivedDate: purchaseOrder.paymentReceivedDate,
-        paymentReceivedAmount: purchaseOrder.paymentReceivedAmount,
-
+        billingPlanId: purchaseOrder.billingPlanId,
         status: purchaseOrder.status,
         remark: purchaseOrder.remark,
+        poOwner: purchaseOrder.poOwner,
       }
     })
 

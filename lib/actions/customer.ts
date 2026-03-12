@@ -20,8 +20,9 @@ export async function createCustomer(data: Customer) {
 
     await prisma.customer.create({
       data: {
-        customerCode: customer.customerCode,
+        customerCode: customer.customerCode || "",
         phone: customer.phone,
+        email: customer.email,
         firstName: customer.firstName,
         lastName: customer.lastName,
         companyName: customer.companyName,
@@ -90,6 +91,7 @@ export async function updateCustomer(data: Role, id: string) {
       data: {
         customerCode: customer.customerCode,
         phone: customer.phone,
+        email: customer.email,
         firstName: customer.firstName,
         lastName: customer.lastName,
         companyName: customer.companyName,

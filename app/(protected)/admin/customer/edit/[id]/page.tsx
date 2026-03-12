@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
 import CustomerForm from "../../../../../../components/customer/customer-form"
+import { getCustomerById } from "@/lib/actions/customer"
+import { Customer } from "@/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default async function EditCustomerPage({
   params,
@@ -14,49 +19,29 @@ export default async function EditCustomerPage({
     notFound()
   }
 
-  const customer = await prisma.customer.findUnique({
-    where: { id },
-  })
+  const customer = await getCustomerById(id)
 
   if (!customer) {
     notFound()
   }
 
-  async function updateCustomer(formData: FormData) {
-    "use server"
-
-    const firstName = formData.get("firstName") as string
-    const lastName = formData.get("lastName") as string
-    const companyName = formData.get("companyName") as string
-    const email = formData.get("email") as string
-    const phone = formData.get("phone") as string
-    const city = formData.get("city") as string
-
-    await prisma.customer.update({
-      where: { id },
-      data: {
-        firstName,
-        lastName,
-        companyName,
-        email,
-        phone,
-        city,
-      },
-    })
-
-    redirect("/admin/customer")
-  }
-
   return (
-    <div className="p-6">
-      <h1 className="text-xl font-semibold mb-6">
-        Edit Customer
-      </h1>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <CardTitle>Edit Customer</CardTitle>
+          <Link href="/admin/customer">
+            <Button className="bg-blue-500 hover:bg-blue-600">
+              Back
+            </Button>
+          </Link>
+        </div>
+      </CardHeader>
 
-      <CustomerForm
-        action={updateCustomer}
-        defaultValues={customer}
-      />
-    </div>
+      <CardContent>
+         <CustomerForm data={customer.data as Customer}  update={true} />
+      </CardContent>
+    </Card>
+
   )
 }
