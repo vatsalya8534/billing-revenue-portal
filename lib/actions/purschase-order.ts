@@ -1,6 +1,6 @@
 "use server";
 
-import { PurchaseOrder } from "@/types";
+import { BillingCycle, PurchaseOrder } from "@/types";
 import { prisma } from "../prisma";
 import { purchaseOrderSchema } from "../validators";
 import { formatError } from "../utils";
@@ -9,6 +9,10 @@ export async function getPurchaseOrders() {
   return await prisma.purchaseOrder.findMany({
     orderBy: {
       createdAt: 'desc'
+    },
+    include: {
+      billingPlan: true,
+      ServiceType: true
     }
   })
 }
@@ -18,7 +22,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
   try {
     const purchaseOrder = purchaseOrderSchema.parse(data)
 
-    await prisma.purchaseOrder.create({
+    const purchaseOrderData = await prisma.purchaseOrder.create({
       data: {
         customerPONumber: purchaseOrder.customerPONumber,
         poAmount: purchaseOrder.poAmount,
@@ -36,6 +40,8 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
         poOwner: purchaseOrder.poOwner,
       }
     })
+
+    await createBillingCycle(purchaseOrder.billingCycle, purchaseOrderData.id)
 
     return {
       success: true,
@@ -104,6 +110,8 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
       }
     })
 
+    createBillingCycle(purchaseOrder.billingCycle, id)
+
     return {
       success: true,
       message: "Purchase Order updated successfully"
@@ -135,3 +143,75 @@ export async function deletePurchaseOrder(id: any) {
     }
   }
 }
+
+export async function getBillingCyclesByPOID(id: string) {
+  try {
+
+    let billingCycles = await prisma.billingCycle.findMany({
+      where: {
+        purchaseOrderId: id
+      }
+    })
+
+    if (billingCycles) {
+      return {
+        success: true,
+        data: billingCycles,
+        message: "Purchase Order fetched successfully"
+      }
+    }
+
+    return {
+      success: false,
+      message: "Purchase Order not found"
+    }
+
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+
+async function createBillingCycle(data: BillingCycle[], id: string) {
+
+  try {
+    await prisma.billingCycle.deleteMany({
+      where: {
+        purchaseOrderId: id
+      }
+    })
+
+    for (const billingCycle of data) {
+      await prisma.billingCycle.create({
+        data: {
+          billingNumber: billingCycle.billingNumber,
+          billingAmount: billingCycle.billingAmount,
+          billingDate: billingCycle.billingDate ? new Date(billingCycle.billingDate) : undefined,
+          billingSubmittedDate: billingCycle.billingSubmittedDate ? new Date(billingCycle.billingSubmittedDate) : undefined,
+          paymentReceived: billingCycle.paymentReceived,
+          paymentReceivedDate: billingCycle.paymentReceivedDate ? new Date(billingCycle.paymentReceivedDate) : undefined,
+          paymentReceivedAmount: billingCycle.paymentReceivedAmount,
+          billingRemark: billingCycle.billingRemark,
+          purchaseOrderId: id
+        }
+      })
+    }
+
+    return {
+      success: true,
+      message: "Billing Cycle created successfully"
+    }
+
+
+  } catch (error) {
+    console.log(error);
+
+    return {
+      success: false,
+      message: formatError(error)
+    }
+  }
+}
+

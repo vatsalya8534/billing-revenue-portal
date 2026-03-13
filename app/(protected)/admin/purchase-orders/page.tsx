@@ -7,6 +7,9 @@ import { PoDataTable } from "./po-datatable";
 const PurchaseOrdersPage = async () => {
   const purchaseOrders = await getPurchaseOrders();
 
+  console.log(purchaseOrders);
+  
+
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">

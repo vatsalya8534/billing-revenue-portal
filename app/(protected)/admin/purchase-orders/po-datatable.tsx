@@ -22,7 +22,12 @@ import { deletePurchaseOrder, getPurchaseOrders } from "@/lib/actions/purschase-
 
 const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
     { accessorKey: "customerPONumber", header: "PO Number" },
-    { accessorKey: "serviceType", header: "Service Type" },
+    {
+        accessorKey: "serviceType", header: "Service Type", cell: ({ row }) => {
+
+            return row.original.ServiceType?.name
+        }
+    },
     { accessorKey: "contractDuration", header: "Contract Duration" },
     {
         accessorKey: "startFrom", header: "Start Date",
@@ -39,7 +44,10 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
                 : "-"
     },
     { accessorKey: "poAmount", header: "Amount" },
-    { accessorKey: "billingPlan", header: "Billing Plan" },
+    { accessorKey: "billingPlan", header: "Billing Plan",  cell: ({ row }) => {
+
+            return row.original.billingPlan?.name
+        } },
     { accessorKey: "status", header: "Status" },
     {
         id: "actions",

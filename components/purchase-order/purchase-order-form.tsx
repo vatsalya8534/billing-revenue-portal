@@ -1,7 +1,7 @@
 "use client";
 
-import React from "react";
-import { useForm, SubmitHandler } from "react-hook-form";
+import React, { useEffect } from "react";
+import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -16,17 +16,18 @@ import { z } from "zod";
 import { PurchaseOrder, POStatus, PaymentReceived } from "@prisma/client";
 import { purchaseOrderSchema } from "@/lib/validators";
 import { createPurchaseOrder, updatePurchaseOrder } from "@/lib/actions/purschase-order";
-import { formatDate, purchaseOrderDefaultValues } from "@/lib/constants";
+import { formatDate } from "@/lib/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { Calendar } from "../ui/calendar";
-import { BillingPlan, ContractType, Customer, ServiceType } from "@/types";
+import { BillingCycle, BillingPlan, ContractType, Customer, ServiceType } from "@/types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import BillingCycleForm from "./billing-cycle-form";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
-const POForm = ({ billingPlan, serviceType, contractType, customers, data, update = false }: { billingPlan: BillingPlan[], serviceType: ServiceType[], contractType: ContractType[], customers: Customer[], data?: PurchaseOrder, update: boolean }) => {
+const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycles, data, update = false }: { billingPlan: BillingPlan[], billingCycles: BillingCycle[], serviceType: ServiceType[], contractType: ContractType[], customers: Customer[], data?: PurchaseOrder, update: boolean }) => {
   const router = useRouter();
 
   const id = data?.id;
@@ -41,13 +42,34 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, data, updat
     endDate: formatDate(data?.endDate),
     billingPlanId: data?.billingPlanId ?? undefined,
     customerId: data?.customerId ?? undefined,
-    remark: data?.remark ?? undefined
+    remark: data?.remark ?? undefined,
+    billingCycle: billingCycles || []
   }
 
   const form = useForm<PurchaseOrderFormValues>({
     resolver: zodResolver(purchaseOrderSchema) as any,
     defaultValues: defaultValue,
   });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: "billingCycle"
+  })
+
+  const watchBillingPlan = form.watch("billingPlanId")
+
+  const addBillingCycle = () => {
+    append({
+      billingNumber: "",
+      billingAmount: 0,
+      billingDate: new Date(),
+      billingSubmittedDate: new Date(),
+      paymentReceived: PaymentReceived.NO,
+      paymentReceivedDate: new Date(),
+      paymentReceivedAmount: 0,
+      billingRemark: ""
+    })
+  }
 
   const [isPending, startTransition] = React.useTransition();
 
@@ -66,8 +88,6 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, data, updat
         res = await createPurchaseOrder(payload);
       }
 
-      console.log(res);
-
 
       if (!res?.success) {
         toast.error("Error", {
@@ -78,6 +98,19 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, data, updat
       }
     });
   };
+
+  useEffect(() => {
+
+    if (!update) {
+      let currentBillingPlan = billingPlan.find((value) => value.id === watchBillingPlan);
+      if (currentBillingPlan) {
+        for (let count = 1; count <= currentBillingPlan.totalBillingCycles; count++) {
+          addBillingCycle()
+        }
+      }
+    }
+
+  }, [watchBillingPlan, update])
 
   return (
     <Form {...form}>
@@ -149,7 +182,6 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, data, updat
               </FormItem>
             )}
           />
-
 
           <FormField
             control={form.control}
@@ -314,7 +346,18 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, data, updat
               </FormItem>
             )}
           />
+        </div>
 
+
+        {fields.map((field, index) => (
+          <BillingCycleForm
+            key={field.id}
+            index={index}
+            control={form.control}
+          />
+        ))}
+
+        <div className="grid grid-cols-2 gap-4" >
           <FormField
             control={form.control}
             name="customerId"

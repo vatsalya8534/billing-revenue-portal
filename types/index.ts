@@ -1,6 +1,7 @@
 import z from "zod"
 import {
-  roleSchema, userSchema, purchaseOrderSchema, serviceTypeSchema, contractTypeSchema, billingPlanSchema, customerSchema
+  roleSchema, userSchema, purchaseOrderSchema, serviceTypeSchema, contractTypeSchema, billingPlanSchema, customerSchema,
+  billingCycleSchema
 } from "@/lib/validators"
 
 export type Role = z.infer<typeof roleSchema>
@@ -10,5 +11,7 @@ export type ContractType = z.infer<typeof contractTypeSchema>
 export type ServiceType = z.infer<typeof serviceTypeSchema>
 export type BillingPlan = z.infer<typeof billingPlanSchema>
 export type Customer = z.infer<typeof customerSchema>
+export type BillingCycle = z.infer<typeof billingCycleSchema>
+
 
 

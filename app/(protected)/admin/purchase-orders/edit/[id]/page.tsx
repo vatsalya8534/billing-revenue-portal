@@ -3,12 +3,12 @@ import { Button } from "@/components/ui/button";
 import POForm from "@/components/purchase-order/purchase-order-form";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPurchaseOrderById } from "@/lib/actions/purschase-order";
-import { getBillingPlans } from "@/lib/actions/billing-plan";
+import { getBillingCyclesByPOID, getPurchaseOrderById } from "@/lib/actions/purschase-order";
+import { getBillingPlanById, getBillingPlans } from "@/lib/actions/billing-plan";
 import { getContractTypes } from "@/lib/actions/contract-type";
 import { getServiceTypes } from "@/lib/actions/service-type";
 import { getCustomers } from "@/lib/actions/customer";
-import { Customer } from "@/types";
+import { BillingCycle, Customer } from "@/types";
 
 interface EditPOPageProps {
   params: Promise<{ id: string }>; // params is now a Promise
@@ -24,6 +24,8 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
 
   const po = await getPurchaseOrderById(id);
 
+  const billingCycles = await getBillingCyclesByPOID(id);
+
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
@@ -33,7 +35,7 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
         </Link>
       </CardHeader>
       <CardContent>
-        <POForm data={po.data} update={true} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />
+        <POForm data={po.data} update={true} billingCycles={billingCycles.data as BillingCycle[]} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />
       </CardContent>
     </Card>
   );

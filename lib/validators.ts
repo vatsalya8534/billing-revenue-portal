@@ -36,6 +36,27 @@ export const createUserSchema = userSchema.extend({
   password: z.string().min(1, "Password is required"),
 });
 
+
+export const billingCycleSchema = z.object({
+  id: z.string().optional(),
+  billingNumber: z.string().min(1, "Billing Number is required"),
+  billingAmount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(0, "Billing Amount must be positive")
+  ),
+  billingDate: z.union([z.date(), z.string()]).nullable().optional(),
+  billingSubmittedDate: z.union([z.date(), z.string()]).nullable().optional(),
+  paymentReceived: z.enum(Object.values(PaymentReceived)),
+  paymentReceivedDate: z.union([z.date(), z.string()]).nullable().optional(),
+  paymentReceivedAmount: z.preprocess(
+    (val) => Number(val),
+    z.number().min(0, "Payment Received Amount must be positive")
+  ),
+  billingRemark: z.string().optional(),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional()
+})
+
 export const purchaseOrderSchema = z.object({
   id: z.string().optional(),
   customerPONumber: z.string().min(1, "Customer PO Number is required"),
@@ -53,7 +74,8 @@ export const purchaseOrderSchema = z.object({
   billingPlanId: z.string().min(1, "Billing Plan is required"),
   customerId: z.string().min(1, "Customer is required"),
   poOwner: z.string().min(1, "PO owner is required"),
-  
+  billingCycle: z.array(billingCycleSchema).default([]),
+
   status: z.enum(Object.values(POStatus)),
   remark: z.string().optional(),
   createdAt: z.date().nullable().optional(),
