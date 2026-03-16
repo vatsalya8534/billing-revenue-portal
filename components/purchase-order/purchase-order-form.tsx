@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
@@ -21,13 +21,14 @@ import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
 import { format } from 'date-fns';
 import { Calendar } from "../ui/calendar";
-import { BillingCycle, BillingPlan, ContractType, Customer, ServiceType } from "@/types";
+import { BillingCycle, BillingPlan, ContractDuration, ContractType, Customer, ServiceType } from "@/types";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import BillingCycleForm from "./billing-cycle-form";
+import moment from "moment"
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
-const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycles, data, update = false }: { billingPlan: BillingPlan[], billingCycles: BillingCycle[], serviceType: ServiceType[], contractType: ContractType[], customers: Customer[], data?: PurchaseOrder, update: boolean }) => {
+const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycles, data, update = false, contractDurations }: { billingPlan: BillingPlan[], billingCycles: BillingCycle[], serviceType: ServiceType[], contractType: ContractType[], customers: Customer[], data?: PurchaseOrder, update: boolean, contractDurations: ContractDuration[] }) => {
   const router = useRouter();
 
   const id = data?.id;
@@ -37,7 +38,6 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
     poAmount: data?.poAmount ?? 0,
     paymentTerms: data?.paymentTerms ?? "",
     customerPONumber: data?.customerPONumber ?? "",
-    contractDuration: data?.contractDuration ?? "",
     startFrom: formatDate(data?.startFrom),
     endDate: formatDate(data?.endDate),
     billingPlanId: data?.billingPlanId ?? undefined,
@@ -57,19 +57,34 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
   })
 
   const watchBillingPlan = form.watch("billingPlanId")
+  const watchPOAmount = form.watch("poAmount")
+  const contractDurationId = form.watch("contractDurationId")
+  const startFrom = form.watch("startFrom")
 
-  const addBillingCycle = () => {
+  const addBillingCycle = (amount: any, count: number, totalBillingCycles: number) => {
+
+    console.log(count);
+
+
+    const startFrom = form.getValues("startFrom")
+    const startDate = moment(startFrom)
+
+    const billingMonthGap = contractDurationData.totalNumberOfMonths / totalBillingCycles;
+
+
     append({
       billingNumber: "",
-      billingAmount: 0,
-      billingDate: new Date(),
-      billingSubmittedDate: new Date(),
+      billingAmount: amount,
+      billingDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
+      billingSubmittedDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
       paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: new Date(),
-      paymentReceivedAmount: 0,
+      paymentReceivedDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
+      paymentReceivedAmount: amount,
       billingRemark: ""
     })
   }
+
+  const [contractDurationData, setContractDurationData] = useState<any>({})
 
   const [isPending, startTransition] = React.useTransition();
 
@@ -102,15 +117,28 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
   useEffect(() => {
 
     if (!update) {
-      let currentBillingPlan = billingPlan.find((value) => value.id === watchBillingPlan);
-      if (currentBillingPlan) {
-        for (let count = 1; count <= currentBillingPlan.totalBillingCycles; count++) {
-          addBillingCycle()
+      if (watchBillingPlan) {
+        let currentBillingPlanData = billingPlan.find((value) => value.id === watchBillingPlan);
+        if (currentBillingPlanData) {
+          for (let count = 0; count < currentBillingPlanData.totalBillingCycles; count++) {
+            addBillingCycle(watchPOAmount / currentBillingPlanData.totalBillingCycles, count, currentBillingPlanData.totalBillingCycles)
+          }
         }
+      }
+
+      if (startFrom) {
+        let contractDuration = contractDurations.find((value) => value.id === contractDurationId)
+        if (contractDuration) {
+          setContractDurationData(contractDuration)
+        }
+
+        const startDate = moment(startFrom)
+        const result = startDate.clone().add(Number(contractDuration?.totalNumberOfMonths), "months")
+        form.setValue("endDate", result.toDate())
       }
     }
 
-  }, [watchBillingPlan, update])
+  }, [watchBillingPlan, update, contractDurationId, startFrom])
 
   return (
     <Form {...form}>
@@ -185,12 +213,29 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
 
           <FormField
             control={form.control}
-            name="contractDuration"
+            name="contractDurationId"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Contract Duration</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Contract Duration" {...field} />
+                  <Select
+                    defaultValue={field.value}
+                    onValueChange={(v) => field.onChange(v)}
+                  >
+                    <SelectTrigger className="w-full" {...field}>
+                      <SelectValue placeholder="Contact Duration " />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {
+                          contractDurations?.length > 0 && contractDurations.map((contract, index) => (
+                            <SelectItem value={contract.id ?? ""} key={index}>{contract.name}</SelectItem>
+                          ))
+                        }
+
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -255,7 +300,7 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
                       <Calendar
                         mode="single"
                         selected={field.value as Date}
-                        onSelect={field.onChange}
+                        onSelect={(date) => field.onChange(date)}
                       />
                     </PopoverContent>
                   </Popover>
@@ -278,6 +323,7 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
                     <PopoverTrigger asChild>
                       <Button
                         variant={"outline"}
+                        disabled
                         className={cn(
                           "justify-start text-left font-normal",
                           !field.value && "text-muted-foreground"
@@ -292,6 +338,7 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
                         mode="single"
                         selected={field.value as Date}
                         onSelect={field.onChange}
+                        disabled
                       />
                     </PopoverContent>
                   </Popover>

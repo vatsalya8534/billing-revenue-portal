@@ -13,9 +13,9 @@ const PurchaseOrdersPage = async () => {
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle>Purchase Orders</CardTitle>
+        <CardTitle>Revenue</CardTitle>
         <Link href="/admin/purchase-orders/create">
-          <Button className="bg-blue-500 hover:bg-blue-600">Create Purchase Order</Button>
+          <Button className="bg-blue-500 hover:bg-blue-600">Create Revenue</Button>
         </Link>
       </CardHeader>
 

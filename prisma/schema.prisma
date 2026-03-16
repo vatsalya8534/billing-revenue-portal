@@ -53,29 +53,31 @@ model User {
 }
 
 model PurchaseOrder {
-  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerPONumber String
-  poAmount         Float
-  serviceTypeId    String    @db.Uuid
-  contractDuration String
-  contractId       String    @db.Uuid
-  startFrom        DateTime?
-  endDate          DateTime?
-  paymentTerms     String
-  customerId       String   @db.Uuid
-  billingPlanId    String   @db.Uuid
-  poOwner          String
-  remark           String?
+  id                 String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  customerPONumber   String
+  poAmount           Float
+  serviceTypeId      String    @db.Uuid
+  contractDurationId String    @db.Uuid
+  contractId         String    @db.Uuid
+  startFrom          DateTime?
+  endDate            DateTime?
+  paymentTerms       String
+  customerId         String    @db.Uuid
+  billingPlanId      String    @db.Uuid
+  poOwner            String
+  remark             String?
 
   status    POStatus @default(ACTIVE)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   billingCycles BillingCycle[]
-  customer      Customer      @relation(fields: [customerId], references: [id])
-  contract      ContractType  @relation(fields: [contractId], references: [id])
-  billingPlan   BillingPlan   @relation(fields: [billingPlanId], references: [id])
-  ServiceType   ServiceType   @relation(fields: [serviceTypeId], references: [id])
+
+  customer         Customer         @relation(fields: [customerId], references: [id])
+  contract         ContractType     @relation(fields: [contractId], references: [id])
+  billingPlan      BillingPlan      @relation(fields: [billingPlanId], references: [id])
+  ServiceType      ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  contractDuration ContractDuration @relation(fields: [contractDurationId], references: [id])
 }
 
 model BillingCycle {
@@ -102,8 +104,8 @@ model ServiceType {
   remark String?
   status Status  @default(ACTIVE)
 
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   purchaseOrders PurchaseOrder[]
 }
@@ -114,6 +116,19 @@ model BillingPlan {
   totalBillingCycles Int
   remark             String?
   status             Status  @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  purchaseOrders PurchaseOrder[]
+}
+
+model ContractDuration {
+  id                  String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                String  @unique
+  totalNumberOfMonths Int
+  remark              String?
+  status              Status  @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

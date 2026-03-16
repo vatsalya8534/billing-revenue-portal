@@ -9,6 +9,7 @@ import { getContractTypes } from "@/lib/actions/contract-type";
 import { getServiceTypes } from "@/lib/actions/service-type";
 import { getCustomers } from "@/lib/actions/customer";
 import { BillingCycle, Customer } from "@/types";
+import { getContractDurations } from "@/lib/actions/contract-duration";
 
 interface EditPOPageProps {
   params: Promise<{ id: string }>; // params is now a Promise
@@ -19,6 +20,7 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
   const contractType = await getContractTypes()
   const serviceType = await getServiceTypes()
   const customers = await getCustomers()
+  const contractDurations = await getContractDurations()
 
   const { id } = await params;
 
@@ -29,13 +31,21 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
-        <CardTitle>Edit Purchase Order</CardTitle>
+        <CardTitle>Edit Revenue</CardTitle>
         <Button className="bg-blue-500 hover:bg-blue-600">
           <Link href="/admin/purchase-orders">Back</Link>
         </Button>
       </CardHeader>
       <CardContent>
-        <POForm data={po.data} update={true} billingCycles={billingCycles.data as BillingCycle[]} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />
+        <POForm
+          data={po.data}
+          update={true}
+          billingCycles={billingCycles.data as BillingCycle[]}
+          billingPlan={billingPlan}
+          contractType={contractType}
+          serviceType={serviceType}
+          customers={customers as Customer[]}
+          contractDurations={contractDurations} />
       </CardContent>
     </Card>
   );

@@ -65,7 +65,7 @@ export const purchaseOrderSchema = z.object({
     z.number().min(0, "PO Amount must be positive")
   ),
   serviceTypeId: z.string().min(1, "Service Type is required"),
-  contractDuration: z.string().min(1, "Contract Duration is required"),
+  contractDurationId: z.string().min(1, "Contract Duration is required"),
 
   contractId: z.string().min(1, "Contract Type is required"),
   startFrom: z.union([z.date(), z.string()]).nullable().optional(),
@@ -109,6 +109,17 @@ export const billingPlanSchema = z.object({
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional()
 })
+
+export const contractDurationSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  totalNumberOfMonths: z.coerce.number(),
+  status: z.enum(Object.values(Status)),
+  remark: z.string().nullable().optional(),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional()
+})
+
 
 export const customerSchema = z.object({
   id: z.string().optional(),

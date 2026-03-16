@@ -16,48 +16,33 @@ import { Input } from "@/components/ui/input"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { BillingPlan, ContractDuration, ServiceType } from "@/types"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
-import { deletePurchaseOrder, getPurchaseOrders } from "@/lib/actions/purschase-order"
-import { useState } from "react"
-
-
+import { deleteBillingPlan, getBillingPlans } from "@/lib/actions/billing-plan"
+import { deleteContractDuration, getContractDurations } from "@/lib/actions/contract-duration"
 
 const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
-    { accessorKey: "customerPONumber", header: "PO Number" },
     {
-        accessorKey: "serviceType", header: "Service Type", cell: ({ row }) => {
-
-            return row.original.ServiceType?.name
-        }
+        accessorKey: "name",
+        header: "Name",
     },
-    { accessorKey: "contractDuration", header: "Contract Duration" ,   cell: ({ row }) => {
-
-            return row.original.contractDuration?.totalNumberOfMonths + " months"
-        }},
     {
-        accessorKey: "startFrom", header: "Start Date",
+        accessorKey: "totalNumberOfMonths",
+        header: "Total Number Of Months",
+        cell: ({ row }) => row.original.totalNumberOfMonths ?? "-",
+    },
+    {
+        accessorKey: "remark",
+        header: "Remark",
+        cell: ({ row }) => row.original.remark ?? "-",
+    },
+    {
+        accessorKey: "createdAt",
+        header: "Created Date",
         cell: ({ row }) =>
-            row.original.startFrom
-                ? new Date(row.original.startFrom).toLocaleDateString("en-GB")
-                : "-"
+            row.original.createdAt ? new Date(row.original.createdAt).toLocaleDateString("en-GB") : "-",
     },
-    {
-        accessorKey: "endDate", header: "End Date",
-        cell: ({ row }) =>
-            row.original.endDate
-                ? new Date(row.original.endDate).toLocaleDateString("en-GB")
-                : "-"
-    },
-    { accessorKey: "poAmount", header: "Amount" },
-    {
-        accessorKey: "billingPlan", header: "Billing Plan", cell: ({ row }) => {
-
-            return row.original.billingPlan?.name
-        }
-    },
-
-    { accessorKey: "status", header: "Status" },
     {
         id: "actions",
         header: "Action",
@@ -73,7 +58,7 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
 
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>
-                            <Link href={`/admin/purchase-orders/edit/${id}`}>
+                            <Link href={`/admin/contract-duration/edit/${id}`}>
                                 Edit
                             </Link>
                         </DropdownMenuItem>
@@ -94,12 +79,13 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
     },
 ]
 
-export function PoDataTable({ data }: { data: any }) {
+export function ContractDurationDataTable({ data }: { data: ContractDuration[] }) {
 
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
-    const [purchaseOrder, setPurchaseOrder] = React.useState<any>(data)
+    const [contractDuration, setContractDuration] = React.useState<any>(data)
 
+    // 🔎 Global filter function
     const globalFilterFn = (
         row: any,
         columnId: string,
@@ -110,23 +96,23 @@ export function PoDataTable({ data }: { data: any }) {
             .includes(filterValue.toLowerCase())
     }
 
-    const getAllPurchaseOrder = async () => {
-        const result = await getPurchaseOrders()
-        setPurchaseOrder([...result])
+    const getAllContractDurations= async () => {
+        const contractDuration = await getContractDurations()
+        setContractDuration([...contractDuration])
     }
 
     const deleteHandler = async (id: string) => {
         try {
-            await deletePurchaseOrder(id);
+            await deleteContractDuration(id);
 
-            await getAllPurchaseOrder()
+            await getAllContractDurations()
         } catch (error) {
-            toast.error("Failed to delete sprint")
+            toast.error("Failed to delete contract duration")
         }
     }
 
     const table = useReactTable({
-        data: purchaseOrder,
+        data: contractDuration,
         columns: getColumns(deleteHandler),
         state: {
             sorting,

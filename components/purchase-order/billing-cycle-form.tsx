@@ -45,7 +45,6 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                             </FormItem>
                         )}
                     />
-
                 </div>
 
                 <div className='space-y-2'>

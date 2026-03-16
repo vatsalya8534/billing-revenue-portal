@@ -39,7 +39,7 @@ export const purchaseOrderDefaultValues = {
   customerPONumber: "",
   poAmount: 0,
   serviceTypeId: "",
-  contractDuration: "",
+  contractDurationId: "",
   contractId: "",
   startFrom: new Date(),
   endDate: new Date(),
@@ -64,6 +64,15 @@ export const billingPlanDefaultValues = {
   remark: "",
   status: Status.ACTIVE
 }
+
+
+export const contractDurationDefaultValues = {
+  name: "",
+  totalNumberOfMonths: 0,
+  remark: "",
+  status: Status.ACTIVE
+}
+
 
 export const contractTypeDefaultValues = {
   name: "",

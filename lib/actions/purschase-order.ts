@@ -12,7 +12,8 @@ export async function getPurchaseOrders() {
     },
     include: {
       billingPlan: true,
-      ServiceType: true
+      ServiceType: true,
+      contractDuration: true
     }
   })
 }
@@ -27,8 +28,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
         customerPONumber: purchaseOrder.customerPONumber,
         poAmount: purchaseOrder.poAmount,
         serviceTypeId: purchaseOrder.serviceTypeId,
-        contractDuration: purchaseOrder.contractDuration,
-
+        contractDurationId: purchaseOrder.contractDurationId,
         contractId: purchaseOrder.contractId,
         startFrom: purchaseOrder.startFrom ? new Date(purchaseOrder.startFrom) : undefined,
         endDate: purchaseOrder.endDate ? new Date(purchaseOrder.endDate) : undefined,
@@ -95,7 +95,7 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
         customerPONumber: purchaseOrder.customerPONumber,
         poAmount: purchaseOrder.poAmount,
         serviceTypeId: purchaseOrder.serviceTypeId,
-        contractDuration: purchaseOrder.contractDuration,
+        contractDurationId: purchaseOrder.contractDurationId,
 
         contractId: purchaseOrder.contractId,
         startFrom: purchaseOrder.startFrom ? new Date(purchaseOrder.startFrom) : undefined,

@@ -5,7 +5,7 @@ import { prisma } from "../prisma";
 import { createUserSchema, loginFormSchema, userSchema } from "../validators";
 import { formatError } from "../utils";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
-import { signIn, signOut } from "@/auth";
+import { auth, signIn, signOut } from "@/auth";
 import bcrypt from "bcrypt";
 
 export async function getUsers() {
@@ -173,5 +173,22 @@ export async function logoutUser() {
       success: false,
       message: "Something went wrong"
     }
+  }
+}
+
+
+export async function getCurrentUser() {
+  try {
+    const session = await auth();
+
+    if (session?.user) {
+      let userSession = session.user;
+
+      return await getUserById(userSession.id as string)
+    }
+    return null;
+  } catch (err) {
+    console.error("Failed to get current user:", err);
+    return null;
   }
 }

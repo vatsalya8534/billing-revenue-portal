@@ -2,10 +2,15 @@
 
 import * as React from "react"
 import {
+  IconCalendarUser,
   IconContract,
+  IconEyeDollar,
   IconFileDescription,
   IconReceipt,
   IconSettings,
+  IconTimeDuration0,
+  IconTimeDuration15,
+  IconTrendingUp,
   IconTypeface,
   IconUser,
   IconUserCircle,
@@ -35,9 +40,9 @@ const data = {
   },
   navMain: [
     {
-      title: "Purchase Orders",
+      title: "Revenue",
       url: "/admin/purchase-orders",
-      icon: IconFileDescription,
+      icon: IconTrendingUp,
     },
 
     {
@@ -45,17 +50,20 @@ const data = {
       url: "/admin/contract-type",
       icon: IconContract,
     },
-
     {
       title: "Service Type",
       url: "/admin/service-type",
       icon: IconTypeface,
     },
-
     {
       title: "Billing Plan",
       url: "/admin/billing-plan",
       icon: IconReceipt,
+    },
+    {
+      title: "Contract Duration",
+      url: "/admin/contract-duration",
+      icon: IconContract,
     },
     {
       title: "Customer",
@@ -75,11 +83,7 @@ const data = {
     },
   ],
   navSecondary: [
-    {
-      title: "Settings",
-      url: "#",
-      icon: IconSettings,
-    },
+
   ],
 }
 
