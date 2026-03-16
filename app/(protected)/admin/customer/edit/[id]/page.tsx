@@ -30,16 +30,14 @@ export default async function EditCustomerPage({
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Edit Customer</CardTitle>
-          <Link href="/admin/customer">
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
-            </Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/customer">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-         <CustomerForm data={customer.data as Customer}  update={true} />
+        <CustomerForm data={customer.data as Customer} update={true} />
       </CardContent>
     </Card>
 

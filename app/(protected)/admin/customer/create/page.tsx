@@ -8,20 +8,18 @@ import { Button } from "@/components/ui/button";
 export default function CreateCustomerPage() {
 
   return (
-   <Card>
+    <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add Customer</CardTitle>
-          <Link href="/admin/customer">
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
-            </Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/customer">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 
       <CardContent>
-         <CustomerForm  update={false} />
+        <CustomerForm update={false} />
       </CardContent>
     </Card>
   );

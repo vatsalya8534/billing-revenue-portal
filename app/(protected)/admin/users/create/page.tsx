@@ -1,11 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import UserForm from "@/components/user/user-form"; 
+import UserForm from "@/components/user/user-form";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { getRoles } from "@/lib/actions/role";
 
-const UserCreatePage  = async  () => {
+const UserCreatePage = async () => {
   const roles = await getRoles();
 
   return (
@@ -13,11 +13,9 @@ const UserCreatePage  = async  () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add User</CardTitle>
-          <Link href="/admin/users">
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
-            </Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/users">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 

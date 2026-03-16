@@ -25,11 +25,9 @@ const RoleEditPage = async ({
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Edit Role</CardTitle>
-                    <Link href="/admin/roles">
-                        <Button className="bg-blue-500 hover:bg-blue-600">
-                            Back
-                        </Button>
-                    </Link>
+                    <Button className="bg-blue-500 hover:bg-blue-600">
+                        <Link href="/admin/roles">Back</Link>
+                    </Button>
                 </div>
             </CardHeader>
 

@@ -9,11 +9,9 @@ const ContractTypeCreatePage = async () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add Contract Type</CardTitle>
-          <Link href="/admin/contract-type">
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
-            </Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/contract-type">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 

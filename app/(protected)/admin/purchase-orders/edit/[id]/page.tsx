@@ -30,9 +30,9 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
     <Card>
       <CardHeader className="flex justify-between items-center">
         <CardTitle>Edit Purchase Order</CardTitle>
-        <Link href="/admin/purchase-orders">
-          <Button variant="secondary">Back</Button>
-        </Link>
+        <Button className="bg-blue-500 hover:bg-blue-600">
+          <Link href="/admin/purchase-orders">Back</Link>
+        </Button>
       </CardHeader>
       <CardContent>
         <POForm data={po.data} update={true} billingCycles={billingCycles.data as BillingCycle[]} billingPlan={billingPlan} contractType={contractType} serviceType={serviceType} customers={customers as Customer[]} />

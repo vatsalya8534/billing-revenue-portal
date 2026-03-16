@@ -13,16 +13,16 @@ const POCreatePage = async () => {
   const contractType = await getContractTypes()
   const serviceType = await getServiceTypes()
   const customers = await getCustomers()
-  
+
 
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add Purchase Order</CardTitle>
-          <Link href="/admin/purchase-orders">
-            <Button className="bg-blue-500 hover:bg-blue-600">Back</Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/purchase-orders">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 

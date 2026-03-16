@@ -19,6 +19,9 @@ import { toast } from "sonner"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
 import { deletePurchaseOrder, getPurchaseOrders } from "@/lib/actions/purschase-order"
+import { useState } from "react"
+
+
 
 const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
     { accessorKey: "customerPONumber", header: "PO Number" },
@@ -44,10 +47,13 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
                 : "-"
     },
     { accessorKey: "poAmount", header: "Amount" },
-    { accessorKey: "billingPlan", header: "Billing Plan",  cell: ({ row }) => {
+    {
+        accessorKey: "billingPlan", header: "Billing Plan", cell: ({ row }) => {
 
             return row.original.billingPlan?.name
-        } },
+        }
+    },
+    
     { accessorKey: "status", header: "Status" },
     {
         id: "actions",
@@ -61,6 +67,7 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
                             <MoreHorizontal />
                         </Button>
                     </DropdownMenuTrigger>
+\
 
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>

@@ -24,11 +24,9 @@ const BillingPlanEditPage = async ({
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Edit Billing Plan</CardTitle>
-                    <Link href="/admin/billing-plan">
-                        <Button className="bg-blue-500 hover:bg-blue-600">
-                            Back
-                        </Button>
-                    </Link>
+                    <Button className="bg-blue-500 hover:bg-blue-600">
+                        <Link href="/admin/billing-plan">Back</Link>
+                    </Button>
                 </div>
             </CardHeader>
 

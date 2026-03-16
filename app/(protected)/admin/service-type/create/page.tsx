@@ -9,11 +9,9 @@ const ServiceTypeCreatePage = async () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add Service Type</CardTitle>
-          <Link href="/admin/service-type">
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
-            </Button>
-          </Link>
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/service-type">Back</Link>
+          </Button>
         </div>
       </CardHeader>
 

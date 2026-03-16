@@ -25,9 +25,9 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
         <CardHeader>
           <div className="flex justify-between items-center">
             <CardTitle>Edit User</CardTitle>
-            <Link href="/admin/users">
-              <Button className="bg-blue-500 hover:bg-blue-600">Back</Button>
-            </Link>
+            <Button className="bg-blue-500 hover:bg-blue-600">
+              <Link href="/admin/users">Back</Link>
+            </Button>
           </div>
         </CardHeader>
         <CardContent>

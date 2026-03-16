@@ -9,11 +9,9 @@ const BillingPlanCreatePage = async () => {
       <CardHeader>
         <div className="flex justify-between items-center">
           <CardTitle>Add Billing Plan</CardTitle>
-          <Link href="/admin/billing-plan">
             <Button className="bg-blue-500 hover:bg-blue-600">
-              Back
+               <Link href="/admin/billing-plan">Back</Link>
             </Button>
-          </Link>
         </div>
       </CardHeader>
 
