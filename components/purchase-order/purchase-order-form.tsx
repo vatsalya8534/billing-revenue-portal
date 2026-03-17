@@ -25,12 +25,30 @@ import { BillingCycle, BillingPlan, ContractDuration, ContractType, Customer, Se
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import BillingCycleForm from "./billing-cycle-form";
 import moment from "moment"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
-const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycles, data, update = false, contractDurations }: { billingPlan: BillingPlan[], billingCycles: BillingCycle[], serviceType: ServiceType[], contractType: ContractType[], customers: Customer[], data?: PurchaseOrder, update: boolean, contractDurations: ContractDuration[] }) => {
+const POForm = ({
+  billingPlan,
+  serviceType,
+  contractType,
+  customers,
+  billingCycles,
+  data,
+  update = false,
+  contractDurations
+}: {
+  billingPlan: BillingPlan[],
+  billingCycles: BillingCycle[],
+  serviceType: ServiceType[],
+  contractType: ContractType[],
+  customers: Customer[],
+  data?: PurchaseOrder,
+  update: boolean,
+  contractDurations: ContractDuration[]
+}) => {
   const router = useRouter();
-
   const id = data?.id;
 
   const defaultValue = {
@@ -42,9 +60,9 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
     endDate: formatDate(data?.endDate),
     billingPlanId: data?.billingPlanId ?? undefined,
     customerId: data?.customerId ?? undefined,
-    remark: data?.remark ?? undefined,
+    remark: data?.remark ?? "",
     billingCycle: billingCycles || []
-  }
+  };
 
   const form = useForm<PurchaseOrderFormValues>({
     resolver: zodResolver(purchaseOrderSchema) as any,
@@ -54,60 +72,52 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "billingCycle"
-  })
+  });
 
-  const watchBillingPlan = form.watch("billingPlanId")
-  const watchPOAmount = form.watch("poAmount")
-  const contractDurationId = form.watch("contractDurationId")
-  const startFrom = form.watch("startFrom")
+  const watchBillingPlan = form.watch("billingPlanId");
+  const watchPOAmount = form.watch("poAmount");
+  const contractDurationId = form.watch("contractDurationId");
+  const startFrom = form.watch("startFrom");
 
-  const addBillingCycle = (amount: any, count: number, totalBillingCycles: number) => {
+  const [contractDurationData, setContractDurationData] = useState<any>({});
+  const [isPending, startTransition] = React.useTransition();
 
-    console.log(count);
+  // ----- View PO Modal -----
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrderFormValues | null>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const handleView = (po: PurchaseOrderFormValues) => {
+    setSelectedPO(po);
+    setIsViewOpen(true);
+  };
 
-
-    const startFrom = form.getValues("startFrom")
-    const startDate = moment(startFrom)
-
+  const addBillingCycle = (amount: number, count: number, totalBillingCycles: number) => {
+    const startFromValue = form.getValues("startFrom");
+    const startDate = moment(startFromValue);
     const billingMonthGap = contractDurationData.totalNumberOfMonths / totalBillingCycles;
-
 
     append({
       billingNumber: "",
       billingAmount: amount,
-      billingDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
-      billingSubmittedDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
+      billingDate: count > 0 ? startDate.clone().add(count * billingMonthGap, "months").toDate() : startDate.toDate(),
+      billingSubmittedDate: count > 0 ? startDate.clone().add(count * billingMonthGap, "months").toDate() : startDate.toDate(),
       paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: count > 0 ? startDate.clone().add((count) * billingMonthGap, "months").toDate() : startDate.toDate(),
+      paymentReceivedDate: count > 0 ? startDate.clone().add(count * billingMonthGap, "months").toDate() : startDate.toDate(),
       paymentReceivedAmount: amount,
       billingRemark: ""
-    })
-  }
+    });
+  };
 
-  const [contractDurationData, setContractDurationData] = useState<any>({})
-
-  const [isPending, startTransition] = React.useTransition();
-
-  const onSubmit: SubmitHandler<z.infer<typeof purchaseOrderSchema>> = (values) => {
-
+  const onSubmit: SubmitHandler<PurchaseOrderFormValues> = (values) => {
     startTransition(async () => {
       let res;
-
-      const payload = {
-        ...values,
-      };
-
       if (update && id) {
-        res = await updatePurchaseOrder(payload, id);
+        res = await updatePurchaseOrder(values, id);
       } else {
-        res = await createPurchaseOrder(payload);
+        res = await createPurchaseOrder(values);
       }
 
-
       if (!res?.success) {
-        toast.error("Error", {
-          description: res?.message,
-        });
+        toast.error("Error", { description: res?.message });
       } else {
         router.push("/admin/purchase-orders");
       }
@@ -115,32 +125,30 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
   };
 
   useEffect(() => {
-
     if (!update) {
       if (watchBillingPlan) {
-        let currentBillingPlanData = billingPlan.find((value) => value.id === watchBillingPlan);
+        const currentBillingPlanData = billingPlan.find(bp => bp.id === watchBillingPlan);
         if (currentBillingPlanData) {
           for (let count = 0; count < currentBillingPlanData.totalBillingCycles; count++) {
-            addBillingCycle(watchPOAmount / currentBillingPlanData.totalBillingCycles, count, currentBillingPlanData.totalBillingCycles)
+            addBillingCycle(watchPOAmount / currentBillingPlanData.totalBillingCycles, count, currentBillingPlanData.totalBillingCycles);
           }
         }
       }
 
       if (startFrom) {
-        let contractDuration = contractDurations.find((value) => value.id === contractDurationId)
-        if (contractDuration) {
-          setContractDurationData(contractDuration)
-        }
+        const contractDuration = contractDurations.find(cd => cd.id === contractDurationId);
+        if (contractDuration) setContractDurationData(contractDuration);
 
-        const startDate = moment(startFrom)
-        const result = startDate.clone().add(Number(contractDuration?.totalNumberOfMonths), "months")
-        form.setValue("endDate", result.toDate())
+        const startDate = moment(startFrom);
+        const result = startDate.clone().add(Number(contractDuration?.totalNumberOfMonths), "months");
+        form.setValue("endDate", result.toDate());
       }
     }
+  }, [watchBillingPlan, update, contractDurationId, startFrom]);
 
-  }, [watchBillingPlan, update, contractDurationId, startFrom])
 
   return (
+
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))} className="space-y-6">
         {/* Row 1: PO Number & Service Type */}
@@ -504,6 +512,27 @@ const POForm = ({ billingPlan, serviceType, contractType, customers, billingCycl
             {update ? "Update PO" : "Create PO"}
           </Button>
         </div>
+
+         <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader><DialogTitle>Purchase Order Details</DialogTitle></DialogHeader>
+          {selectedPO && (
+            <div className="space-y-2 text-sm">
+              <p><strong>PO Number:</strong> {selectedPO.customerPONumber}</p>
+              <p><strong>Service Type:</strong> {serviceType.find(st => st.id === selectedPO.serviceTypeId)?.name}</p>
+              <p><strong>Billing Plan:</strong> {billingPlan.find(bp => bp.id === selectedPO.billingPlanId)?.name}</p>
+              <p><strong>Amount:</strong> {selectedPO.poAmount}</p>
+              <p><strong>Status:</strong> {selectedPO.status}</p>
+              <p><strong>Start Date:</strong> {selectedPO.startFrom ? format(new Date(selectedPO.startFrom), "PPP") : "-"}</p>
+              <p><strong>End Date:</strong> {selectedPO.endDate ? format(new Date(selectedPO.endDate), "PPP") : "-"}</p>
+              <p><strong>Contract Duration:</strong> {contractDurations.find(cd => cd.id === selectedPO.contractDurationId)?.name}</p>
+              <p><strong>Payment Terms:</strong> {selectedPO.paymentTerms}</p>
+              <p><strong>PO Owner:</strong> {selectedPO.poOwner}</p>
+              <p><strong>Remark:</strong> {selectedPO.remark}</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
       </form>
     </Form >
   );

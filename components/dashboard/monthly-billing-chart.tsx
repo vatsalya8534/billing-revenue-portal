@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts"
 
 import {
@@ -17,52 +17,36 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 
-const billingData: Record<string, any[]> = {
-  "2024": [
-    { month: "Jan", billing: 12000 },
-    { month: "Feb", billing: 18000 },
-    { month: "Mar", billing: 9000 },
-    { month: "Apr", billing: 15000 },
-    { month: "May", billing: 22000 },
-    { month: "Jun", billing: 11000 },
-    { month: "Jul", billing: 14000 },
-    { month: "Aug", billing: 17000 },
-    { month: "Sep", billing: 9000 },
-    { month: "Oct", billing: 20000 },
-    { month: "Nov", billing: 21000 },
-    { month: "Dec", billing: 24000 },
-  ],
-  "2025": [
-    { month: "Jan", billing: 15000 },
-    { month: "Feb", billing: 12000 },
-    { month: "Mar", billing: 16000 },
-    { month: "Apr", billing: 18000 },
-    { month: "May", billing: 21000 },
-    { month: "Jun", billing: 19000 },
-    { month: "Jul", billing: 17000 },
-    { month: "Aug", billing: 22000 },
-    { month: "Sep", billing: 24000 },
-    { month: "Oct", billing: 26000 },
-    { month: "Nov", billing: 20000 },
-    { month: "Dec", billing: 30000 },
-  ],
-}
+import { getMonthlyBillingData } from "@/lib/actions/dashboard"
 
 const chartConfig = {
   billing: {
-    label: "Billing Amount",
-    color: "hsl(var(--chart-1))",
+    label: "Billing Generated",
+    color: "#2563eb",
+  },
+  payment: {
+    label: "Payment Received",
+    color: "#f97316",
   },
 }
 
 export function MonthlyBillingChart() {
-  const [year, setYear] = useState("2025")
+  const startYear = 2024
+  const currentYear = new Date().getFullYear()
 
-  const chartData = billingData[year]
+  const [year, setYear] = useState(currentYear.toString())
+  const [chartData, setChartData] = useState<any[]>([])
+
+  useEffect(() => {
+    async function loadData() {
+      const data = await getMonthlyBillingData(Number(year))
+      setChartData(data)
+    }
+    loadData()
+  }, [year])
 
   return (
     <div className="space-y-4">
-
       {/* Year Filter */}
       <div className="flex justify-end">
         <Select value={year} onValueChange={setYear}>
@@ -71,27 +55,66 @@ export function MonthlyBillingChart() {
           </SelectTrigger>
 
           <SelectContent>
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
+            {Array.from(
+              { length: currentYear - startYear + 1 },
+              (_, i) => {
+                const y = (startYear + i).toString()
+                return (
+                  <SelectItem key={y} value={y}>
+                    {y}
+                  </SelectItem>
+                )
+              }
+            )}
           </SelectContent>
         </Select>
       </div>
 
       {/* Chart */}
       <ChartContainer config={chartConfig} className="h-[320px] w-full">
-        <BarChart data={chartData}>
+        <BarChart data={chartData} barGap={6}>
           <CartesianGrid vertical={false} />
           <XAxis dataKey="month" tickLine={false} axisLine={false} />
-          <ChartTooltip content={<ChartTooltipContent />} />
+
+          <ChartTooltip
+            content={<ChartTooltipContent indicator="dot" />}
+          />
 
           <Bar
             dataKey="billing"
-            radius={6}
+            name="Billing Generated"
             fill="#2563eb"
+            radius={6}
+            minPointSize={3}
+          />
+
+          <Bar
+            dataKey="payment"
+            name="Payment Received"
+            fill="#f97316"
+            radius={6}
+            minPointSize={3}
           />
         </BarChart>
       </ChartContainer>
 
+      <div className="flex gap-6 mt-2 justify-start items-center">
+        <div className="flex items-center gap-2">
+          <span
+            className="w-4 h-4 rounded-full"
+            style={{ backgroundColor: chartConfig.billing.color }}
+          />
+          <span className="text-sm font-medium">Billing Generated</span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span
+            className="w-4 h-4 rounded-full"
+            style={{ backgroundColor: chartConfig.payment.color }}
+          />
+          <span className="text-sm font-medium">Payment Received</span>
+        </div>
+      </div>
     </div>
   )
 }

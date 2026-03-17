@@ -8,14 +8,17 @@ import { formatError } from "../utils";
 export async function getPurchaseOrders() {
   return await prisma.purchaseOrder.findMany({
     orderBy: {
-      createdAt: 'desc'
+      createdAt: "desc",
     },
     include: {
       billingPlan: true,
       ServiceType: true,
-      contractDuration: true
-    }
-  })
+      contractDuration: true,
+      contract: true,
+      customer: true,
+      billingCycles: true,
+    },
+  });
 }
 
 export async function createPurchaseOrder(data: PurchaseOrder) {
