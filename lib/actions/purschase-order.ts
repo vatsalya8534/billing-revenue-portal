@@ -58,31 +58,39 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
     }
   }
 }
+
 export async function getPurchaseOrderById(id: string) {
   try {
-
-    let purchaseOrder = await prisma.purchaseOrder.findFirst({
-      where: { id }
-    })
+    const purchaseOrder = await prisma.purchaseOrder.findFirst({
+      where: { id },
+      include: {
+        ServiceType: true,
+        billingPlan: true,
+        contractDuration: true,
+        contract: true,
+        customer: true,
+        billingCycles: true,
+      },
+    });
 
     if (purchaseOrder) {
       return {
         success: true,
         data: purchaseOrder,
-        message: "Purchase Order fetched successfully"
-      }
+        message: "Purchase Order fetched successfully",
+      };
     }
 
     return {
       success: false,
-      message: "Purchase Order not found"
-    }
+      message: "Purchase Order not found",
+    };
 
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 

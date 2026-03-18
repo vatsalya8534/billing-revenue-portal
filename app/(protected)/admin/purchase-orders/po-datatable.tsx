@@ -109,20 +109,25 @@ const getColumns = (
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onView(row.original)}>
-                                View
+                            {/* Navigate to the full-page view */}
+                            <DropdownMenuItem asChild>
+                                <Link href={`/admin/purchase-orders/view/${id}`}>
+                                    View
+                                </Link>
                             </DropdownMenuItem>
 
+                            {/* Edit */}
                             <DropdownMenuItem asChild>
                                 <Link href={`/admin/purchase-orders/edit/${id}`}>
                                     Edit
                                 </Link>
                             </DropdownMenuItem>
 
+                            {/* Delete */}
                             <DropdownMenuItem
                                 onSelect={(e) => {
-                                    e.preventDefault()
-                                    onDelete(id)
+                                    e.preventDefault();
+                                    onDelete(id);
                                 }}
                                 className="text-red-600 cursor-pointer"
                             >
@@ -226,117 +231,6 @@ export function PoDataTable({ data }: { data: any[] }) {
                     </TableBody>
                 </Table>
             </div>
-
-            {/* ================= VIEW MODAL ================= */}
-            <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-                 <DialogContent className="w-full h-full max-w-4xl max-h-full p-6">
-                    <DialogHeader>
-                        <DialogTitle>Purchase Order Details</DialogTitle>
-                    </DialogHeader>
-
-                    {selectedPO && (
-                        <div className="space-y-6 text-sm">
-
-                            {/* BASIC */}
-                            <Section title="Basic Information">
-                                <Grid>
-                                    <Item label="PO Number" value={selectedPO.customerPONumber} />
-                                    <Item label="Status" value={selectedPO.status} />
-                                    <Item label="Amount" value={selectedPO.poAmount} />
-                                    <Item label="Owner" value={selectedPO.poOwner} />
-                                    <Item label="Payment Terms" value={selectedPO.paymentTerms} />
-                                    <Item label="Remark" value={selectedPO.remark} />
-                                    <Item label="Created At" value={formatDateTime(selectedPO.createdAt)} />
-                                    <Item label="Updated At" value={formatDateTime(selectedPO.updatedAt)} />
-                                </Grid>
-                            </Section>
-
-                            {/* SERVICE */}
-                            <Section title="Service Details">
-                                <Grid>
-                                    <Item label="Service Type" value={selectedPO.ServiceType?.name} />
-                                    <Item label="Billing Plan" value={selectedPO.billingPlan?.name} />
-                                    <Item label="Contract Type" value={selectedPO.contract?.name} />
-                                    <Item
-                                        label="Contract Duration"
-                                        value={
-                                            selectedPO.contractDuration
-                                                ? `${selectedPO.contractDuration.name} (${selectedPO.contractDuration.totalNumberOfMonths} months)`
-                                                : "-"
-                                        }
-                                    />
-                                </Grid>
-                            </Section>
-
-                            {/* CUSTOMER */}
-                            <Section title="Customer Details">
-                                <Grid>
-                                    <Item
-                                        label="Name"
-                                        value={
-                                            selectedPO.customer
-                                                ? `${selectedPO.customer.firstName} ${selectedPO.customer.lastName}`
-                                                : "-"
-                                        }
-                                    />
-                                    <Item label="Email" value={selectedPO.customer?.email} />
-                                    <Item label="Phone" value={selectedPO.customer?.phone} />
-                                    <Item label="Start Date" value={formatDate(selectedPO.startFrom)} />
-                                    <Item label="End Date" value={formatDate(selectedPO.endDate)} />
-                                </Grid>
-                            </Section>
-
-                            {/* BILLING CYCLES*/}
-                            <Section title="Billing Cycles">
-                                {selectedPO.billingCycles?.length ? (
-                                    selectedPO.billingCycles.map((bc: any, i: number) => (
-                                        <div key={bc.id} className="border rounded-md p-4 space-y-3">
-                                            <h4 className="font-medium">Cycle {i + 1}</h4>
-
-                                            <Grid>
-                                                <Item label="Billing Number" value={bc.billingNumber} />
-                                                <Item label="Billing Amount" value={bc.billingAmount} />
-                                                <Item label="Billing Date" value={formatDate(bc.billingDate)} />
-                                                <Item label="Submitted Date" value={formatDate(bc.billingSubmittedDate)} />
-                                                <Item label="Payment Status" value={bc.paymentReceived || "NO"} />
-                                                <Item label="Payment Amount" value={bc.paymentReceivedAmount || 0} />
-                                                <Item label="Payment Date" value={formatDate(bc.paymentReceivedDate)} />
-                                                <Item label="Remark" value={bc.billingRemark} />
-                                            </Grid>
-                                        </div>
-                                    ))
-                                ) : (
-                                    <p>No billing cycles found</p>
-                                )}
-                            </Section>
-
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     )
 }
-
-const Section = ({ title, children }: any) => (
-    <div>
-        <h3 className="font-semibold border-b pb-1 mb-3">{title}</h3>
-        {children}
-    </div>
-)
-
-const Grid = ({ children }: any) => (
-    <div className="grid grid-cols-2 gap-4">{children}</div>
-)
-
-const Item = ({ label, value }: any) => (
-    <p>
-        <strong>{label}:</strong> {value || "-"}
-    </p>
-)
-
-const formatDate = (date: any) =>
-    date ? new Date(date).toLocaleDateString("en-GB") : "-"
-
-const formatDateTime = (date: any) =>
-    date ? new Date(date).toLocaleString("en-GB") : "-"
