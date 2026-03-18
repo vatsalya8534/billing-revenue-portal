@@ -22,3 +22,11 @@ export function formatError(error: any) {
     return "Something went wrong"
   }
 }
+
+export function incrementCode(value: number | string, length: number = 6): string {
+  const number = typeof value === "string"
+    ? parseInt(value, 10) + 1
+    : value
+
+  return number.toString().padStart(length, "0")
+}

@@ -32,90 +32,171 @@ async function main() {
         }
     })
 
-    await prisma.customer.create({
-        data: {
-            customerCode: "CUSTOMER-0001",
-            phone: "1234567890",
-            firstName: "Customer ",
-            lastName: "1",
-            companyName: "Technosyslabs",
-            alternatePhone: "1234567890",
-            email: "customer@technosyslabs.com",
-            addressLine1: "Indrapuram",
-            addressLine2: "Ghaziabad",
-            city: "Ghaziabad",
-            state: "UP",
-            country: "India",
-            postalCode: "201102",
-            gstNumber: "12212121212121212121",
-            panNumber: "21212121212121212",
-            website: "http://technosyslabs.com",
-            remark: "tes",
-            status: Status.ACTIVE
-        }
-    })
-
-    await prisma.customer.upsert({
-        where: { email: "customer@technosyslabs.com" },
-        update: {
-          
+    const customers = [
+        {
+            email: "customer1@technosyslabs.com",
+            data: {
+                customerCode: "CUSTOMER0001",
+                phone: "9876543210",
+                firstName: "Rahul",
+                lastName: "Sharma",
+                companyName: "Technosyslabs",
+                alternatePhone: "9123456780",
+                addressLine1: "Indirapuram",
+                addressLine2: "Ghaziabad",
+                city: "Ghaziabad",
+                state: "UP",
+                country: "India",
+                postalCode: "201102",
+                gstNumber: "07ABCDE1234F1Z5",
+                panNumber: "ABCDE1234F",
+                website: "http://technosyslabs.com",
+                remark: "Regular client",
+                status: Status.ACTIVE
+            }
         },
-        create: {
-            customerCode: "CUSTOMER0001",
-            phone: "1234567890",
-            firstName: "Customer ",
-            lastName: "1",
-            companyName: "Technosyslabs",
-            alternatePhone: "1234567890",
-            email: "customer@technosyslabs.com",
-            addressLine1: "Indrapuram",
-            addressLine2: "Ghaziabad",
-            city: "Ghaziabad",
-            state: "UP",
-            country: "India",
-            postalCode: "201102",
-            gstNumber: "12212121212121212121",
-            panNumber: "21212121212121212",
-            website: "http://technosyslabs.com",
-            remark: "tes",
-            status: Status.ACTIVE
+        {
+            email: "customer2@abc.com",
+            data: {
+                customerCode: "CUSTOMER0002",
+                phone: "9812345678",
+                firstName: "Amit",
+                lastName: "Verma",
+                companyName: "ABC Pvt Ltd",
+                alternatePhone: "9898989898",
+                addressLine1: "Sector 62",
+                addressLine2: "Noida",
+                city: "Noida",
+                state: "UP",
+                country: "India",
+                postalCode: "201301",
+                gstNumber: "09ABCDE5678G1Z2",
+                panNumber: "ABCDE5678G",
+                website: "http://abc.com",
+                remark: "Corporate client",
+                status: Status.ACTIVE
+            }
         },
-    })
-
-    await prisma.contractType.create({
-        data: {
-            name: "Contract type 1",
-            remark: "Contract type 1",
-            status: Status.ACTIVE
+        {
+            email: "customer3@xyz.com",
+            data: {
+                customerCode: "CUSTOMER0003",
+                phone: "9000000000",
+                firstName: "Neha",
+                lastName: "Gupta",
+                companyName: "XYZ Solutions",
+                alternatePhone: "9111111111",
+                addressLine1: "MG Road",
+                addressLine2: "Gurgaon",
+                city: "Gurgaon",
+                state: "Haryana",
+                country: "India",
+                postalCode: "122001",
+                gstNumber: "06ABCDE9999H1Z3",
+                panNumber: "ABCDE9999H",
+                website: "http://xyz.com",
+                remark: "High priority client",
+                status: Status.ACTIVE
+            }
+        },
+        {
+            email: "customer4@test.com",
+            data: {
+                customerCode: "CUSTOMER0004",
+                phone: "8888888888",
+                firstName: "Suresh",
+                lastName: "Kumar",
+                companyName: "Test Corp",
+                alternatePhone: "8777777777",
+                addressLine1: "Karol Bagh",
+                addressLine2: "Delhi",
+                city: "Delhi",
+                state: "Delhi",
+                country: "India",
+                postalCode: "110005",
+                gstNumber: "07TEST1234T1Z1",
+                panNumber: "TEST1234T",
+                website: "http://testcorp.com",
+                remark: "Test customer",
+                status: Status.INACTIVE
+            }
         }
-    })
+    ];
 
-    await prisma.serviceType.create({
-        data: {
-            name: "Service type 1",
-            remark: "Service type 1",
-            status: Status.ACTIVE
-        }
-    })
+    for (const customer of customers) {
+        await prisma.customer.upsert({
+            where: { email: customer.email },
+            update: {},
+            create: customer.data
+        });
+    }
 
-    await prisma.contractDuration.create({
-        data: {
-            name: "Contract Duration 1",
-            totalNumberOfMonths: 10,
-            remark: "",
-            status: Status.ACTIVE
-        }
-    })
+    const contractTypes = [
+        { name: "Fixed Price", remark: "Pre-defined cost" },
+        { name: "Time & Material", remark: "Based on time and material" },
+        { name: "Cost Plus", remark: "Cost + margin" },
+        { name: "AMC", remark: "Annual maintenance contract" },
+        { name: "FMS", remark: "Facility management services" },
+        { name: "Retainer", remark: "Recurring fixed payment" },
+        { name: "Milestone-Based", remark: "Based on milestones" },
+        { name: "Dedicated Resource", remark: "Dedicated team billing" },
+        { name: "Hybrid", remark: "Combination model" },
+        { name: "Other", remark: "Custom contract type" }
+    ];
 
-    await prisma.billingPlan.create({
-        data: {
-            name: "Billing Plan 1",
-            totalBillingCycles: 2,
-            remark: "",
-            status: Status.ACTIVE
-        }
-    })
+    await prisma.contractType.createMany({
+        data: contractTypes,
+        skipDuplicates: true
+    });
 
+    const serviceTypes = [
+        { name: "FMS", remark: "Facility Management Services" },
+        { name: "AMC", remark: "Annual Maintenance Contract" },
+        { name: "Software", remark: "Software development and support" },
+        { name: "Implementation", remark: "System implementation" },
+        { name: "Consulting", remark: "IT consulting services" },
+        { name: "Support", remark: "Technical support" },
+        { name: "Upgrade", remark: "System upgrades" },
+        { name: "Integration", remark: "System integration" },
+        { name: "Training", remark: "User training" },
+        { name: "Other", remark: "Misc services" }
+    ];
+
+    await prisma.serviceType.createMany({
+        data: serviceTypes,
+        skipDuplicates: true
+    });
+
+    const contractDurations = [
+        { name: "3 Months", totalNumberOfMonths: 3, remark: "Short-term contract" },
+        { name: "6 Months", totalNumberOfMonths: 6, remark: "Half-year contract" },
+        { name: "9 Months", totalNumberOfMonths: 9, remark: "Quarter-year contract" },
+        { name: "12 Months", totalNumberOfMonths: 12, remark: "One-year contract" },
+        { name: "18 Months", totalNumberOfMonths: 18, remark: "1.5-year contract" },
+        { name: "24 Months", totalNumberOfMonths: 24, remark: "Two-year contract" },
+        { name: "36 Months", totalNumberOfMonths: 36, remark: "Three-year contract" },
+        { name: "Custom", totalNumberOfMonths: 0, remark: "Custom duration" }
+    ];
+
+    await prisma.contractDuration.createMany({
+        data: contractDurations,
+        skipDuplicates: true
+    });
+
+    const billingPlans = [
+        { name: "Monthly", totalBillingCycles: 12, remark: "Billing done every month" },
+        { name: "Quarterly", totalBillingCycles: 4, remark: "Billing every 3 months" },
+        { name: "Half-Yearly", totalBillingCycles: 2, remark: "Billing every 6 months" },
+        { name: "Yearly", totalBillingCycles: 1, remark: "Single billing per year" },
+        { name: "One-Time", totalBillingCycles: 1, remark: "One-time payment" },
+        { name: "Milestone-Based", totalBillingCycles: 0, remark: "Based on milestones" },
+        { name: "Custom", totalBillingCycles: 0, remark: "Flexible billing plan" }
+    ];
+
+    await prisma.billingPlan.createMany({
+        data: billingPlans,
+        skipDuplicates: true
+    });
     console.log("Seed completed")
 }
 

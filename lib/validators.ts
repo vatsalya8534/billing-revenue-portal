@@ -1,5 +1,5 @@
 import { email, nullable, z } from "zod"
-import { Status, PaymentReceived, POStatus } from "@prisma/client"
+import { Status, PaymentReceived, POStatus, OrderType, CompanyStatus } from "@prisma/client"
 
 export const statusEnum = z.nativeEnum(Status)
 export const paymentReceivedEnum = z.nativeEnum(PaymentReceived)
@@ -140,6 +140,42 @@ export const customerSchema = z.object({
   panNumber: z.string().optional(),
   website: z.string().optional(),
   remark: z.string().nullable().optional(),
+  status: z.enum(Object.values(Status)),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const companySchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Company Name is required"),
+  companyCode: z.string().optional(),
+  email: z.string().min(1, "Email is required"),
+  phone: z.string().min(1, "Phone is required"),
+  alternatePhone: z.string().optional(),
+  addressLine1: z.string().min(1, "Address line 1 is required"),
+  addressLine2: z.string().optional(),
+  city: z.string().min(1, "City is required"),
+  state: z.string().min(1, "State is required"),
+  country: z.string().min(1, "Country is required"),
+  pincode: z.string().min(1, "Pincode is required"),
+  gstNumber: z.string().optional(),
+  panNumber: z.string().optional(),
+  cinNumber: z.string().optional(),
+  status: z.enum(Object.values(CompanyStatus)),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional(),
+})
+
+export const projectSchema = z.object({
+  id: z.string().optional(),
+  companyId: z.string().min(1, "company is required"),
+  projectName: z.string().min(1, "projectName is required"),
+  startDate: z.union([z.date(), z.string().min(1, "Start Date is required")]),
+  endDate: z.union([z.date(), z.string()]).nullable().optional(),
+  poValue: z.coerce.number().min(1, "PO value is required"),
+  resourceCount: z.coerce.number().min(1, "total resource count"),
+  billingPlanId: z.string().min(1, "Billing Plan is required"),
+  orderType: z.enum(Object.values(OrderType)),
   status: z.enum(Object.values(Status)),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),

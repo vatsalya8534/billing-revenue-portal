@@ -2,14 +2,10 @@
 
 import * as React from "react"
 import {
-  IconCalendarUser,
+  IconBriefcase,
+  IconBuilding,
   IconContract,
-  IconEyeDollar,
-  IconFileDescription,
   IconReceipt,
-  IconSettings,
-  IconTimeDuration0,
-  IconTimeDuration15,
   IconTrendingUp,
   IconTypeface,
   IconUser,
@@ -44,6 +40,11 @@ const data = {
       url: "/admin/purchase-orders",
       icon: IconTrendingUp,
     },
+    {
+      title: "P&L",
+      url: "/admin/pl",
+      icon: IconBriefcase,
+    },
 
     {
       title: "Contract Type",
@@ -69,6 +70,11 @@ const data = {
       title: "Customer",
       url: "/admin/customer",
       icon: IconUserCircle,
+    },
+    {
+      title: "Company",
+      url: "/admin/company",
+      icon: IconBuilding,
     },
 
     {
