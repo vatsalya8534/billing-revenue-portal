@@ -5,7 +5,7 @@ import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
 import { notFound } from "next/navigation"
 import { Project, Role } from "@/types"
-import { getprojectById } from "@/lib/actions/project"
+import { getBillingCyclesByPOID, getprojectById } from "@/lib/actions/project"
 import PLForm from "@/components/pl/pl-form"
 import { getCompanys } from "@/lib/actions/company"
 import { getBillingPlans } from "@/lib/actions/billing-plan"
@@ -28,6 +28,8 @@ const ProjectEditPage = async ({
 
     if (!project) return notFound()
 
+    const billingCycles = await getBillingCyclesByPOID(id);
+
     project = JSON.parse(JSON.stringify(project))
 
     return (
@@ -42,7 +44,7 @@ const ProjectEditPage = async ({
             </CardHeader>
 
             <CardContent>
-                <PLForm update={true} data={project.data as any}  companies={companies as any} billingPlans={billingPlans}/>
+                <PLForm  billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans} />
             </CardContent>
         </Card>
     )

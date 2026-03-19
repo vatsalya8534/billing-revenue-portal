@@ -166,6 +166,17 @@ export const companySchema = z.object({
   updatedAt: z.date().optional(),
 })
 
+export const projectMonthlyPLSchema = z.object({
+  id: z.string().optional(),
+  projectId: z.string().optional(),
+  month: z.int(),
+  year: z.int(),
+  billedAmount: z.coerce.number(),
+  otherCost: z.any(),
+  createdAt: z.date().nullable().optional(),
+  updatedAt: z.date().optional()
+})
+
 export const projectSchema = z.object({
   id: z.string().optional(),
   companyId: z.string().min(1, "company is required"),
@@ -177,6 +188,7 @@ export const projectSchema = z.object({
   billingPlanId: z.string().min(1, "Billing Plan is required"),
   orderType: z.enum(Object.values(OrderType)),
   status: z.enum(Object.values(Status)),
+  billingCycle: z.array(projectMonthlyPLSchema).default([]),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
 })

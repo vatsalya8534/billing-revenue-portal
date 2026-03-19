@@ -215,9 +215,7 @@ async function createBillingCycle(data: BillingCycle[], id: string) {
       message: "Billing Cycle created successfully"
     }
 
-
   } catch (error) {
-    console.log(error);
 
     return {
       success: false,

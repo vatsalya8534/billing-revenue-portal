@@ -23,7 +23,7 @@ const ServiceTypeCreatePage = async () => {
             </CardHeader>
 
             <CardContent>
-                <PLForm companies={companies as Company[]} billingPlans={billingPlans} update={false} />
+                <PLForm billingCycles={[]} companies={companies as Company[]} billingPlans={billingPlans} update={false} />
             </CardContent>
         </Card>
     );
