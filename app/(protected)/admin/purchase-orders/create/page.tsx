@@ -6,7 +6,7 @@ import { getBillingPlans } from "@/lib/actions/billing-plan";
 import { getContractTypes } from "@/lib/actions/contract-type";
 import { getServiceTypes } from "@/lib/actions/service-type";
 import { getCustomers } from "@/lib/actions/customer";
-import { Customer } from "@/types";
+import { BillingCycle, BillingPlan, Customer } from "@/types";
 import { getContractDurations } from "@/lib/actions/contract-duration";
 
 const POCreatePage = async () => {
@@ -30,7 +30,6 @@ const POCreatePage = async () => {
 
       <CardContent>
         <POForm 
-          billingCycles={[]}
           update={false} 
           billingPlan={billingPlan} 
           contractType={contractType} 

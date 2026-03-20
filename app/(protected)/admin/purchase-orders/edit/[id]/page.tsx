@@ -26,8 +26,6 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
 
   const po = await getPurchaseOrderById(id);
 
-  const billingCycles = await getBillingCyclesByPOID(id);
-
   return (
     <Card>
       <CardHeader className="flex justify-between items-center">
@@ -40,7 +38,6 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
         <POForm
           data={po.data}
           update={true}
-          billingCycles={billingCycles.data as BillingCycle[]}
           billingPlan={billingPlan}
           contractType={contractType}
           serviceType={serviceType}

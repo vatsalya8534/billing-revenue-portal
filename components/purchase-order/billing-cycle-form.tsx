@@ -10,36 +10,22 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { PaymentReceived } from '@prisma/client';
 import { Textarea } from '../ui/textarea';
 
-const BillingCycleForm = ({ index, control }: { index: number, control: any }) => {
-
+const BillingCycleForm = ({ index, control }: { index: number; control: any }) => {
     return (
         <div className='border p-4'>
-            <h1 className='font-bold mb-4 border-b'>{index + 1 } Billing Cycle</h1>
-            <div className="grid grid-cols-2 gap-4 ">
+            <h1 className='font-bold mb-4 border-b'>{index + 1} Billing Cycle</h1>
+            <div className="grid grid-cols-2 gap-4">
+
+                {/* Billing Number / Invoice Number */}
                 <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.billingNumber`}
+                        name={`billingCycles.${index}.invoiceNumber`}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Billing Number</FormLabel>
+                                <FormLabel>Invoice Number</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter Billing Number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycle.${index}.billingAmount`}
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Billing Amount</FormLabel>
-                                <FormControl>
-                                    <Input type='number' placeholder="Enter Billing Amount" {...field} />
+                                    <Input placeholder="Enter Invoice Number" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -47,19 +33,53 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                     />
                 </div>
 
+                {/* Invoice Amount */}
                 <div className='space-y-2'>
-
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.billingDate`}
+                        name={`billingCycles.${index}.invoiceAmount`}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Billing Date</FormLabel>
+                                <FormLabel>Invoice Amount</FormLabel>
+                                <FormControl>
+                                    <Input type='number' placeholder="Enter Invoice Amount" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Collected Amount */}
+                <div className='space-y-2'>
+                    <FormField
+                        control={control}
+                        name={`billingCycles.${index}.collectedAmount`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Collected Amount</FormLabel>
+                                <FormControl>
+                                    <Input type='number' placeholder="Enter Collected Amount" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* Invoice Date */}
+                <div className='space-y-2'>
+                    <FormField
+                        control={control}
+                        name={`billingCycles.${index}.invoiceDate`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Invoice Date</FormLabel>
                                 <FormControl>
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
-                                                variant={"outline"}
+                                                variant="outline"
                                                 className={cn(
                                                     "justify-start text-left font-normal",
                                                     !field.value && "text-muted-foreground"
@@ -70,11 +90,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value as Date}
-                                                onSelect={field.onChange}
-                                            />
+                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
                                         </PopoverContent>
                                     </Popover>
                                 </FormControl>
@@ -83,11 +99,12 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                         )}
                     />
                 </div>
-                <div className='space-y-2'>
 
+                {/* Billing Submitted Date */}
+                <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.billingSubmittedDate`}
+                        name={`billingCycles.${index}.billingSubmittedDate`}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Billing Submitted Date</FormLabel>
@@ -95,7 +112,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
-                                                variant={"outline"}
+                                                variant="outline"
                                                 className={cn(
                                                     "justify-start text-left font-normal",
                                                     !field.value && "text-muted-foreground"
@@ -106,11 +123,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value as Date}
-                                                onSelect={field.onChange}
-                                            />
+                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
                                         </PopoverContent>
                                     </Popover>
                                 </FormControl>
@@ -119,29 +132,25 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                         )}
                     />
                 </div>
-                <div className='space-y-2'>
 
+                {/* Payment Received */}
+                <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.paymentReceived`}
+                        name={`billingCycles.${index}.paymentReceived`}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Payment Received</FormLabel>
                                 <FormControl>
-                                    <Select
-                                        defaultValue={field.value}
-                                        onValueChange={(v) => field.onChange(v)}
-                                    >
+                                    <Select defaultValue={field.value} onValueChange={(v) => field.onChange(v)}>
                                         <SelectTrigger className="w-full" {...field}>
                                             <SelectValue placeholder="Payment Received" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectGroup>
-                                                {
-                                                    Object.values(PaymentReceived).map((status, index) => (
-                                                        <SelectItem value={status} key={index}>{status}</SelectItem>
-                                                    ))
-                                                }
+                                                {Object.values(PaymentReceived).map((status, idx) => (
+                                                    <SelectItem value={status} key={idx}>{status}</SelectItem>
+                                                ))}
                                             </SelectGroup>
                                         </SelectContent>
                                     </Select>
@@ -151,11 +160,12 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                         )}
                     />
                 </div>
-                <div className='space-y-2'>
 
+                {/* Payment Received Date */}
+                <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.paymentReceivedDate`}
+                        name={`billingCycles.${index}.paymentReceivedDate`}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Payment Received Date</FormLabel>
@@ -163,7 +173,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                                     <Popover>
                                         <PopoverTrigger asChild>
                                             <Button
-                                                variant={"outline"}
+                                                variant="outline"
                                                 className={cn(
                                                     "justify-start text-left font-normal",
                                                     !field.value && "text-muted-foreground"
@@ -174,11 +184,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0">
-                                            <Calendar
-                                                mode="single"
-                                                selected={field.value as Date}
-                                                onSelect={field.onChange}
-                                            />
+                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
                                         </PopoverContent>
                                     </Popover>
                                 </FormControl>
@@ -187,16 +193,30 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                         )}
                     />
                 </div>
-                <div className='space-y-2'>
 
+                {/* Payment Due Date */}
+                <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.paymentReceivedAmount`}
+                        name={`billingCycles.${index}.paymentDueDate`}
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Payment Received Amount</FormLabel>
+                                <FormLabel>Payment Due Date</FormLabel>
                                 <FormControl>
-                                    <Input type='number' placeholder="Enter Payment Received Amount" {...field} />
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn("justify-start text-left font-normal", !field.value && "text-muted-foreground")}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value, "PPP") : "Pick a date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
+                                        </PopoverContent>
+                                    </Popover>
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
@@ -204,11 +224,12 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
                     />
                 </div>
 
-                <div className='space-y-2'>
 
+                {/* Billing Remark */}
+                <div className='space-y-2'>
                     <FormField
                         control={control}
-                        name={`billingCycle.${index}.billingRemark`}
+                        name={`billingCycles.${index}.billingRemark`}
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Remark</FormLabel>
@@ -223,8 +244,7 @@ const BillingCycleForm = ({ index, control }: { index: number, control: any }) =
 
             </div>
         </div>
+    );
+};
 
-    )
-}
-
-export default BillingCycleForm
+export default BillingCycleForm;

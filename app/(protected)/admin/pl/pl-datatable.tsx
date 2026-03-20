@@ -110,7 +110,6 @@ export function PLDataTable({ data }: { data: Project[] }) {
     const [globalFilter, setGlobalFilter] = React.useState("")
     const [project, setProject] = React.useState<any>(data)
 
-    // 🔎 Global filter function
     const globalFilterFn = (
         row: any,
         columnId: string,

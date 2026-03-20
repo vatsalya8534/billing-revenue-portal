@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
     ColumnDef,
     flexRender,
@@ -9,50 +9,70 @@ import {
     getFilteredRowModel,
     useReactTable,
     SortingState,
-} from "@tanstack/react-table"
+} from "@tanstack/react-table";
 
 import {
     Table, TableBody, TableCell,
     TableHead, TableHeader, TableRow
-} from "@/components/ui/table"
+} from "@/components/ui/table";
 
-import { Input } from "@/components/ui/input"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
+import { Input } from "@/components/ui/input";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-import { MoreHorizontal } from "lucide-react"
+import { MoreHorizontal } from "lucide-react";
+
 import {
     deletePurchaseOrder,
-    getPurchaseOrders
-} from "@/lib/actions/purschase-order"
+    getPurchaseOrders,
+} from "@/lib/actions/purschase-order";
 
-import { useState } from "react"
+// ================= TYPES =================
+type PurchaseOrderType = {
+    id: string;
+    customerPONumber: string;
+    poAmount: number;
+    status: string;
+    startFrom?: Date;
+    endDate?: Date;
 
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle
-} from "@/components/ui/dialog"
+    ServiceType?: { name: string };
+    billingPlan?: { name: string };
+    contractDuration?: { totalNumberOfMonths: number };
+    customer?: { firstName: string; lastName: string };
+
+    paymentTerms?: string;
+    poOwner?: string;
+};
 
 // ================= COLUMNS =================
 const getColumns = (
-    onDelete: (id: string) => void,
-    onView: (row: any) => void
-): ColumnDef<any>[] => [
-        { accessorKey: "customerPONumber", header: "PO Number" },
+    onDelete: (id: string) => void
+): ColumnDef<PurchaseOrderType>[] => [
+        {
+            accessorKey: "customerPONumber",
+            header: "PO Number",
+        },
+
+        {
+            header: "Customer",
+            cell: ({ row }) =>
+                row.original.customer
+                    ? `${row.original.customer.firstName} ${row.original.customer.lastName}`
+                    : "-",
+        },
 
         {
             header: "Service Type",
-            cell: ({ row }) => row.original.ServiceType?.name || "-"
+            cell: ({ row }) => row.original.ServiceType?.name || "-", // ✅ FIXED
         },
 
         {
@@ -60,7 +80,7 @@ const getColumns = (
             cell: ({ row }) =>
                 row.original.contractDuration
                     ? `${row.original.contractDuration.totalNumberOfMonths} months`
-                    : "-"
+                    : "-",
         },
 
         {
@@ -68,7 +88,7 @@ const getColumns = (
             cell: ({ row }) =>
                 row.original.startFrom
                     ? new Date(row.original.startFrom).toLocaleDateString("en-GB")
-                    : "-"
+                    : "-",
         },
 
         {
@@ -76,29 +96,39 @@ const getColumns = (
             cell: ({ row }) =>
                 row.original.endDate
                     ? new Date(row.original.endDate).toLocaleDateString("en-GB")
-                    : "-"
+                    : "-",
         },
 
         {
             accessorKey: "poAmount",
-            header: "Amount"
+            header: "Amount",
         },
 
         {
             header: "Billing Plan",
-            cell: ({ row }) => row.original.billingPlan?.name || "-"
+            cell: ({ row }) => row.original.billingPlan?.name || "-",
         },
 
         {
             accessorKey: "status",
-            header: "Status"
+            header: "Status",
+        },
+
+        {
+            header: "Payment Terms",
+            cell: ({ row }) => row.original.paymentTerms || "-",
+        },
+
+        {
+            header: "PO Owner",
+            cell: ({ row }) => row.original.poOwner || "-",
         },
 
         {
             id: "actions",
             header: "Action",
             cell: ({ row }) => {
-                const id = row.original.id
+                const id = row.original.id;
 
                 return (
                     <DropdownMenu>
@@ -109,81 +139,79 @@ const getColumns = (
                         </DropdownMenuTrigger>
 
                         <DropdownMenuContent align="end">
-                            {/* Navigate to the full-page view */}
                             <DropdownMenuItem asChild>
                                 <Link href={`/admin/purchase-orders/view/${id}`}>
                                     View
                                 </Link>
                             </DropdownMenuItem>
 
-                            {/* Edit */}
                             <DropdownMenuItem asChild>
                                 <Link href={`/admin/purchase-orders/edit/${id}`}>
                                     Edit
                                 </Link>
                             </DropdownMenuItem>
 
-                            {/* Delete */}
                             <DropdownMenuItem
-                                onSelect={(e) => {
-                                    e.preventDefault();
-                                    onDelete(id);
-                                }}
                                 className="text-red-600 cursor-pointer"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    onDelete(row.original.id); // calls deleteHandler
+                                }}
                             >
                                 Delete
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                )
-            }
-        }
-    ]
+                );
+            },
+        },
+    ];
 
 // ================= COMPONENT =================
-export function PoDataTable({ data }: { data: any[] }) {
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [globalFilter, setGlobalFilter] = React.useState("")
-    const [purchaseOrder, setPurchaseOrder] = React.useState(data)
+export function PoDataTable({ data }: { data: PurchaseOrderType[] }) {
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = React.useState("");
 
-    const [selectedPO, setSelectedPO] = useState<any>(null)
-    const [isViewOpen, setIsViewOpen] = useState(false)
+    const [purchaseOrders, setPurchaseOrders] = React.useState<PurchaseOrderType[]>(data || []);
 
-    const getAllPurchaseOrder = async () => {
-        const result = await getPurchaseOrders()
-        setPurchaseOrder(result)
-    }
+    const refreshData = async () => {
+        const res : any = await getPurchaseOrders();
+
+        if (res.success && res.data) {
+            setPurchaseOrders(res.data);
+        } else {
+            setPurchaseOrders([]);
+            toast.error("Failed to fetch data");
+        }
+    };;
 
     const deleteHandler = async (id: string) => {
         try {
-            await deletePurchaseOrder(id)
-            await getAllPurchaseOrder()
-            toast.success("Deleted successfully")
-        } catch {
-            toast.error("Delete failed")
-        }
-    }
+            const confirmed = window.confirm("Are you sure you want to delete this PO?");
+            if (!confirmed) return; // user cancelled
 
-    const handleView = (po: any) => {
-        setSelectedPO(po)
-        setIsViewOpen(true)
-    }
+            const res = await deletePurchaseOrder(id); // call your API
+            if (res.success) {
+                await refreshData(); // refresh table
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     const table = useReactTable({
-        data: purchaseOrder,
-        columns: getColumns(deleteHandler, handleView),
+        data: purchaseOrders,
+        columns: getColumns(deleteHandler),
         state: { sorting, globalFilter },
         onSortingChange: setSorting,
         onGlobalFilterChange: setGlobalFilter,
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-    })
+    });
 
     return (
         <div className="space-y-4">
-
-            {/* SEARCH */}
             <Input
                 placeholder="Search..."
                 value={globalFilter}
@@ -191,7 +219,6 @@ export function PoDataTable({ data }: { data: any[] }) {
                 className="max-w-sm"
             />
 
-            {/* TABLE */}
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -223,7 +250,7 @@ export function PoDataTable({ data }: { data: any[] }) {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center">
+                                <TableCell colSpan={10} className="text-center">
                                     No results
                                 </TableCell>
                             </TableRow>
@@ -232,5 +259,6 @@ export function PoDataTable({ data }: { data: any[] }) {
                 </Table>
             </div>
         </div>
-    )
+    );
 }
+

@@ -3,15 +3,14 @@
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 
+// ---------------- DASHBOARD STATS ----------------
 export async function getDashboardStats() {
   const now = new Date();
 
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  startOfMonth.setHours(0, 0, 0, 0);
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   const billCount = await prisma.billingCycle.count();
-
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
   const billingThisMonthAgg = await prisma.billingCycle.aggregate({
     where: {
@@ -22,10 +21,9 @@ export async function getDashboardStats() {
       },
     },
     _sum: {
-      paymentReceivedAmount: true,
+      collectedAmount: true, // ✅ FIXED
     },
   });
-
 
   const totalBilledAgg = await prisma.purchaseOrder.aggregate({
     _sum: {
@@ -33,34 +31,31 @@ export async function getDashboardStats() {
     },
   });
 
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   return {
     billCount,
-    billingThisMonth: billingThisMonthAgg._sum.paymentReceivedAmount || 0,
+    billingThisMonth: billingThisMonthAgg._sum.collectedAmount || 0, // ✅ FIXED
     totalBilledAmount: totalBilledAgg._sum.poAmount || 0,
     currentMonth: months[now.getMonth()],
   };
 }
 
+// ---------------- PIE CHART ----------------
 export async function getBillingStatusData(year: number) {
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year, 11, 31, 23, 59, 59);
   const today = new Date();
 
-  // Fetch all billing cycles within the year
   const cycles = await prisma.billingCycle.findMany({
     where: {
-      billingDate: { gte: startOfYear, lte: endOfYear },
+      billingSubmittedDate: { gte: startOfYear, lte: endOfYear }, // ✅ FIXED
     },
     select: {
-      billingAmount: true,
-      paymentReceivedAmount: true,
+      invoiceAmount: true,
+      collectedAmount: true,
       paymentReceived: true,
-      billingDate: true,
+      billingSubmittedDate: true,
     },
   });
 
@@ -69,17 +64,20 @@ export async function getBillingStatusData(year: number) {
   let overdue = 0;
 
   cycles.forEach((cycle) => {
-    const billingAmt = Number(cycle.billingAmount || 0);
-    const paidAmt = Number(cycle.paymentReceivedAmount || 0);
+    const billingAmt = Number(cycle.invoiceAmount || 0);
+    const paidAmt = Number(cycle.collectedAmount || 0);
 
-    // Total amount billed (Bill Generated)
     billGenerated += billingAmt;
 
-    // Total amount received (Payment Received)
-    if (cycle.paymentReceived === "YES") paymentReceived += paidAmt;
+    if (cycle.paymentReceived === "YES") {
+      paymentReceived += paidAmt;
+    }
 
-    // Total overdue amount (Billing date passed and not fully paid)
-    if (cycle.billingDate && paidAmt < billingAmt && new Date(cycle.billingDate) <= today) {
+    if (
+      cycle.billingSubmittedDate &&
+      paidAmt < billingAmt &&
+      new Date(cycle.billingSubmittedDate) <= today
+    ) {
       overdue += billingAmt - paidAmt;
     }
   });
@@ -91,52 +89,46 @@ export async function getBillingStatusData(year: number) {
   ];
 }
 
+// ---------------- MONTHLY CHART ----------------
 export async function getMonthlyBillingData(year: number) {
   const now = new Date();
-  const currentMonthIndex = now.getMonth(); // 0 = Jan
-
-  const startDate = new Date(year, 0, 1);
-  const endDate = new Date(year, 11, 31);
+  const currentMonthIndex = now.getMonth();
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
-      billingDate: {
-        gte: startDate,
-        lte: endDate,
+      billingSubmittedDate: {
+        gte: new Date(year, 0, 1),
+        lte: new Date(year, 11, 31),
       },
     },
     select: {
-      billingAmount: true,
-      paymentReceivedAmount: true,
+      invoiceAmount: true,
+      collectedAmount: true,
       paymentReceived: true,
-      billingDate: true,
+      billingSubmittedDate: true,
     },
   });
 
-  const months = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec"
-  ];
+  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
   const monthlyData = months.map((month, index) => ({
     month,
     billing: 0,
     payment: 0,
-    index, 
+    index,
   }));
 
   cycles.forEach((cycle) => {
-    if (!cycle.billingDate) return;
+    if (!cycle.billingSubmittedDate) return;
 
-    const monthIndex = new Date(cycle.billingDate).getMonth();
+    const monthIndex = new Date(cycle.billingSubmittedDate).getMonth();
 
-    monthlyData[monthIndex].billing += Number(cycle.billingAmount) || 0;
+    monthlyData[monthIndex].billing += Number(cycle.invoiceAmount || 0);
 
     if (cycle.paymentReceived === "YES") {
-      monthlyData[monthIndex].payment += Number(cycle.paymentReceivedAmount) || 0;
+      monthlyData[monthIndex].payment += Number(cycle.collectedAmount || 0);
     }
   });
-
 
   if (year === now.getFullYear()) {
     monthlyData.forEach((m) => {
@@ -150,28 +142,25 @@ export async function getMonthlyBillingData(year: number) {
   return monthlyData;
 }
 
+// ---------------- TABLE DETAILS ----------------
 export async function getBillingStatusDetails(status: string, year: number) {
-  try {
-    const startOfYear = new Date(year, 0, 1);
-    const endOfYear = new Date(year, 11, 31, 23, 59, 59);
-    const today = new Date();
+  const startOfYear = new Date(year, 0, 1);
+  const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+  const today = new Date();
 
-    // Fetch all POs with related billing cycles
-    const purchaseOrders = await prisma.purchaseOrder.findMany({
-      include: {
-        customer: true,
-        ServiceType: true,
-        billingPlan: true,
-        contractDuration: true,
-        contract: true,
-        billingCycles: true,
-      },
-    });
+  const purchaseOrders = await prisma.purchaseOrder.findMany({
+    include: {
+      customer: true,
+      ServiceType: true,
+      billingPlan: true,
+      billingCycles: true,
+    },
+  });
 
-    // Filter POs based on the selected status
-    const filteredPOs = purchaseOrders.filter((po) => {
-      const cycles = po.billingCycles.filter((cycle) => {
-        const billingDate = cycle.billingDate ? new Date(cycle.billingDate) : null;
+  return purchaseOrders
+    .map((po) => {
+      const relevantCycles = po.billingCycles.filter((cycle) => {
+        const billingDate = cycle.billingSubmittedDate;
         if (!billingDate) return false;
 
         if (status === "Bill Generated") {
@@ -179,44 +168,39 @@ export async function getBillingStatusDetails(status: string, year: number) {
         }
 
         if (status === "Payment Received") {
-          return cycle.paymentReceived === "YES" && billingDate >= startOfYear && billingDate <= endOfYear;
+          return (
+            cycle.paymentReceived === "YES" &&
+            billingDate >= startOfYear &&
+            billingDate <= endOfYear
+          );
         }
 
         if (status === "Overdue") {
-          const billingAmount = Number(cycle.billingAmount || 0);
-          const paidAmount = Number(cycle.paymentReceivedAmount || 0);
-          return billingDate <= today && paidAmount < billingAmount;
+          const billingAmt = Number(cycle.invoiceAmount || 0);
+          const paidAmt = Number(cycle.collectedAmount || 0);
+          return billingDate <= today && paidAmt < billingAmt;
         }
 
         return false;
       });
 
-      return cycles.length > 0;
-    });
+      if (!relevantCycles.length) return null;
 
-    return filteredPOs.map((po) => {
-      const relevantCycles = po.billingCycles.filter((cycle) => {
-        const billingDate = cycle.billingDate ? new Date(cycle.billingDate) : null;
-        if (!billingDate) return false;
-
-        if (status === "Bill Generated") return billingDate >= startOfYear && billingDate <= endOfYear;
-        if (status === "Payment Received") return cycle.paymentReceived === "YES" && billingDate >= startOfYear && billingDate <= endOfYear;
-        if (status === "Overdue") {
-          const billingAmount = Number(cycle.billingAmount || 0);
-          const paidAmount = Number(cycle.paymentReceivedAmount || 0);
-          return billingDate <= today && paidAmount < billingAmount;
-        }
-
-        return false;
-      });
-
-      // Add extraAmount only for Payment Received and Overdue
       let extraAmount = 0;
+
       if (status === "Payment Received") {
-        extraAmount = relevantCycles.reduce((sum, c) => sum + Number(c.paymentReceivedAmount || 0), 0);
-      } else if (status === "Overdue") {
         extraAmount = relevantCycles.reduce(
-          (sum, c) => sum + (Number(c.billingAmount || 0) - Number(c.paymentReceivedAmount || 0)),
+          (sum, c) => sum + Number(c.collectedAmount || 0),
+          0
+        );
+      }
+
+      if (status === "Overdue") {
+        extraAmount = relevantCycles.reduce(
+          (sum, c) =>
+            sum +
+            (Number(c.invoiceAmount || 0) -
+              Number(c.collectedAmount || 0)),
           0
         );
       }
@@ -224,18 +208,15 @@ export async function getBillingStatusDetails(status: string, year: number) {
       return {
         id: po.id,
         poNumber: po.customerPONumber,
-        customerName: `${po.customer?.firstName || "-"} ${po.customer?.lastName || "-"}`,
+        customerName: `${po.customer?.firstName || ""} ${po.customer?.lastName || ""}`,
         serviceName: po.ServiceType?.name || "-",
         billingPlan: po.billingPlan?.name || "-",
         amount: po.poAmount,
         startDate: po.startFrom ? format(new Date(po.startFrom), "dd/MM/yyyy") : "-",
         endDate: po.endDate ? format(new Date(po.endDate), "dd/MM/yyyy") : "-",
         status: po.status,
-        extraAmount, // <-- Added extra field here
+        extraAmount,
       };
-    });
-  } catch (error) {
-    console.error("Failed to fetch billing status details:", error);
-    return [];
-  }
+    })
+    .filter(Boolean);
 }

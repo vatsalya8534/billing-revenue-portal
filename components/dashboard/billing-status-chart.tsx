@@ -72,7 +72,7 @@ export function BillingStatusChart() {
   const handleSliceClick = async (data: BillingDetail) => {
     setSelectedSlice(data);
     try {
-      const details: POItem[] = await getBillingStatusDetails(data.status, Number(year));
+      const details: any = await getBillingStatusDetails(data.status, Number(year));
       setSliceDetails(details);
     } catch (err) {
       console.error("Failed to fetch slice details:", err);

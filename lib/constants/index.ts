@@ -1,19 +1,23 @@
 import { OrderType, PaymentReceived, POStatus, Status } from "@prisma/client";
-import { custom, email } from "zod";
 
-export const APP_NAME = process.env.NEXT_APP_APP_NAME ?? "Billing & Revenue Portal";
+export const APP_NAME =
+  process.env.NEXT_APP_APP_NAME ?? "Billing & Revenue Portal";
 
-export const APP_DESCRIPTION = process.env.NEXT_APP_DESCRIPTION ?? "Internal Billing & Revenue Management System";
+export const APP_DESCRIPTION =
+  process.env.NEXT_APP_DESCRIPTION ??
+  "Internal Billing & Revenue Management System";
 
-export const SERVER_URL = process.env.NEXT_APP_SERVER_URL ?? "http://localhost:3000";
+export const SERVER_URL =
+  process.env.NEXT_APP_SERVER_URL ?? "http://localhost:3000";
 
 export const roleDefaultValues = {
   name: "",
   remark: "",
-  status: Status.ACTIVE
+  status: Status.ACTIVE,
 };
 
-export const formatDate = (date?: Date | null) => date ? date.toISOString().split("T")[0] : "";
+export const formatDate = (date?: Date | null) =>
+  date ? date.toISOString().split("T")[0] : "";
 
 export const userDefaultValues = {
   username: "",
@@ -23,7 +27,7 @@ export const userDefaultValues = {
   email: "",
   status: Status.ACTIVE,
   remark: "",
-  roleId: ""
+  roleId: "",
 };
 
 export const clientDefaultValues = {
@@ -38,47 +42,57 @@ export const clientDefaultValues = {
 export const purchaseOrderDefaultValues = {
   customerPONumber: "",
   poAmount: 0,
+
   serviceTypeId: "",
   contractDurationId: "",
   contractId: "",
-  startFrom: new Date(),
-  endDate: new Date(),
+
+  startFrom: null as Date | null,
+  endDate: null as Date | null,
+
   paymentTerms: "",
   billingPlanId: "",
   customerId: "",
-  status: POStatus.PENDING,
+  poOwner: "",
+
+  status: POStatus.LIVE,
   remark: "",
-  poOwner: ""
+
+  ageingDays: "",
+  br: null as Date | null,
+
+  others: "",
+  scope: "",
+  tds: "",
+
+  billingCycles: [],
 };
 
 export const serviceTypeDefaultValues = {
   name: "",
   remark: "",
-  status: Status.ACTIVE
-}
-
+  status: Status.ACTIVE,
+};
 
 export const billingPlanDefaultValues = {
   name: "",
   totalBillingCycles: 0,
   remark: "",
-  status: Status.ACTIVE
-}
-
+  status: Status.ACTIVE,
+};
 
 export const contractDurationDefaultValues = {
   name: "",
   totalNumberOfMonths: 0,
   remark: "",
-  status: Status.ACTIVE
-}
-
+  status: Status.ACTIVE,
+};
 
 export const contractTypeDefaultValues = {
   name: "",
   remark: "",
-  status: Status.ACTIVE
-}
+  status: Status.ACTIVE,
+};
 
 export const customerDefaultValues = {
   customerCode: "",
@@ -98,8 +112,8 @@ export const customerDefaultValues = {
   panNumber: "",
   website: "",
   remark: "",
-  status: Status.ACTIVE
-}
+  status: Status.ACTIVE,
+};
 
 export const plDefaultValues = {
   companyId: "",
