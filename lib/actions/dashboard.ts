@@ -17,14 +17,13 @@ export async function getDashboardStats() {
 
   const billingThisMonthAgg = await prisma.billingCycle.aggregate({
     where: {
-      paymentReceived: "YES",
-      paymentReceivedDate: {
+      billingSubmittedDate: {
         gte: startOfMonth,
         lte: endOfMonth,
       },
     },
     _sum: {
-      collectedAmount: true,
+      invoiceAmount: true,
     },
   });
 
@@ -71,7 +70,7 @@ export async function getDashboardStats() {
 
   return {
     billCount,
-    billingThisMonth: billingThisMonthAgg._sum.collectedAmount || 0,
+    billingThisMonth: billingThisMonthAgg._sum.invoiceAmount || 0,
     totalBilledAmount: totalBilledAgg._sum.poAmount || 0,
     totalOverdueAmount: totalOverdue, // ✅ NEW FIELD
     currentMonth: months[now.getMonth()],
