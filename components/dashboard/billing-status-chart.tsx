@@ -52,7 +52,7 @@ export function BillingStatusChart() {
           };
         });
 
-        const MIN_SLICE = 1;
+        const MIN_SLICE = 5;
         const normalizedData = completeData.map((d) => ({
           ...d,
           value: d.value === 0 ? MIN_SLICE : d.value,

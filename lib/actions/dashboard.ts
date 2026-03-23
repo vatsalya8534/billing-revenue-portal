@@ -87,11 +87,20 @@ export async function getBillingStatusData(year: number) {
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
-      billingSubmittedDate: {
-        not: null, // ✅ avoids TS error
-        gte: startOfYear,
-        lte: endOfYear,
-      },
+      OR: [
+        {
+          billingSubmittedDate: {
+            gte: startOfYear,
+            lte: endOfYear,
+          },
+        },
+        {
+          paymentDueDate: {
+            gte: startOfYear,
+            lte: endOfYear,
+          },
+        },
+      ],
     },
     select: {
       invoiceAmount: true,
@@ -110,20 +119,32 @@ export async function getBillingStatusData(year: number) {
     const billingAmt = Number(cycle.invoiceAmount || 0);
     const paidAmt = Number(cycle.collectedAmount || 0);
 
-    // ✅ Total Billing Generated
-    billGenerated += billingAmt;
+    const billingDate = cycle.billingSubmittedDate;
+    const dueDateRaw = cycle.paymentDueDate;
 
-    // ✅ Payment Received
-    if (cycle.paymentReceived === "YES") {
-      paymentReceived += paidAmt;
+    // ✅ BILL GENERATED (based on billing date)
+    if (
+      billingDate &&
+      billingDate >= startOfYear &&
+      billingDate <= endOfYear
+    ) {
+      billGenerated += billingAmt;
+
+      if (cycle.paymentReceived === "YES") {
+        paymentReceived += paidAmt;
+      }
     }
 
-    // ✅ Overdue Calculation
-    if (cycle.paymentDueDate && paidAmt < billingAmt) {
-      const dueDate = new Date(cycle.paymentDueDate);
+    // ✅ OVERDUE (based on due date)
+    if (dueDateRaw && paidAmt < billingAmt) {
+      const dueDate = new Date(dueDateRaw);
       dueDate.setHours(0, 0, 0, 0);
 
-      if (dueDate < today) {
+      if (
+        dueDate >= startOfYear &&
+        dueDate <= endOfYear &&
+        dueDate < today
+      ) {
         overdue += billingAmt - paidAmt;
       }
     }
