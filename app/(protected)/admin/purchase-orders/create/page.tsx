@@ -6,8 +6,9 @@ import { getBillingPlans } from "@/lib/actions/billing-plan";
 import { getContractTypes } from "@/lib/actions/contract-type";
 import { getServiceTypes } from "@/lib/actions/service-type";
 import { getCustomers } from "@/lib/actions/customer";
-import { BillingCycle, BillingPlan, Customer } from "@/types";
+import { BillingCycle, BillingPlan, Company, Customer } from "@/types";
 import { getContractDurations } from "@/lib/actions/contract-duration";
+import { getCompanys } from "@/lib/actions/company";
 
 const POCreatePage = async () => {
   const billingPlan = await getBillingPlans()
@@ -15,7 +16,7 @@ const POCreatePage = async () => {
   const serviceType = await getServiceTypes()
   const customers = await getCustomers()
   const contractDurations = await getContractDurations()
-
+  const companies = await getCompanys()
 
   return (
     <Card>
@@ -29,11 +30,12 @@ const POCreatePage = async () => {
       </CardHeader>
 
       <CardContent>
-        <POForm 
-          update={false} 
-          billingPlan={billingPlan} 
-          contractType={contractType} 
-          serviceType={serviceType} 
+        <POForm
+          update={false}
+          companies={companies as Company[]}
+          billingPlan={billingPlan as BillingPlan[]}
+          contractType={contractType}
+          serviceType={serviceType}
           customers={customers as Customer[]}
           contractDurations={contractDurations} />
       </CardContent>

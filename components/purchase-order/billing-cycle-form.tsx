@@ -224,6 +224,56 @@ const BillingCycleForm = ({ index, control }: { index: number; control: any }) =
                     />
                 </div>
 
+                <div className='space-y-2'>
+                    <FormField
+                        control={control}
+                        name={`billingCycles.${index}.br`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>BR</FormLabel>
+                                <FormControl>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className={cn(
+                                                    "justify-start text-left font-normal",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                            >
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value as Date, "PPP") : "Pick a date"}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0">
+                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+                {/* TDS */}
+                <div className='space-y-2'>
+                    <FormField
+                        control={control}
+                        name={`billingCycles.${index}.tds`}
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>TDS</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Enter TDS" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </div>
+
+
 
                 {/* Billing Remark */}
                 <div className='space-y-2'>

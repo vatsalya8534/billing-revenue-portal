@@ -23,7 +23,7 @@ import { cn } from "@/lib/utils";
 import { purchaseOrderSchema } from "@/lib/validators";
 import { createPurchaseOrder, updatePurchaseOrder } from "@/lib/actions/purschase-order";
 import { PurchaseOrder, POStatus, PaymentReceived } from "@prisma/client";
-import { BillingCycle, BillingPlan, ContractDuration, ContractType, Customer, ServiceType } from "@/types";
+import { BillingCycle, BillingPlan, Company, ContractDuration, ContractType, Customer, ServiceType } from "@/types";
 import z from "zod";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
@@ -33,6 +33,7 @@ const POForm = ({
   serviceType,
   contractType,
   customers,
+  companies,
   data,
   update = false,
   contractDurations
@@ -41,6 +42,7 @@ const POForm = ({
   serviceType: ServiceType[];
   contractType: ContractType[];
   customers: Customer[];
+  companies: Company[];
   data?: any;
   update: boolean;
   contractDurations: ContractDuration[];
@@ -60,17 +62,13 @@ const POForm = ({
     customerId: "",
     poOwner: "",
     status: POStatus.LIVE,
-
     startFrom: undefined,
     endDate: undefined,
     ageingDays: 0,
-    br: undefined,
 
     remark: "",
-    others: "",
     scope: "",
-    tds: "",
-    billingCycles: []
+    billingCycles: [],
   };
 
   // ---------------- FORM ----------------
@@ -101,35 +99,59 @@ const POForm = ({
   const addBillingCycle = (
     amount: number,
     index: number,
-    totalBillingCycles: number
+    totalBillingCycles: number,
+    billingPlanType: BillingPlan["billingCycleType"]
   ) => {
     if (!startFrom) return;
 
     const startDate = moment(startFrom);
 
-    const gap =
-      (contractDurationData?.totalNumberOfMonths ?? totalBillingCycles) /
-      totalBillingCycles;
+    // exact gap per cycle (can be fractional)
+    const totalMonths = contractDurationData?.totalNumberOfMonths ?? totalBillingCycles;
+    const gap = totalMonths / totalBillingCycles;
 
-    const date = startDate.clone().add(index * gap, "months").toDate();
+    // calculate base date for this cycle
+    const tempDate = startDate.clone().add(index * gap, "months");
+
+    // determine invoice date
+    let invoiceDate: Date;
+    switch (billingPlanType) {
+      case "Start":
+        invoiceDate = tempDate.clone().startOf("month").toDate();
+        break;
+      case "Mid":
+        invoiceDate = tempDate.clone().date(15).toDate();
+        break;
+      case "End":
+        invoiceDate = tempDate.clone().endOf("month").toDate();
+        break;
+      default:
+        invoiceDate = tempDate.toDate();
+    }
+
+    // payment due = invoice date + 1 month
+    const paymentDueDate = moment(invoiceDate).add(1, "month").toDate();
 
     return {
-      billingSubmittedDate: date,
+      billingSubmittedDate: invoiceDate,
+      invoiceDate: invoiceDate,
+      paymentDueDate: paymentDueDate,
       paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: null,
-      paymentDuedate: date,
+      paymentReceivedDate: null, 
       billingRemark: "",
       invoiceNumber: "",
       invoiceAmount: amount,
-      collectedamount: 0,
-      invoiceDate: date
+      br: undefined,
+      tds: "",
+      collectedAmount: 0,
     };
   };
+
 
   // ---------------- AGEING CALCULATION ----------------
   useEffect(() => {
     if (startFrom && endDate) {
-      const days = moment(endDate).diff(moment(startFrom), "days");
+      const days = moment(endDate).diff(moment(startFrom), "days") + 1;
 
       form.setValue("ageingDays", days >= 0 ? days : 0);
     } else {
@@ -161,13 +183,12 @@ const POForm = ({
 
       const cycles = Array.from({ length: bp.totalBillingCycles }, (_, i) =>
         addBillingCycle(
-          Number(watchPOAmount) / bp.totalBillingCycles,
+          Math.round((Number(watchPOAmount) / bp.totalBillingCycles) * 100) / 100,
           i,
-          bp.totalBillingCycles
+          bp.totalBillingCycles,
+          bp.billingCycleType
         )
-      ).filter(Boolean) as NonNullable<
-        ReturnType<typeof addBillingCycle>
-      >[];
+      ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
 
       form.setValue("billingCycles", cycles);
     }
@@ -177,12 +198,11 @@ const POForm = ({
       if (cd) setContractDurationData(cd);
     }
   }, [watchBillingPlan, watchPOAmount, startFrom, contractDurationId, update]);
-
   // ---------------- UPDATE MODE ----------------
   useEffect(() => {
     if (!update || !data) return;
 
-    const formattedCycles = (data.billingCycles ?? []).map((bc : any) => ({
+    const formattedCycles = (data.billingCycles ?? []).map((bc: any) => ({
       invoiceNumber: bc.invoiceNumber ?? "",
       invoiceAmount: Number(bc.invoiceAmount ?? 0),
       collectedAmount: Number(bc.collectedamount ?? 0),
@@ -208,9 +228,9 @@ const POForm = ({
       customerPONumber: data.customerPONumber ?? "",
       poAmount: Number(data.poAmount ?? 0),
 
-      // ✅ IMPORTANT: force string for Select fields
       serviceTypeId: String(data.serviceTypeId ?? ""),
       contractDurationId: String(data.contractDurationId ?? ""),
+      companyId: String(data.companyId ?? ""),
       contractId: String(data.contractId ?? ""),
       billingPlanId: String(data.billingPlanId ?? ""),
       customerId: String(data.customerId ?? ""),
@@ -222,17 +242,14 @@ const POForm = ({
       startFrom: data.startFrom ? new Date(data.startFrom) : undefined,
       endDate: data.endDate ? new Date(data.endDate) : undefined,
       ageingDays: Number(data.ageingDays ?? 0),
-      br: data.br ? new Date(data.br) : undefined,
+
 
       remark: data.remark ?? "",
-      others: data.others ?? "",
       scope: data.scope ?? "",
-      tds: data.tds ?? "",
 
       billingCycles: formattedCycles ?? []
     });
 
-    // ✅ sync field array
     replace(formattedCycles);
 
   }, [data, update, form, replace]);
@@ -251,6 +268,7 @@ const POForm = ({
       >
         {/* --- Row 1: PO Number & Service Type --- */}
         <div className="grid grid-cols-2 gap-6">
+
           <FormField
             control={form.control}
             name="customerPONumber"
@@ -259,6 +277,43 @@ const POForm = ({
                 <FormLabel>Customer PO Number</FormLabel>
                 <FormControl>
                   <Input placeholder="Enter Customer PO Number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Company */}
+          <FormField
+            control={form.control}
+            name="companyId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Company</FormLabel>
+                <FormControl>
+                  <Select
+                    value={field.value ?? ""}
+                    onValueChange={field.onChange}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Company" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {companies && companies.length > 0 ? (
+                          companies.map((company) => (
+                            <SelectItem key={company.id} value={String(company.id)}>
+                              {company.name}
+                            </SelectItem>
+                          ))
+                        ) : (
+                          <SelectItem key="loading" value="loading" disabled>
+                            Loading companies...
+                          </SelectItem>
+                        )}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -419,7 +474,7 @@ const POForm = ({
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="endDate"
@@ -454,25 +509,9 @@ const POForm = ({
             )}
           />
 
-          <FormField control={form.control} name="others" render={({ field }) => (
-            <FormItem>
-              <FormLabel>Others</FormLabel>
-              <FormControl><Input {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
           <FormField control={form.control} name="scope" render={({ field }) => (
             <FormItem>
               <FormLabel>Scope</FormLabel>
-              <FormControl><Input {...field} /></FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
-
-          <FormField control={form.control} name="tds" render={({ field }) => (
-            <FormItem>
-              <FormLabel>TDS</FormLabel>
               <FormControl><Input {...field} /></FormControl>
               <FormMessage />
             </FormItem>
@@ -483,7 +522,7 @@ const POForm = ({
             name="ageingDays"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Ageing Days</FormLabel>
+                <FormLabel>Contract Days</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -496,27 +535,6 @@ const POForm = ({
               </FormItem>
             )}
           />
-
-          {/* BR */}
-          <FormField control={form.control} name="br" render={({ field }) => (
-            <FormItem>
-              <FormLabel>BR</FormLabel>
-              <FormControl>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className="justify-start text-left">
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {field.value ? format(field.value, "PPP") : "Pick a date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
-                  </PopoverContent>
-                </Popover>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )} />
 
           <FormField
             control={form.control}

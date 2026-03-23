@@ -2,14 +2,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import POForm from "@/components/purchase-order/purchase-order-form";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { getBillingCyclesByPOID, getPurchaseOrderById } from "@/lib/actions/purschase-order";
-import { getBillingPlanById, getBillingPlans } from "@/lib/actions/billing-plan";
+import { getPurchaseOrderById } from "@/lib/actions/purschase-order";
+import { getBillingPlans } from "@/lib/actions/billing-plan";
 import { getContractTypes } from "@/lib/actions/contract-type";
 import { getServiceTypes } from "@/lib/actions/service-type";
 import { getCustomers } from "@/lib/actions/customer";
-import { BillingCycle, Customer } from "@/types";
+import { BillingPlan, Company, Customer } from "@/types";
 import { getContractDurations } from "@/lib/actions/contract-duration";
+import { getCompanys } from "@/lib/actions/company";
 
 interface EditPOPageProps {
   params: Promise<{ id: string }>; // params is now a Promise
@@ -21,6 +21,8 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
   const serviceType = await getServiceTypes()
   const customers = await getCustomers()
   const contractDurations = await getContractDurations()
+  const companies = await getCompanys()
+
 
   const { id } = await params;
 
@@ -38,7 +40,8 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
         <POForm
           data={po.data}
           update={true}
-          billingPlan={billingPlan}
+          companies={companies as Company[]}
+          billingPlan={billingPlan as BillingPlan[]}
           contractType={contractType}
           serviceType={serviceType}
           customers={customers as Customer[]}

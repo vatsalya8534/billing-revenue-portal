@@ -79,12 +79,26 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
           />
           <FormField
             control={form.control}
-            name="totalBillingCycles"
+            name="billingCycleType"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Billing Cycles</FormLabel>
+                <FormLabel>Billing Cycle Type</FormLabel>
                 <FormControl>
-                  <Input type="number" placeholder="Enter total billing cycles" {...field} />
+                  <Select
+                    value={field.value ?? ""} // controlled input
+                    onValueChange={field.onChange} // hook to RHF
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select Cycle Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="Start">Start</SelectItem>
+                        <SelectItem value="Mid">Mid</SelectItem>
+                        <SelectItem value="End">End</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

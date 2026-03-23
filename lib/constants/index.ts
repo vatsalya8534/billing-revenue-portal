@@ -59,13 +59,23 @@ export const purchaseOrderDefaultValues = {
   remark: "",
 
   ageingDays: "",
-  br: null as Date | null,
-
-  others: "",
   scope: "",
-  tds: "",
 
-  billingCycles: [],
+  billingCycles: [
+    {
+      invoiceNumber: "",
+      invoiceAmount: 0,
+      collectedAmount: 0,
+      invoiceDate: null as Date | null,
+      billingSubmittedDate: null as Date | null,
+      paymentReceived: PaymentReceived.NO,
+      paymentReceivedDate: null as Date | null,
+      paymentDueDate: null as Date | null,
+      billingRemark: "",
+      tds: "",       // added
+      br: null as Date | null, // added
+    },
+  ],
 };
 
 export const serviceTypeDefaultValues = {
@@ -79,6 +89,7 @@ export const billingPlanDefaultValues = {
   totalBillingCycles: 0,
   remark: "",
   status: Status.ACTIVE,
+  billingCycleType: "Start" as const, 
 };
 
 export const contractDurationDefaultValues = {

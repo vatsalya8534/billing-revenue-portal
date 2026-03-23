@@ -71,6 +71,8 @@ export const billingCycleSchema = z.object({
   invoiceDate: z.union([z.date(), z.string()]).nullable().optional(),
 
   invoiceNumber: z.string().optional(),
+  tds: z.string().optional().default(""),
+  br: z.union([z.date(), z.string()]).nullable().optional(),
 
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
@@ -90,6 +92,7 @@ export const purchaseOrderSchema = z.object({
   serviceTypeId: z.string().min(1, "Service Type is required"),
   contractDurationId: z.string().min(1, "Contract Duration is required"),
   contractId: z.string().min(1, "Contract Type is required"),
+  companyId: z.string().optional(), 
 
   startFrom: z.union([z.date(), z.string()]).nullable().optional(),
   endDate: z.union([z.date(), z.string()]).nullable().optional(),
@@ -108,11 +111,8 @@ export const purchaseOrderSchema = z.object({
   remark: z.string().optional(),
 
   ageingDays: z.number().min(0).optional(),
-  br: z.union([z.date(), z.string()]).nullable().optional(),
 
-  others: z.string().optional().default(""),
   scope: z.string().optional().default(""),
-  tds: z.string().optional().default(""),
 
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
@@ -147,6 +147,7 @@ export const billingPlanSchema = z.object({
   remark: z.string().nullable().optional(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
+  billingCycleType: z.enum(["Start", "Mid", "End"]),
 });
 
 /* ---------------- CONTRACT DURATION ---------------- */
