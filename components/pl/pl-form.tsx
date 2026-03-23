@@ -47,8 +47,8 @@ const PLForm = ({
   delete data?.createdAt;
   delete data?.updatedAt;
 
-  if(data) {
-    data.billingCycle = billingCycles.map((value:any) => {
+  if (data) {
+    data.billingCycle = billingCycles.map((value: any) => {
       delete value.createdAt;
       delete value.updatedAt;
       return value
@@ -57,7 +57,7 @@ const PLForm = ({
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema) as any,
-    defaultValues:  data || plDefaultValues,
+    defaultValues: data || plDefaultValues,
   });
 
   const [isPending, startTransition] = useTransition();
@@ -90,7 +90,7 @@ const PLForm = ({
       }
 
       console.log(res);
-      
+
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -101,31 +101,33 @@ const PLForm = ({
   };
 
   useEffect(() => {
-    const start = moment(startDate);
-    const end = moment(endDate);
+    if (!update) {
+      const start = moment(startDate);
+      const end = moment(endDate);
 
-    const months = Math.ceil(end.diff(start, "months", true));
+      const months = Math.ceil(end.diff(start, "months", true));
 
-    const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
+      const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
 
-    if (!billingPlanId) return;
+      if (!billingPlanId) return;
 
-    const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1)
+      const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1)
 
-    let count = 0;
+      let count = 0;
 
-    while (count < months) {
+      while (count < months) {
 
-      const date = moment(start);
+        const date = moment(start);
 
-      const newDate = date.clone().add(count, "month");
+        const newDate = date.clone().add(count, "month");
 
-      const monthIndex = newDate.month();
-      const year = newDate.year();
+        const monthIndex = newDate.month();
+        const year = newDate.year();
 
-      addMonthCycle(monthIndex, year)
+        addMonthCycle(monthIndex, year)
 
-      count += monthGap;
+        count += monthGap;
+      }
     }
 
   }, [billingPlanId])
@@ -195,7 +197,7 @@ const PLForm = ({
                     <FormLabel>Start Date</FormLabel>
                     <FormControl>
                       <Popover>
-                        <PopoverTrigger asChild>
+                        <PopoverTrigger disabled={update} asChild>
                           <Button
                             variant={"outline"}
                             className={cn(
@@ -212,6 +214,7 @@ const PLForm = ({
                             mode="single"
                             selected={field.value as Date}
                             onSelect={(date) => field.onChange(date)}
+                            disabled={update}
                           />
                         </PopoverContent>
                       </Popover>
@@ -231,7 +234,7 @@ const PLForm = ({
                     <FormLabel>End Date</FormLabel>
                     <FormControl>
                       <Popover>
-                        <PopoverTrigger asChild>
+                        <PopoverTrigger disabled={update} asChild>
                           <Button
                             variant={"outline"}
                             className={cn(
@@ -248,6 +251,7 @@ const PLForm = ({
                             mode="single"
                             selected={field.value as Date}
                             onSelect={field.onChange}
+                            disabled={update}
                           />
                         </PopoverContent>
                       </Popover>
@@ -281,6 +285,7 @@ const PLForm = ({
                       <Select
                         defaultValue={field.value}
                         onValueChange={(v) => field.onChange(v)}
+                        disabled={update}
                       >
                         <SelectTrigger className="w-full" {...field}>
                           <SelectValue placeholder="Billing plan" />
@@ -386,7 +391,7 @@ const PLForm = ({
           </TabsContent>
           <TabsContent value="billing-cycle">
             <Accordion type="single" collapsible defaultValue="billing-cycle-0">
-              {fields.map((field, index) => 
+              {fields.map((field, index) =>
                 <PLBillingCycle field={field} index={index} key={index} form={form} />
               )}
             </Accordion>
