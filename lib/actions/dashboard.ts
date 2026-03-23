@@ -87,19 +87,11 @@ export async function getBillingStatusData(year: number) {
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
-      OR: [
-        {
-          billingSubmittedDate: {
-            gte: startOfYear,
-            lte: endOfYear,
-          },
-        },
-        {
-          paymentDueDate: {
-            not: null,
-          },
-        },
-      ],
+      billingSubmittedDate: {
+        not: null, // ✅ avoids TS error
+        gte: startOfYear,
+        lte: endOfYear,
+      },
     },
     select: {
       invoiceAmount: true,
@@ -114,17 +106,19 @@ export async function getBillingStatusData(year: number) {
   let paymentReceived = 0;
   let overdue = 0;
 
-  cycles.forEach((cycle) => {
+  for (const cycle of cycles) {
     const billingAmt = Number(cycle.invoiceAmount || 0);
     const paidAmt = Number(cycle.collectedAmount || 0);
 
+    // ✅ Total Billing Generated
     billGenerated += billingAmt;
 
+    // ✅ Payment Received
     if (cycle.paymentReceived === "YES") {
       paymentReceived += paidAmt;
     }
 
-    // ✅ FIXED OVERDUE LOGIC
+    // ✅ Overdue Calculation
     if (cycle.paymentDueDate && paidAmt < billingAmt) {
       const dueDate = new Date(cycle.paymentDueDate);
       dueDate.setHours(0, 0, 0, 0);
@@ -133,7 +127,7 @@ export async function getBillingStatusData(year: number) {
         overdue += billingAmt - paidAmt;
       }
     }
-  });
+  }
 
   return [
     { status: "Bill Generated", value: billGenerated },
