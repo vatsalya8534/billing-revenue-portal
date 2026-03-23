@@ -5,6 +5,14 @@ import { purchaseOrderSchema } from "../validators";
 import { formatError } from "../utils";
 import { PurchaseOrder } from "@/types";
 
+const toLocalDate = (date?: string | Date | null) => {
+  if (!date) return undefined;
+  return new Date(
+    typeof date === "string" ? date + "T00:00:00" : date
+  );
+};
+
+// ---------------- GET ALL ----------------
 export async function getPurchaseOrders() {
   try {
     const purchaseOrders = await prisma.purchaseOrder.findMany({
@@ -25,6 +33,7 @@ export async function getPurchaseOrders() {
   }
 }
 
+// ---------------- CREATE ----------------
 export async function createPurchaseOrder(data: PurchaseOrder) {
   try {
     const validatedData = purchaseOrderSchema.parse(data);
@@ -37,9 +46,9 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
         contractDurationId: validatedData.contractDurationId,
         contractId: validatedData.contractId,
 
-        startFrom: validatedData.startFrom ? new Date(validatedData.startFrom) : undefined,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
-        br: validatedData.br ? new Date(validatedData.br) : undefined,
+        startFrom: toLocalDate(validatedData.startFrom),
+        endDate: toLocalDate(validatedData.endDate),
+        br: toLocalDate(validatedData.br),
 
         paymentTerms: validatedData.paymentTerms,
         customerId: validatedData.customerId,
@@ -47,7 +56,11 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
         poOwner: validatedData.poOwner,
         status: validatedData.status,
 
-        ageingDays: validatedData.ageingDays !== undefined ? String(validatedData.ageingDays) : null,
+        ageingDays:
+          validatedData.ageingDays !== undefined
+            ? String(validatedData.ageingDays)
+            : null,
+
         remark: validatedData.remark ?? "",
         others: validatedData.others ?? "",
         scope: validatedData.scope ?? "",
@@ -58,11 +71,13 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
             invoiceNumber: bc.invoiceNumber ?? "",
             invoiceAmount: bc.invoiceAmount ?? 0,
             collectedAmount: bc.collectedAmount ?? 0,
-            invoiceDate: bc.invoiceDate ? new Date(bc.invoiceDate) : undefined,
-            billingSubmittedDate: bc.billingSubmittedDate ? new Date(bc.billingSubmittedDate) : undefined,
+
+            invoiceDate: toLocalDate(bc.invoiceDate),
+            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
+            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
+            paymentDueDate: toLocalDate(bc.paymentDueDate),
+
             paymentReceived: bc.paymentReceived,
-            paymentReceivedDate: bc.paymentReceivedDate ? new Date(bc.paymentReceivedDate) : undefined,
-            paymentDueDate: bc.paymentDueDate ? new Date(bc.paymentDueDate) : undefined,
             billingRemark: bc.billingRemark ?? "",
           })),
         },
@@ -75,6 +90,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
   }
 }
 
+// ---------------- GET BY ID ----------------
 export async function getPurchaseOrderById(id: string) {
   try {
     const po = await prisma.purchaseOrder.findUnique({
@@ -85,7 +101,7 @@ export async function getPurchaseOrderById(id: string) {
         contractDuration: true,
         contract: true,
         customer: true,
-        billingCycles: true, // ✅ fetch only existing cycles
+        billingCycles: true,
       },
     });
 
@@ -98,7 +114,11 @@ export async function getPurchaseOrderById(id: string) {
   }
 }
 
-export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
+// ---------------- UPDATE ----------------
+export async function updatePurchaseOrder(
+  data: PurchaseOrder,
+  id: string
+) {
   try {
     const validatedData = purchaseOrderSchema.parse(data);
 
@@ -111,9 +131,9 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
         contractDurationId: validatedData.contractDurationId,
         contractId: validatedData.contractId,
 
-        startFrom: validatedData.startFrom ? new Date(validatedData.startFrom) : undefined,
-        endDate: validatedData.endDate ? new Date(validatedData.endDate) : undefined,
-        br: validatedData.br ? new Date(validatedData.br) : undefined,
+        startFrom: toLocalDate(validatedData.startFrom),
+        endDate: toLocalDate(validatedData.endDate),
+        br: toLocalDate(validatedData.br),
 
         paymentTerms: validatedData.paymentTerms,
         customerId: validatedData.customerId,
@@ -121,28 +141,34 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
         poOwner: validatedData.poOwner,
         status: validatedData.status,
 
-        ageingDays: validatedData.ageingDays !== undefined ? String(validatedData.ageingDays) : null,
+        ageingDays:
+          validatedData.ageingDays !== undefined
+            ? String(validatedData.ageingDays)
+            : null,
+
         remark: validatedData.remark ?? "",
         others: validatedData.others ?? "",
         scope: validatedData.scope ?? "",
         tds: validatedData.tds ?? "",
 
         billingCycles: {
+          deleteMany: {},
           create: validatedData.billingCycles?.map((bc) => ({
             invoiceNumber: bc.invoiceNumber ?? "",
             invoiceAmount: bc.invoiceAmount ?? 0,
             collectedAmount: bc.collectedAmount ?? 0,
-            invoiceDate: bc.invoiceDate ? new Date(bc.invoiceDate) : undefined,
-            billingSubmittedDate: bc.billingSubmittedDate ? new Date(bc.billingSubmittedDate) : undefined,
+
+            invoiceDate: toLocalDate(bc.invoiceDate),
+            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
+            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
+            paymentDueDate: toLocalDate(bc.paymentDueDate),
+
             paymentReceived: bc.paymentReceived,
-            paymentReceivedDate: bc.paymentReceivedDate ? new Date(bc.paymentReceivedDate) : undefined,
-            paymentDueDate: bc.paymentDueDate ? new Date(bc.paymentDueDate) : undefined,
             billingRemark: bc.billingRemark ?? "",
           })),
         },
       },
     });
-
 
     return { success: true, message: "Purchase Order updated successfully" };
   } catch (error) {
@@ -150,24 +176,36 @@ export async function updatePurchaseOrder(data: PurchaseOrder, id: string) {
   }
 }
 
+// ---------------- DELETE ----------------
 export async function deletePurchaseOrder(id: string) {
   try {
-    await prisma.billingCycle.deleteMany({ where: { purchaseOrderId: id } });
+    await prisma.billingCycle.deleteMany({
+      where: { purchaseOrderId: id },
+    });
+
     await prisma.purchaseOrder.delete({ where: { id } });
 
-    return { success: true, message: "Purchase Order deleted successfully" };
+    return {
+      success: true,
+      message: "Purchase Order deleted successfully",
+    };
   } catch (error) {
     return { success: false, message: formatError(error) };
   }
 }
 
+// ---------------- GET BILLING CYCLES ----------------
 export async function getBillingCyclesByPOID(id: string) {
   try {
     const billingCycles = await prisma.billingCycle.findMany({
       where: { purchaseOrderId: id },
     });
 
-    return { success: true, data: billingCycles, message: "Billing Cycles fetched successfully" };
+    return {
+      success: true,
+      data: billingCycles,
+      message: "Billing Cycles fetched successfully",
+    };
   } catch (error) {
     return { success: false, message: formatError(error) };
   }

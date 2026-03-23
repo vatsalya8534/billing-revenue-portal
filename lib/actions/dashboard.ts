@@ -10,6 +10,9 @@ export async function getDashboardStats() {
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   const billCount = await prisma.billingCycle.count();
 
   const billingThisMonthAgg = await prisma.billingCycle.aggregate({
@@ -21,7 +24,7 @@ export async function getDashboardStats() {
       },
     },
     _sum: {
-      collectedAmount: true, // ✅ FIXED
+      collectedAmount: true,
     },
   });
 
@@ -31,12 +34,46 @@ export async function getDashboardStats() {
     },
   });
 
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  // ✅ TOTAL OVERDUE CALCULATION
+  const overdueCycles = await prisma.billingCycle.findMany({
+    where: {
+      paymentDueDate: {
+        not: null,
+      },
+    },
+    select: {
+      invoiceAmount: true,
+      collectedAmount: true,
+      paymentDueDate: true,
+    },
+  });
+
+  let totalOverdue = 0;
+
+  overdueCycles.forEach((cycle) => {
+    const billingAmt = Number(cycle.invoiceAmount || 0);
+    const paidAmt = Number(cycle.collectedAmount || 0);
+
+    if (!cycle.paymentDueDate) return;
+
+    const dueDate = new Date(cycle.paymentDueDate);
+    dueDate.setHours(0, 0, 0, 0);
+
+    if (dueDate < today && paidAmt < billingAmt) {
+      totalOverdue += billingAmt - paidAmt;
+    }
+  });
+
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
 
   return {
     billCount,
-    billingThisMonth: billingThisMonthAgg._sum.collectedAmount || 0, // ✅ FIXED
+    billingThisMonth: billingThisMonthAgg._sum.collectedAmount || 0,
     totalBilledAmount: totalBilledAgg._sum.poAmount || 0,
+    totalOverdueAmount: totalOverdue, // ✅ NEW FIELD
     currentMonth: months[now.getMonth()],
   };
 }
@@ -45,17 +82,32 @@ export async function getDashboardStats() {
 export async function getBillingStatusData(year: number) {
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
-      billingSubmittedDate: { gte: startOfYear, lte: endOfYear }, // ✅ FIXED
+      OR: [
+        {
+          billingSubmittedDate: {
+            gte: startOfYear,
+            lte: endOfYear,
+          },
+        },
+        {
+          paymentDueDate: {
+            not: null,
+          },
+        },
+      ],
     },
     select: {
       invoiceAmount: true,
       collectedAmount: true,
       paymentReceived: true,
       billingSubmittedDate: true,
+      paymentDueDate: true,
     },
   });
 
@@ -73,12 +125,14 @@ export async function getBillingStatusData(year: number) {
       paymentReceived += paidAmt;
     }
 
-    if (
-      cycle.billingSubmittedDate &&
-      paidAmt < billingAmt &&
-      new Date(cycle.billingSubmittedDate) <= today
-    ) {
-      overdue += billingAmt - paidAmt;
+    // ✅ FIXED OVERDUE LOGIC
+    if (cycle.paymentDueDate && paidAmt < billingAmt) {
+      const dueDate = new Date(cycle.paymentDueDate);
+      dueDate.setHours(0, 0, 0, 0);
+
+      if (dueDate < today) {
+        overdue += billingAmt - paidAmt;
+      }
     }
   });
 
@@ -109,7 +163,10 @@ export async function getMonthlyBillingData(year: number) {
     },
   });
 
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+  ];
 
   const monthlyData = months.map((month, index) => ({
     month,
@@ -146,7 +203,9 @@ export async function getMonthlyBillingData(year: number) {
 export async function getBillingStatusDetails(status: string, year: number) {
   const startOfYear = new Date(year, 0, 1);
   const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const purchaseOrders = await prisma.purchaseOrder.findMany({
     include: {
@@ -178,7 +237,13 @@ export async function getBillingStatusDetails(status: string, year: number) {
         if (status === "Overdue") {
           const billingAmt = Number(cycle.invoiceAmount || 0);
           const paidAmt = Number(cycle.collectedAmount || 0);
-          return billingDate <= today && paidAmt < billingAmt;
+
+          if (!cycle.paymentDueDate) return false;
+
+          const dueDate = new Date(cycle.paymentDueDate);
+          dueDate.setHours(0, 0, 0, 0);
+
+          return dueDate < today && paidAmt < billingAmt;
         }
 
         return false;
@@ -212,8 +277,12 @@ export async function getBillingStatusDetails(status: string, year: number) {
         serviceName: po.ServiceType?.name || "-",
         billingPlan: po.billingPlan?.name || "-",
         amount: po.poAmount,
-        startDate: po.startFrom ? format(new Date(po.startFrom), "dd/MM/yyyy") : "-",
-        endDate: po.endDate ? format(new Date(po.endDate), "dd/MM/yyyy") : "-",
+        startDate: po.startFrom
+          ? format(new Date(po.startFrom), "dd/MM/yyyy")
+          : "-",
+        endDate: po.endDate
+          ? format(new Date(po.endDate), "dd/MM/yyyy")
+          : "-",
         status: po.status,
         extraAmount,
       };

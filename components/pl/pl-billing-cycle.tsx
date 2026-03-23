@@ -13,6 +13,8 @@ const PLBillingCycle = ({ field, index, form }: any) => {
 
     const monthName = moment().month(field.month).format("MMMM");
     const [totalOtherBillAmount, setTotalOtherBillAmount] = useState(0);
+    const [monthlyGMPercentage, setmonthlyGMPercentage] = useState(0);
+
     const hasInitialized = useRef(false);
 
     const { fields, append, remove } = useFieldArray({
@@ -29,6 +31,8 @@ const PLBillingCycle = ({ field, index, form }: any) => {
 
     let otherBills = form.watch(`billingCycle.${index}.otherCost`) || [];
 
+    let billedAmount = form.watch(`billingCycle.${index}.billedAmount`)
+
     useEffect(() => {
         if (otherBills && otherBills.length > 0) {
             let totalAmount = 0;
@@ -36,6 +40,10 @@ const PLBillingCycle = ({ field, index, form }: any) => {
             for (const bill of otherBills) {
                 totalAmount += Number(bill.value);
             }
+
+            let mPercentage = (totalAmount/billedAmount) * 100;
+            
+            setmonthlyGMPercentage(mPercentage)
 
             setTotalOtherBillAmount(totalAmount);
         }
@@ -59,7 +67,7 @@ const PLBillingCycle = ({ field, index, form }: any) => {
             }
         }
 
-    }, [JSON.stringify(otherBills)]);
+    }, [JSON.stringify(otherBills), billedAmount]);
 
     return (
         <AccordionItem key={index} value={`billing-cycle-${index}`}>
@@ -84,6 +92,7 @@ const PLBillingCycle = ({ field, index, form }: any) => {
                     <div className='space-y-2 col-span-2'>
                         <div className='flex justify-between'>
                             <h2>Total Other Bill Amount : {totalOtherBillAmount}</h2>
+                            <h2>Monthly GM% : {monthlyGMPercentage} %</h2>
                             <Button type='button' variant="default" onClick={addMiscellaneousAmount}>Add Miscellaneous Amount</Button>
                         </div>
                         {
