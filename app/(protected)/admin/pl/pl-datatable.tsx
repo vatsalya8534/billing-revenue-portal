@@ -68,6 +68,11 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
         accessorKey: "totalCost",
         header: "Total cost till last update"
     },
+     {
+        accessorKey: "currentGM",
+        header: "Current GM%",
+        cell: ({row}) => (row.original.totalCost / row.original.totalRevenue) * 100 + " % " 
+    },
     {
         id: "actions",
         header: "Action",
