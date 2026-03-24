@@ -73,7 +73,6 @@ export const purchaseOrderDefaultValues = {
       paymentDueDate: null as Date | null,
       billingRemark: "",
       tds: "",       // added
-      br: null as Date | null, // added
     },
   ],
 };
@@ -89,7 +88,7 @@ export const billingPlanDefaultValues = {
   totalBillingCycles: 0,
   remark: "",
   status: Status.ACTIVE,
-  billingCycleType: "Start" as const, 
+  billingCycleType: "START" as "START",
 };
 
 export const contractDurationDefaultValues = {

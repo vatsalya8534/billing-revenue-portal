@@ -72,8 +72,6 @@ export const billingCycleSchema = z.object({
 
   invoiceNumber: z.string().optional(),
   tds: z.string().optional().default(""),
-  br: z.union([z.date(), z.string()]).nullable().optional(),
-
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
 });
@@ -147,7 +145,7 @@ export const billingPlanSchema = z.object({
   remark: z.string().nullable().optional(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
-  billingCycleType: z.enum(["Start", "Mid", "End"]),
+  billingCycleType: z.enum(["START", "MID", "END"]),
 });
 
 /* ---------------- CONTRACT DURATION ---------------- */

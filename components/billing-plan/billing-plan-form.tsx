@@ -83,22 +83,38 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Billing Cycle Type</FormLabel>
-                <FormControl>
-                  <Select
-                    value={field.value ?? ""} // controlled input
-                    onValueChange={field.onChange} // hook to RHF
-                  >
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select Cycle Type" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="Start">Start</SelectItem>
-                        <SelectItem value="Mid">Mid</SelectItem>
-                        <SelectItem value="End">End</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="START">Start</SelectItem>
+                    <SelectItem value="MID">Mid</SelectItem>
+                    <SelectItem value="END">End</SelectItem>
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="totalBillingCycles"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Total Billing Cycles</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="Enter total billing cycles"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))} // important
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

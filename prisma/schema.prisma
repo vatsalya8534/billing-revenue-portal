@@ -34,6 +34,12 @@ enum POStatus {
   CLOSED
 }
 
+enum BillingCycleType {
+  START
+  MID
+  END
+}
+
 model Role {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name      String   @unique
@@ -100,7 +106,6 @@ model BillingCycle {
   invoiceAmount        Float?
   invoiceDate          DateTime?
   invoiceNumber        String
-  br                   DateTime?
   tds                  String
   purchaseOrder        PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id])
 }
@@ -119,6 +124,7 @@ model BillingPlan {
   id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name               String          @unique
   totalBillingCycles Int
+  billingCycleType   BillingCycleType @default(START)
   remark             String?
   status             Status          @default(ACTIVE)
   createdAt          DateTime        @default(now())

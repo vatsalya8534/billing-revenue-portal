@@ -28,6 +28,13 @@ import z from "zod";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
+interface Billing {
+  name: string; // Monthly, Quarterly, Yearly, etc.
+  totalBillingCycles: number;
+  gapInMonths: number; // dynamically define gap per cycle
+  billingCycleType: "Start" | "Mid" | "End"; // default for this plan
+}
+
 const POForm = ({
   billingPlan,
   serviceType,
@@ -99,51 +106,52 @@ const POForm = ({
   const addBillingCycle = (
     amount: number,
     index: number,
-    totalBillingCycles: number,
-    billingPlanType: BillingPlan["billingCycleType"]
+    plan: Billing,              
+    startFrom: Date | string,
+    paymentDueInput?: Date | string
   ) => {
     if (!startFrom) return;
 
-    const startDate = moment(startFrom);
+    const start = moment(startFrom);
 
-    // exact gap per cycle (can be fractional)
-    const totalMonths = contractDurationData?.totalNumberOfMonths ?? totalBillingCycles;
-    const gap = totalMonths / totalBillingCycles;
+    // 1️⃣ Dynamic invoice date based on plan.gapInMonths
+    let invoiceDate = start.clone().add(plan.gapInMonths * index, "months");
 
-    // calculate base date for this cycle
-    const tempDate = startDate.clone().add(index * gap, "months");
-
-    // determine invoice date
-    let invoiceDate: Date;
-    switch (billingPlanType) {
+    // 2️⃣ Apply Start / Mid / End for this cycle
+    let billingSubmittedDate: moment.Moment;
+    switch (plan.billingCycleType) {
       case "Start":
-        invoiceDate = tempDate.clone().startOf("month").toDate();
+        billingSubmittedDate = invoiceDate.clone().startOf("month");
+        invoiceDate = invoiceDate.clone().startOf("month");
         break;
       case "Mid":
-        invoiceDate = tempDate.clone().date(15).toDate();
+        billingSubmittedDate = invoiceDate.clone().date(15);
+        invoiceDate = invoiceDate.clone().date(15);
         break;
       case "End":
-        invoiceDate = tempDate.clone().endOf("month").toDate();
+        billingSubmittedDate = invoiceDate.clone().startOf("month");
+        invoiceDate = invoiceDate.clone().endOf("month");
         break;
       default:
-        invoiceDate = tempDate.toDate();
+        billingSubmittedDate = invoiceDate.clone();
     }
 
-    // payment due = invoice date + 1 month
-    const paymentDueDate = moment(invoiceDate).add(1, "month").toDate();
+    // 3️⃣ Payment due date can be user input, else +1 month
+    const paymentDueDate = paymentDueInput
+      ? moment(paymentDueInput).toDate()
+      : invoiceDate.clone().add(1, "month").toDate();
 
     return {
-      billingSubmittedDate: invoiceDate,
-      invoiceDate: invoiceDate,
-      paymentDueDate: paymentDueDate,
+      invoiceDate: invoiceDate.toDate(),
+      billingSubmittedDate: billingSubmittedDate.toDate(),
+      paymentDueDate,
+      invoiceAmount: amount,
       paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: null, 
+      paymentReceivedDate: null,
+      collectedAmount: 0,
+      tds: "",
       billingRemark: "",
       invoiceNumber: "",
-      invoiceAmount: amount,
-      br: undefined,
-      tds: "",
-      collectedAmount: 0,
     };
   };
 
@@ -178,26 +186,31 @@ const POForm = ({
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
     if (!update && watchBillingPlan && watchPOAmount && startFrom) {
+      // Find the selected billing plan
       const bp = billingPlan.find((b) => b.id === watchBillingPlan);
       if (!bp) return;
 
-      const cycles = Array.from({ length: bp.totalBillingCycles }, (_, i) =>
-        addBillingCycle(
-          Math.round((Number(watchPOAmount) / bp.totalBillingCycles) * 100) / 100,
-          i,
-          bp.totalBillingCycles,
-          bp.billingCycleType
-        )
+      const paymentDueInput = form.getValues("paymentDueDate" as any) as Date | undefined;
+      
+
+      
+      const cycles = Array.from(
+        { length: bp.totalBillingCycles || 1 },
+        (_, i) =>
+          addBillingCycle(
+            Math.round((Number(watchPOAmount) / (bp.totalBillingCycles || 1)) * 100) / 100,
+            i,
+            bp,              
+            startFrom,
+            paymentDueInput
+          )
       ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
 
       form.setValue("billingCycles", cycles);
     }
+  }, [watchBillingPlan, watchPOAmount, startFrom, update]);
 
-    if (startFrom && contractDurationId) {
-      const cd = contractDurations.find((c) => c.id === contractDurationId);
-      if (cd) setContractDurationData(cd);
-    }
-  }, [watchBillingPlan, watchPOAmount, startFrom, contractDurationId, update]);
+
   // ---------------- UPDATE MODE ----------------
   useEffect(() => {
     if (!update || !data) return;

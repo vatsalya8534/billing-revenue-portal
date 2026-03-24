@@ -33,6 +33,11 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
         cell: ({ row }) => row.original.totalBillingCycles ?? "-",
     },
     {
+        accessorKey: "billingCycleType",
+        header: "Billing Cycle Type",
+        cell: ({ row }) => row.original.billingCycleType ?? "-",
+    },
+    {
         accessorKey: "remark",
         header: "Remark",
         cell: ({ row }) => row.original.remark ?? "-",
