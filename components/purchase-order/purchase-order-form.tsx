@@ -29,10 +29,10 @@ import z from "zod";
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
 interface Billing {
-  name: string; // Monthly, Quarterly, Yearly, etc.
+  name: string; 
   totalBillingCycles: number;
   gapInMonths: number; // dynamically define gap per cycle
-  billingCycleType: "Start" | "Mid" | "End"; // default for this plan
+  billingCycleType: "START" | "MID" | "END"; // default for this plan
 }
 
 const POForm = ({
@@ -104,56 +104,51 @@ const POForm = ({
 
   // ---------------- BILLING CYCLE GENERATOR ----------------
   const addBillingCycle = (
-    amount: number,
-    index: number,
-    plan: Billing,              
-    startFrom: Date | string,
-    paymentDueInput?: Date | string
-  ) => {
-    if (!startFrom) return;
+  amount: number,
+  index: number,
+  plan: Billing,
+  startFrom: Date | string,
+  paymentDueInput?: Date | string // optional
+) => {
+  if (!startFrom) return;
 
-    const start = moment(startFrom);
+  const start = moment(startFrom);
 
-    // 1️⃣ Dynamic invoice date based on plan.gapInMonths
-    let invoiceDate = start.clone().add(plan.gapInMonths * index, "months");
+  // Dynamic invoice date based on plan.gapInMonths
+  let invoiceDate = start.clone().add(plan.gapInMonths * index, "months");
 
-    // 2️⃣ Apply Start / Mid / End for this cycle
-    let billingSubmittedDate: moment.Moment;
-    switch (plan.billingCycleType) {
-      case "Start":
-        billingSubmittedDate = invoiceDate.clone().startOf("month");
-        invoiceDate = invoiceDate.clone().startOf("month");
-        break;
-      case "Mid":
-        billingSubmittedDate = invoiceDate.clone().date(15);
-        invoiceDate = invoiceDate.clone().date(15);
-        break;
-      case "End":
-        billingSubmittedDate = invoiceDate.clone().startOf("month");
-        invoiceDate = invoiceDate.clone().endOf("month");
-        break;
-      default:
-        billingSubmittedDate = invoiceDate.clone();
-    }
+  // Apply Start / Mid / End for this cycle
+  let billingSubmittedDate: moment.Moment;
+  switch (plan.billingCycleType) {
+    case "START":
+      billingSubmittedDate = invoiceDate.clone().startOf("month");
+      invoiceDate = invoiceDate.clone().startOf("month");
+      break;
+    case "MID":
+      billingSubmittedDate = invoiceDate.clone().date(15);
+      invoiceDate = invoiceDate.clone().date(15);
+      break;
+    case "END":
+      billingSubmittedDate = invoiceDate.clone().startOf("month");
+      invoiceDate = invoiceDate.clone().endOf("month");
+      break;
+    default:
+      billingSubmittedDate = invoiceDate.clone();
+  }
 
-    // 3️⃣ Payment due date can be user input, else +1 month
-    const paymentDueDate = paymentDueInput
-      ? moment(paymentDueInput).toDate()
-      : invoiceDate.clone().add(1, "month").toDate();
-
-    return {
-      invoiceDate: invoiceDate.toDate(),
-      billingSubmittedDate: billingSubmittedDate.toDate(),
-      paymentDueDate,
-      invoiceAmount: amount,
-      paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: null,
-      collectedAmount: 0,
-      tds: "",
-      billingRemark: "",
-      invoiceNumber: "",
-    };
+  return {
+    invoiceDate: invoiceDate.toDate(),
+    billingSubmittedDate: billingSubmittedDate.toDate(),
+    paymentDueDate: paymentDueInput ? moment(paymentDueInput).toDate() : undefined, // ✅ user can input
+    invoiceAmount: amount,
+    paymentReceived: PaymentReceived.NO,
+    paymentReceivedDate: null,
+    collectedAmount: 0,
+    tds: "",
+    billingRemark: "",
+    invoiceNumber: "",
   };
+};
 
 
   // ---------------- AGEING CALCULATION ----------------
@@ -185,30 +180,29 @@ const POForm = ({
 
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
-    if (!update && watchBillingPlan && watchPOAmount && startFrom) {
-      // Find the selected billing plan
-      const bp = billingPlan.find((b) => b.id === watchBillingPlan);
-      if (!bp) return;
+    if (!watchBillingPlan || !watchPOAmount || !startFrom) return;
 
-      const paymentDueInput = form.getValues("paymentDueDate" as any) as Date | undefined;
-      
+    const bp = billingPlan.find((b) => b.id === watchBillingPlan);
+    if (!bp) return;
 
-      
-      const cycles = Array.from(
-        { length: bp.totalBillingCycles || 1 },
-        (_, i) =>
-          addBillingCycle(
-            Math.round((Number(watchPOAmount) / (bp.totalBillingCycles || 1)) * 100) / 100,
-            i,
-            bp,              
-            startFrom,
-            paymentDueInput
-          )
-      ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
+    const totalCycles = bp.totalBillingCycles || 1;
 
-      form.setValue("billingCycles", cycles);
-    }
-  }, [watchBillingPlan, watchPOAmount, startFrom, update]);
+    const perCycleAmount =
+      Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
+
+    const cycles = Array.from({ length: totalCycles }, (_, i) =>
+      addBillingCycle(
+        perCycleAmount,
+        i,
+        bp, // 👈 correct type
+        startFrom
+      )
+    ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
+
+    // ✅ IMPORTANT: use replace instead of setValue
+    replace(cycles);
+
+  }, [watchBillingPlan, watchPOAmount, startFrom, replace]);
 
 
   // ---------------- UPDATE MODE ----------------

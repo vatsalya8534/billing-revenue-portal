@@ -1,9 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip, Legend } from "recharts";
-import { getBillingStatusData, getBillingStatusDetails } from "@/lib/actions/dashboard";
+import {
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Cell,
+  Tooltip,
+  Legend,
+} from "recharts";
 
+import {
+  getBillingStatusData,
+  getBillingStatusDetails,
+} from "@/lib/actions/dashboard";
+
+// ================= TYPES =================
 interface BillingDetail {
   status: string;
   value: number;
@@ -13,73 +25,77 @@ interface BillingDetail {
 interface POItem {
   id: string;
   poNumber: string;
-  customerName: string;
+  invoiceNumber?: string;
+  companyName?: string;
   serviceName?: string;
   billingPlan?: string;
   amount: number;
   startDate?: string;
   endDate?: string;
-  status?: string;
   extraAmount?: number;
 }
 
+// ================= COMPONENT =================
 export function BillingStatusChart() {
   const currentYear = new Date().getFullYear();
+
   const [year, setYear] = useState(currentYear.toString());
+  const [month, setMonth] = useState(new Date().getMonth() + 1);
+
   const [chartData, setChartData] = useState<BillingDetail[]>([]);
-  const [selectedSlice, setSelectedSlice] = useState<BillingDetail | null>(null);
+  const [selectedSlice, setSelectedSlice] =
+    useState<BillingDetail | null>(null);
   const [sliceDetails, setSliceDetails] = useState<POItem[]>([]);
 
   const colors: Record<string, string> = {
     "Bill Generated": "#3b82f6",
     "Payment Received": "#10b981",
-    "Overdue": "#ef4444",
+    Overdue: "#ef4444",
   };
 
+  // ================= FETCH DATA =================
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const data = await getBillingStatusData(Number(year));
+      const data = await getBillingStatusData(Number(year), month);
 
-        const allStatuses = ["Bill Generated", "Payment Received", "Overdue"];
+      const statuses = ["Bill Generated", "Payment Received", "Overdue"];
 
-        const completeData = allStatuses.map((status) => {
-          const existing = data.find((d) => d.status === status);
-          return {
-            status,
-            value: existing ? existing.value : 0,
-            fill: colors[status],
-          };
-        });
+      const finalData = statuses.map((status) => {
+        const found = data.find((d) => d.status === status);
+        return {
+          status,
+          value: found?.value || 0,
+          fill: colors[status],
+        };
+      });
 
-        const MIN_SLICE = 5;
-        const normalizedData = completeData.map((d) => ({
-          ...d,
-          value: d.value === 0 ? MIN_SLICE : d.value,
-        }));
-
-        setChartData(normalizedData);
-        setSelectedSlice(null);
-        setSliceDetails([]);
-      } catch (err) {
-        console.error("Failed to fetch billing status data:", err);
-      }
+      setChartData(finalData);
+      setSelectedSlice(null);
+      setSliceDetails([]);
     };
 
     fetchData();
-  }, [year]);
+  }, [year, month]);
 
+  // ================= HANDLE CLICK =================
   const handleSliceClick = async (data: BillingDetail) => {
+    if (data.value === 0) return; // ✅ prevent useless clicks
+
     setSelectedSlice(data);
-    try {
-      const details: any = await getBillingStatusDetails(data.status, Number(year));
-      setSliceDetails(details);
-    } catch (err) {
-      console.error("Failed to fetch slice details:", err);
-      setSliceDetails([]);
-    }
+
+    const details = await getBillingStatusDetails(
+      data.status,
+      Number(year),
+      month
+    );
+
+    setSliceDetails(details || []);
   };
 
+  // ================= TOTAL =================
+  const totalValue = chartData.reduce((sum, d) => sum + d.value, 0);
+
+  // ================= COLUMN HEADER =================
   const extraColumnHeader =
     selectedSlice?.status === "Overdue"
       ? "Overdue"
@@ -89,88 +105,127 @@ export function BillingStatusChart() {
 
   return (
     <div className="flex flex-col md:flex-row gap-4">
-      
-      {/* LEFT: Smaller Pie Chart */}
-      <div className="w-full md:w-1/3 flex flex-col items-start">
-        
-        <div className="w-full flex justify-start mb-2">
+      {/* LEFT SIDE */}
+      <div className="w-full md:w-1/3">
+        <div className="flex gap-2 mb-2">
+          {/* YEAR */}
           <select
             value={year}
             onChange={(e) => setYear(e.target.value)}
-            className="border rounded px-2 py-1"
+            className="border px-2 py-1 rounded"
           >
             <option value={currentYear - 2}>{currentYear - 2}</option>
             <option value={currentYear - 1}>{currentYear - 1}</option>
             <option value={currentYear}>{currentYear}</option>
           </select>
+
+          {/* MONTH */}
+          <select
+            value={month}
+            onChange={(e) => setMonth(Number(e.target.value))}
+            className="border px-2 py-1 rounded"
+          >
+            {[
+              "Jan","Feb","Mar","Apr","May","Jun",
+              "Jul","Aug","Sep","Oct","Nov","Dec"
+            ].map((m, i) => (
+              <option key={i} value={i + 1}>
+                {m}
+              </option>
+            ))}
+          </select>
         </div>
 
-        <div style={{ width: "100%", height: 260 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Tooltip formatter={(value: number, name: string) => [`₹${value}`, name]} />
-              <Legend />
-              <Pie
-                data={chartData}
-                dataKey="value"
-                nameKey="status"
-                innerRadius={50}
-                outerRadius={80}   // 🔽 smaller pie
-                cornerRadius={5}
-                onClick={handleSliceClick}
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={index} fill={entry.fill} />
-                ))}
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+        {/* PIE OR NO DATA */}
+        {totalValue > 0 ? (
+          <div style={{ width: "100%", height: 260 }}>
+            <ResponsiveContainer>
+              <PieChart>
+                <Tooltip formatter={(v: number) => [`₹${v}`]} />
+                <Legend />
 
-      {/* RIGHT: Bigger Table */}
-      <div className="w-full md:w-2/3 overflow-auto max-h-[360px]">
-        {selectedSlice ? (
-          <div className="border p-4 rounded shadow">
-            <h3 className="font-semibold mb-2">Details: {selectedSlice.status}</h3>
-
-            {sliceDetails.length ? (
-              <table className="w-full text-left border-collapse text-sm">
-                <thead>
-                  <tr>
-                    <th className="border px-2 py-1">PO Number</th>
-                    <th className="border px-2 py-1">Customer</th>
-                    <th className="border px-2 py-1">Service</th>
-                    <th className="border px-2 py-1">Billing Plan</th>
-                    <th className="border px-2 py-1">Amount</th>
-                    <th className="border px-2 py-1">Start</th>
-                    <th className="border px-2 py-1">End</th>
-                    <th className="border px-2 py-1">{extraColumnHeader}</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {sliceDetails.map((item) => (
-                    <tr key={item.id}>
-                      <td className="border px-2 py-1">{item.poNumber}</td>
-                      <td className="border px-2 py-1">{item.customerName}</td>
-                      <td className="border px-2 py-1">{item.serviceName || "-"}</td>
-                      <td className="border px-2 py-1">{item.billingPlan || "-"}</td>
-                      <td className="border px-2 py-1">₹{item.amount}</td>
-                      <td className="border px-2 py-1">{item.startDate || "-"}</td>
-                      <td className="border px-2 py-1">{item.endDate || "-"}</td>
-                      <td className="border px-2 py-1">₹{item.extraAmount ?? 0}</td>
-                    </tr>
+                <Pie
+                  data={chartData}
+                  dataKey="value"
+                  nameKey="status"
+                  innerRadius={50}
+                  outerRadius={80}
+                  onClick={handleSliceClick}
+                >
+                  {chartData.map((entry, i) => (
+                    <Cell key={i} fill={entry.fill} />
                   ))}
-                </tbody>
-              </table>
-            ) : (
-              <p className="text-gray-500">No records found for this status.</p>
-            )}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
           </div>
         ) : (
-          <div className="border p-4 rounded shadow text-gray-500">
-            Click on the chart to see details
+          <div className="h-[260px] flex items-center justify-center border rounded text-gray-500">
+            No data found
+          </div>
+        )}
+      </div>
+
+      {/* RIGHT SIDE */}
+      <div className="w-full md:w-2/3 overflow-auto max-h-[360px]">
+        {totalValue === 0 ? (
+          <div className="border p-4 text-gray-500">
+            No data found
+          </div>
+        ) : selectedSlice ? (
+          <div className="border p-4 rounded shadow">
+            <h3 className="font-semibold mb-2">
+              {selectedSlice.status}
+            </h3>
+
+            <table className="w-full text-sm border">
+              <thead>
+                <tr>
+                  <th className="border px-2 py-1">PO Number</th>
+                  <th className="border px-2 py-1">Invoice Number</th>
+                  <th className="border px-2 py-1">Company Name</th>
+                  <th className="border px-2 py-1">Service Type</th>
+                  <th className="border px-2 py-1">Billing Plan</th>
+                  <th className="border px-2 py-1">Amount</th>
+                  <th className="border px-2 py-1">{extraColumnHeader}</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sliceDetails.length > 0 ? (
+                  sliceDetails.map((item) => (
+                    <tr key={item.id}>
+                      <td className="border px-2">{item.poNumber}</td>
+                      <td className="border px-2">{item.invoiceNumber}</td>
+                      <td className="border px-2">
+                        {item.companyName || "-"}
+                      </td>
+                      <td className="border px-2">{item.serviceName}</td>
+                      <td className="border px-2">{item.billingPlan}</td>
+                      <td className="border px-2">
+                        ₹{item.amount.toLocaleString("en-IN")}
+                      </td>
+                      <td className="border px-2">
+                        ₹{(item.extraAmount || 0).toLocaleString("en-IN")}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="text-center py-3 text-gray-500"
+                    >
+                      No details found
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="border p-4 text-gray-500">
+            Click chart to view details
           </div>
         )}
       </div>

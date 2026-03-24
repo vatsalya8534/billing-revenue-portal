@@ -78,9 +78,11 @@ export async function getDashboardStats() {
 }
 
 // ---------------- PIE CHART ----------------
-export async function getBillingStatusData(year: number) {
-  const startOfYear = new Date(year, 0, 1);
-  const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+export async function getBillingStatusData(year: number, month?: number) {
+  const start = new Date(year, (month || 1) - 1, 1);
+  const end = month
+    ? new Date(year, month, 0, 23, 59, 59)
+    : new Date(year, 11, 31, 23, 59, 59);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -88,18 +90,8 @@ export async function getBillingStatusData(year: number) {
   const cycles = await prisma.billingCycle.findMany({
     where: {
       OR: [
-        {
-          billingSubmittedDate: {
-            gte: startOfYear,
-            lte: endOfYear,
-          },
-        },
-        {
-          paymentDueDate: {
-            gte: startOfYear,
-            lte: endOfYear,
-          },
-        },
+        { billingSubmittedDate: { gte: start, lte: end } },
+        { paymentDueDate: { gte: start, lte: end } },
       ],
     },
     select: {
@@ -122,12 +114,7 @@ export async function getBillingStatusData(year: number) {
     const billingDate = cycle.billingSubmittedDate;
     const dueDateRaw = cycle.paymentDueDate;
 
-    // ✅ BILL GENERATED (based on billing date)
-    if (
-      billingDate &&
-      billingDate >= startOfYear &&
-      billingDate <= endOfYear
-    ) {
+    if (billingDate && billingDate >= start && billingDate <= end) {
       billGenerated += billingAmt;
 
       if (cycle.paymentReceived === "YES") {
@@ -135,16 +122,11 @@ export async function getBillingStatusData(year: number) {
       }
     }
 
-    // ✅ OVERDUE (based on due date)
     if (dueDateRaw && paidAmt < billingAmt) {
       const dueDate = new Date(dueDateRaw);
       dueDate.setHours(0, 0, 0, 0);
 
-      if (
-        dueDate >= startOfYear &&
-        dueDate <= endOfYear &&
-        dueDate < today
-      ) {
+      if (dueDate < today && dueDate >= start && dueDate <= end) {
         overdue += billingAmt - paidAmt;
       }
     }
@@ -214,92 +196,97 @@ export async function getMonthlyBillingData(year: number) {
 }
 
 // ---------------- TABLE DETAILS ----------------
-export async function getBillingStatusDetails(status: string, year: number) {
-  const startOfYear = new Date(year, 0, 1);
-  const endOfYear = new Date(year, 11, 31, 23, 59, 59);
+export async function getBillingStatusDetails(
+  status: string,
+  year: number,
+  month?: number
+) {
+  const start = new Date(year, (month || 1) - 1, 1);
+  const end = month
+    ? new Date(year, month, 0, 23, 59, 59)
+    : new Date(year, 11, 31, 23, 59, 59);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const purchaseOrders = await prisma.purchaseOrder.findMany({
+  const cycles = await prisma.billingCycle.findMany({
+    where: {
+      OR: [
+        { billingSubmittedDate: { gte: start, lte: end } },
+        { paymentDueDate: { gte: start, lte: end } },
+      ],
+    },
     include: {
-      customer: true,
-      ServiceType: true,
-      billingPlan: true,
-      billingCycles: true,
+      purchaseOrder: {
+        include: {
+          ServiceType: true,
+          billingPlan: true,
+          customer: true,
+        },
+      },
     },
   });
 
-  return purchaseOrders
-    .map((po) => {
-      const relevantCycles = po.billingCycles.filter((cycle) => {
-        const billingDate = cycle.billingSubmittedDate;
-        if (!billingDate) return false;
+  return cycles
+    .filter((cycle) => {
+      const billingAmt = Number(cycle.invoiceAmount || 0);
+      const paidAmt = Number(cycle.collectedAmount || 0);
 
-        if (status === "Bill Generated") {
-          return billingDate >= startOfYear && billingDate <= endOfYear;
-        }
+      const billingDate = cycle.billingSubmittedDate;
+      const dueDateRaw = cycle.paymentDueDate;
 
-        if (status === "Payment Received") {
-          return (
-            cycle.paymentReceived === "YES" &&
-            billingDate >= startOfYear &&
-            billingDate <= endOfYear
-          );
-        }
-
-        if (status === "Overdue") {
-          const billingAmt = Number(cycle.invoiceAmount || 0);
-          const paidAmt = Number(cycle.collectedAmount || 0);
-
-          if (!cycle.paymentDueDate) return false;
-
-          const dueDate = new Date(cycle.paymentDueDate);
-          dueDate.setHours(0, 0, 0, 0);
-
-          return dueDate < today && paidAmt < billingAmt;
-        }
-
-        return false;
-      });
-
-      if (!relevantCycles.length) return null;
-
-      let extraAmount = 0;
+      if (status === "Bill Generated") {
+        return billingDate && billingDate >= start && billingDate <= end;
+      }
 
       if (status === "Payment Received") {
-        extraAmount = relevantCycles.reduce(
-          (sum, c) => sum + Number(c.collectedAmount || 0),
-          0
+        return (
+          cycle.paymentReceived === "YES" &&
+          billingDate &&
+          billingDate >= start &&
+          billingDate <= end
         );
       }
 
       if (status === "Overdue") {
-        extraAmount = relevantCycles.reduce(
-          (sum, c) =>
-            sum +
-            (Number(c.invoiceAmount || 0) -
-              Number(c.collectedAmount || 0)),
-          0
-        );
+        if (!dueDateRaw) return false;
+
+        const dueDate = new Date(dueDateRaw);
+        dueDate.setHours(0, 0, 0, 0);
+
+        return dueDate < today && paidAmt < billingAmt;
       }
 
-      return {
-        id: po.id,
-        poNumber: po.customerPONumber,
-        customerName: `${po.customer?.firstName || ""} ${po.customer?.lastName || ""}`,
-        serviceName: po.ServiceType?.name || "-",
-        billingPlan: po.billingPlan?.name || "-",
-        amount: po.poAmount,
-        startDate: po.startFrom
-          ? format(new Date(po.startFrom), "dd/MM/yyyy")
-          : "-",
-        endDate: po.endDate
-          ? format(new Date(po.endDate), "dd/MM/yyyy")
-          : "-",
-        status: po.status,
-        extraAmount,
-      };
+      return false;
     })
-    .filter(Boolean);
+    .map((cycle) => ({
+      id: cycle.id,
+      poNumber: cycle.purchaseOrder.customerPONumber,
+
+      invoiceNumber: cycle.invoiceNumber || "-",
+
+     
+      companyName: cycle.purchaseOrder.customer?.companyName || "-",
+
+      serviceName: cycle.purchaseOrder.ServiceType?.name || "-",
+      billingPlan: cycle.purchaseOrder.billingPlan?.name || "-",
+
+      amount: Number(cycle.invoiceAmount || 0),
+
+      startDate: cycle.purchaseOrder.startFrom
+        ? format(new Date(cycle.purchaseOrder.startFrom), "dd/MM/yyyy")
+        : "-",
+
+      endDate: cycle.purchaseOrder.endDate
+        ? format(new Date(cycle.purchaseOrder.endDate), "dd/MM/yyyy")
+        : "-",
+
+      extraAmount:
+        status === "Payment Received"
+          ? Number(cycle.collectedAmount || 0)
+          : status === "Overdue"
+            ? Number(cycle.invoiceAmount || 0) -
+            Number(cycle.collectedAmount || 0)
+            : 0,
+    }));
 }

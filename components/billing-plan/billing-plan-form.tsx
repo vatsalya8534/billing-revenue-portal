@@ -18,7 +18,6 @@ import { Button } from "@/components/ui/button";
 
 import { z } from "zod";
 import { BillingPlan } from "@/types";
-import { createContractType, updateContractType } from "@/lib/actions/contract-type";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { createBillingPlan, updateBillingPlan } from "@/lib/actions/billing-plan";
 
@@ -30,12 +29,19 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
 
   const form = useForm<BillingCycleFormValues>({
     resolver: zodResolver(billingPlanSchema) as any,
-    defaultValues: data || billingPlanDefaultValues,
+    defaultValues: data
+      ? {
+        ...data,
+        billingCycleType: data.billingCycleType as "START" | "MID" | "END",
+      }
+      : billingPlanDefaultValues,
   });
+
 
   const [isPending, startTransition] = React.useTransition();
 
   const onSubmit: SubmitHandler<z.infer<typeof billingPlanSchema>> = (values: any) => {
+  
     startTransition(async () => {
       let res;
 
@@ -55,6 +61,7 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
         });
       } else {
         router.push("/admin/billing-plan");
+        router.refresh(); 
       }
     });
   };
@@ -62,6 +69,7 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        
         <div className="grid grid-cols-2 gap-6">
           {/* Role Name */}
           <FormField
@@ -81,23 +89,25 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
             control={form.control}
             name="billingCycleType"
             render={({ field }) => (
+            
               <FormItem>
                 <FormLabel>Billing Cycle Type</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
+                <FormControl>
+                  <Select
+                    value={field.value}
+                    onValueChange={field.onChange}
+                  >
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder="Select Cycle Type" />
                     </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="START">Start</SelectItem>
-                    <SelectItem value="MID">Mid</SelectItem>
-                    <SelectItem value="END">End</SelectItem>
-                  </SelectContent>
-                </Select>
+                    <SelectContent>
+                      <SelectItem value="START">Start</SelectItem>
+                      <SelectItem value="MID">Mid</SelectItem>
+                      <SelectItem value="END">End</SelectItem>
+                      
+                    </SelectContent>
+                  </Select>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

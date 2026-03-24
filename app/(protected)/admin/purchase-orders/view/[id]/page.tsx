@@ -33,7 +33,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
     <div className="p-6 space-y-6">
       <Card>
         <CardHeader className="flex justify-between items-center">
-          <CardTitle>Purchase Order Details</CardTitle>
+          <CardTitle>Revenue Details</CardTitle>
 
           <Button asChild className="bg-blue-500 hover:bg-blue-600">
             <Link href="/admin/purchase-orders">Back</Link>
@@ -66,17 +66,11 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
               </p>
 
               <p>
-                <strong>Ageing Days:</strong> {po.ageingDays ?? "-"}
+                <strong>Contract Days:</strong> {po.ageingDays ?? "-"}
               </p>
 
-              <p>
-                <strong>BR:</strong>{" "}
-                {po.br ? format(new Date(po.br), "dd/MM/yyyy") : "-"}
-              </p>
-
-              <p><strong>Others:</strong> {po.others || "-"}</p>
               <p><strong>Scope:</strong> {po.scope || "-"}</p>
-              <p><strong>TDS:</strong> {po.tds || "-"}</p>
+
             </div>
 
             {/* ================= RELATIONS ================= */}
@@ -100,6 +94,11 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
             <h2 className="font-semibold mb-2">Customer</h2>
 
             <p>
+              <strong>Company:</strong>{" "}
+              {po.customer?.companyName || "-"}
+            </p>
+
+            <p>
               <strong>Name:</strong>{" "}
               {po.customer
                 ? `${po.customer.firstName} ${po.customer.lastName}`
@@ -112,7 +111,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
 
           {/* ================= BILLING CYCLES ================= */}
           <section>
-            <h2 className="font-semibold mb-2">Billing Cycles</h2>
+            <h2 className="font-semibold mb-2">Billing</h2>
 
             {po.billingCycles?.length ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,6 +123,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
                       <p><strong>Invoice No:</strong> {bc.invoiceNumber}</p>
                       <p><strong>Amount:</strong> ₹{bc.invoiceAmount}</p>
                       <p><strong>Collected:</strong> ₹{bc.collectedAmount ?? 0}</p>
+                      <p><strong>TDS:</strong> {bc.tds || "-"}</p>
 
                       <p>
                         <strong>Invoice Date:</strong>{" "}

@@ -4,13 +4,69 @@ import { prisma } from "../prisma";
 import { purchaseOrderSchema } from "../validators";
 import { formatError } from "../utils";
 import { PurchaseOrder } from "@/types";
+import { PaymentReceived } from "@prisma/client";
 
+// ---------------- DATE HELPER ----------------
 const toLocalDate = (date?: string | Date | null) => {
   if (!date) return undefined;
-  return new Date(
-    typeof date === "string" ? date + "T00:00:00" : date
-  );
+  return new Date(typeof date === "string" ? date + "T00:00:00" : date);
 };
+
+// ---------------- BILLING CYCLE GENERATOR ----------------
+function generateBillingCycles({
+  startDate,
+  totalCycles,
+  type,
+}: {
+  startDate: Date;
+  totalCycles: number;
+  type: "START" | "MID" | "END";
+}) {
+  const cycles = [];
+
+  for (let i = 0; i < totalCycles; i++) {
+    // ✅ ALWAYS create fresh base date
+    const base = new Date(startDate);
+    base.setDate(1); // prevent overflow issues
+
+    // ✅ add months safely
+    const date = new Date(base);
+    date.setMonth(base.getMonth() + i);
+
+    let finalDate = new Date(date);
+
+    if (type === "START") {
+      finalDate.setDate(1);
+    }
+
+    if (type === "MID") {
+      finalDate.setDate(15);
+    }
+
+    if (type === "END") {
+      // go to next month then step back 1 day
+      const temp = new Date(date);
+      temp.setMonth(temp.getMonth() + 1);
+      temp.setDate(0);
+      finalDate = temp;
+    }
+
+    cycles.push({
+      invoiceNumber: "",
+      invoiceAmount: 0,
+      collectedAmount: 0,
+      invoiceDate: null,
+      billingSubmittedDate: finalDate,
+      paymentReceivedDate: null,
+      paymentDueDate: null,
+      paymentReceived: PaymentReceived.NO,
+      billingRemark: "",
+      tds: "",
+    });
+  }
+
+  return cycles;
+}
 
 // ---------------- GET ALL ----------------
 export async function getPurchaseOrders() {
@@ -38,6 +94,36 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
   try {
     const validatedData = purchaseOrderSchema.parse(data);
 
+    // 🔥 GET BILLING PLAN
+    const billingPlan = await prisma.billingPlan.findUnique({
+      where: { id: validatedData.billingPlanId },
+    });
+
+    if (!billingPlan) {
+      throw new Error("Billing Plan not found");
+    }
+
+    // 🔥 AUTO GENERATE IF EMPTY
+    const autoCycles =
+      !validatedData.billingCycles || validatedData.billingCycles.length === 0
+        ? generateBillingCycles({
+            startDate: new Date(validatedData.startFrom!),
+            totalCycles: billingPlan.totalBillingCycles,
+            type: billingPlan.billingCycleType as "START" | "MID" | "END",
+          })
+        : validatedData.billingCycles.map((bc) => ({
+            invoiceNumber: bc.invoiceNumber ?? "",
+            invoiceAmount: bc.invoiceAmount ?? 0,
+            collectedAmount: bc.collectedAmount ?? 0,
+            invoiceDate: toLocalDate(bc.invoiceDate),
+            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
+            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
+            paymentDueDate: toLocalDate(bc.paymentDueDate),
+            paymentReceived: bc.paymentReceived,
+            billingRemark: bc.billingRemark ?? "",
+            tds: bc.tds ?? "",
+          }));
+
     await prisma.purchaseOrder.create({
       data: {
         customerPONumber: validatedData.customerPONumber,
@@ -48,7 +134,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
 
         startFrom: toLocalDate(validatedData.startFrom),
         endDate: toLocalDate(validatedData.endDate),
-        br: toLocalDate(validatedData.br),
+
 
         paymentTerms: validatedData.paymentTerms,
         customerId: validatedData.customerId,
@@ -62,24 +148,11 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
             : null,
 
         remark: validatedData.remark ?? "",
-        others: validatedData.others ?? "",
         scope: validatedData.scope ?? "",
-        tds: validatedData.tds ?? "",
+
 
         billingCycles: {
-          create: validatedData.billingCycles?.map((bc) => ({
-            invoiceNumber: bc.invoiceNumber ?? "",
-            invoiceAmount: bc.invoiceAmount ?? 0,
-            collectedAmount: bc.collectedAmount ?? 0,
-
-            invoiceDate: toLocalDate(bc.invoiceDate),
-            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
-            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
-            paymentDueDate: toLocalDate(bc.paymentDueDate),
-
-            paymentReceived: bc.paymentReceived,
-            billingRemark: bc.billingRemark ?? "",
-          })),
+          create: autoCycles,
         },
       },
     });
@@ -133,7 +206,7 @@ export async function updatePurchaseOrder(
 
         startFrom: toLocalDate(validatedData.startFrom),
         endDate: toLocalDate(validatedData.endDate),
-        br: toLocalDate(validatedData.br),
+
 
         paymentTerms: validatedData.paymentTerms,
         customerId: validatedData.customerId,
@@ -147,9 +220,7 @@ export async function updatePurchaseOrder(
             : null,
 
         remark: validatedData.remark ?? "",
-        others: validatedData.others ?? "",
         scope: validatedData.scope ?? "",
-        tds: validatedData.tds ?? "",
 
         billingCycles: {
           deleteMany: {},
@@ -157,14 +228,13 @@ export async function updatePurchaseOrder(
             invoiceNumber: bc.invoiceNumber ?? "",
             invoiceAmount: bc.invoiceAmount ?? 0,
             collectedAmount: bc.collectedAmount ?? 0,
-
             invoiceDate: toLocalDate(bc.invoiceDate),
             billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
             paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
             paymentDueDate: toLocalDate(bc.paymentDueDate),
-
             paymentReceived: bc.paymentReceived,
             billingRemark: bc.billingRemark ?? "",
+            tds: bc.tds ?? "",
           })),
         },
       },

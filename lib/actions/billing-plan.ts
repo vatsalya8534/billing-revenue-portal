@@ -1,76 +1,94 @@
 "use server";
 
-import { Role } from "@/types";
 import { prisma } from "../prisma";
-import { billingPlanSchema, contractTypeSchema } from "../validators";
+import { billingPlanSchema } from "../validators";
 import { formatError } from "../utils";
+import { z } from "zod";
 
+// ✅ Correct type from Zod schema
+type BillingPlanInput = z.infer<typeof billingPlanSchema>;
+
+// ---------------- GET ALL ----------------
 export async function getBillingPlans() {
-  return await prisma.billingPlan.findMany({
-    orderBy: {
-      createdAt: 'desc'
-    },
-  })
+  try {
+    const data = await prisma.billingPlan.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return {
+      success: true,
+      data,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: formatError(error),
+    };
+  }
 }
 
-export async function createBillingPlan(data: Role) {
-
+// ---------------- CREATE ----------------
+export async function createBillingPlan(data: BillingPlanInput) {
   try {
-    const billingPlan = billingPlanSchema.parse(data)
+    const billingPlan = billingPlanSchema.parse(data);
 
     await prisma.billingPlan.create({
       data: {
         name: billingPlan.name,
         totalBillingCycles: billingPlan.totalBillingCycles,
         remark: billingPlan.remark,
-        status: billingPlan.status
-      }
-    })
+        status: billingPlan.status,
+        billingCycleType: billingPlan.billingCycleType,
+      },
+    });
 
     return {
       success: true,
-      message: "billing plan created successfully"
-    }
-
+      message: "Billing plan created successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
+
+// ---------------- GET BY ID ----------------
 export async function getBillingPlanById(id: string) {
   try {
+    const billingPlan = await prisma.billingPlan.findUnique({
+      where: { id },
+    });
 
-    let billingPlan = await prisma.billingPlan.findFirst({
-      where: { id }
-    })
-
-    if (billingPlan) {
+    if (!billingPlan) {
       return {
-        success: true,
-        data: billingPlan,
-        message: "Billing plan fetched successfully"
-      }
+        success: false,
+        message: "Billing plan not found",
+      };
     }
 
     return {
-      success: false,
-      message: "Billing plan not found"
-    }
-
+      success: true,
+      data: billingPlan,
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
-export async function updateBillingPlan(data: Role, id: string) {
+// ---------------- UPDATE ----------------
+export async function updateBillingPlan(
+  data: BillingPlanInput,
+  id: string
+) {
   try {
-
-    const billingPlan = billingPlanSchema.parse(data)
+    const billingPlan = billingPlanSchema.parse(data);
 
     await prisma.billingPlan.update({
       where: { id },
@@ -78,38 +96,38 @@ export async function updateBillingPlan(data: Role, id: string) {
         name: billingPlan.name,
         totalBillingCycles: billingPlan.totalBillingCycles,
         remark: billingPlan.remark,
-        status: billingPlan.status
-      }
-    })
+        status: billingPlan.status,
+        billingCycleType: billingPlan.billingCycleType,
+      },
+    });
 
     return {
       success: true,
-      message: "Billing plan updated successfully"
-    }
-
+      message: "Billing plan updated successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
-export async function deleteBillingPlan(id: any) {
+// ---------------- DELETE ----------------
+export async function deleteBillingPlan(id: string) {
   try {
     await prisma.billingPlan.delete({
-      where: { id }
-    })
+      where: { id },
+    });
 
     return {
       success: true,
-      message: "Billing plan deleted successfully"
-    }
-
+      message: "Billing plan deleted successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
