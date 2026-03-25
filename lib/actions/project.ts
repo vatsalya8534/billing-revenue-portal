@@ -189,6 +189,8 @@ async function createBillingCycle(data: any, id: string) {
           month: projectMonthlyPL.month,
           year: projectMonthlyPL.year,
           billedAmount: projectMonthlyPL.billedAmount,
+          fms: projectMonthlyPL.fms,
+          spare: projectMonthlyPL.spare,
           otherCost: JSON.stringify(projectMonthlyPL.otherCost),
         }
       })
@@ -228,12 +230,15 @@ function getTotalAmount(data: any) {
           console.error("Invalid JSON:", billingCycle.otherCost);
         }
       } else {
-        otherCostData = billingCycle.otherCost;
+        otherCostData = billingCycle.otherCost
       }
 
       for (const otherCost of otherCostData) {
         if (isFinite(otherCost.value)) amount.totalCost += Number(otherCost.value)
       }
+
+      amount.totalCost += +billingCycle.fms;
+      amount.totalCost += +billingCycle.spare;
     }
   }
 

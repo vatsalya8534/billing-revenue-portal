@@ -106,7 +106,7 @@ model BillingCycle {
   invoiceAmount        Float?
   invoiceDate          DateTime?
   invoiceNumber        String
-  tds                  String
+  tds                  Decimal   @default(0) @db.Decimal(12, 2)
   purchaseOrder        PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id])
 }
 
@@ -121,14 +121,14 @@ model ServiceType {
 }
 
 model BillingPlan {
-  id                 String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name               String          @unique
+  id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String           @unique
   totalBillingCycles Int
   billingCycleType   BillingCycleType @default(START)
   remark             String?
-  status             Status          @default(ACTIVE)
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  status             Status           @default(ACTIVE)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
   purchaseOrders     PurchaseOrder[]
   project            Project[]
 }
@@ -234,6 +234,8 @@ model ProjectMonthlyPL {
   year  Int
 
   billedAmount Decimal @db.Decimal(12, 2)
+  fms          Decimal @default(0) @db.Decimal(12, 2)
+  spare        Decimal @default(0) @db.Decimal(12, 2)
   otherCost    Json
 
   createdAt DateTime @default(now())

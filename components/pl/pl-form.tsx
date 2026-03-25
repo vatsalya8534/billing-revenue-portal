@@ -64,18 +64,20 @@ const PLForm = ({
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
   const billingPlanId = form.watch("billingPlanId");
-
+  const poValue = form.watch("poValue");
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
     name: "billingCycle"
   });
 
-  const addMonthCycle = (month: number, year: number) => {
+  const addMonthCycle = (amount: number, month: number, year: number) => {
     append({
       month,
       year,
-      billedAmount: 0,
+      billedAmount: amount ?? 0,
+      fms: 0,
+      spare: 0,
       otherCost: [],
     });
   };
@@ -88,9 +90,6 @@ const PLForm = ({
       } else {
         res = await createProject(values);
       }
-
-      console.log(res);
-
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -107,11 +106,16 @@ const PLForm = ({
 
       const months = Math.ceil(end.diff(start, "months", true));
 
-      const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
 
       if (!billingPlanId) return;
 
+      const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
+
       const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1)
+
+      let totalAmountPerCycle = Number((poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(2));
+
+      if(isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
 
       let count = 0;
 
@@ -124,7 +128,7 @@ const PLForm = ({
         const monthIndex = newDate.month();
         const year = newDate.year();
 
-        addMonthCycle(monthIndex, year)
+        addMonthCycle(totalAmountPerCycle, monthIndex, year)
 
         count += monthGap;
       }
@@ -315,13 +319,7 @@ const PLForm = ({
                   <FormItem>
                     <FormLabel>Resource Count</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        placeholder="Enter Resource Count"
-                        {...field}
-                        onChange={(e) => field.onChange(e.target.valueAsNumber)}
-                      />
+                      <Input type="number" placeholder="Enter Resource Count" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

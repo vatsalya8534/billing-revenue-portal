@@ -23,7 +23,6 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
   const contractDurations = await getContractDurations()
   const companies = await getCompanys()
 
-
   const { id } = await params;
 
   const po = await getPurchaseOrderById(id);
@@ -41,7 +40,7 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
           data={po.data}
           update={true}
           companies={companies as Company[]}
-          billingPlan={billingPlan as BillingPlan[]}
+          billingPlan={billingPlan.data as BillingPlan[]}
           contractType={contractType}
           serviceType={serviceType}
           customers={customers as Customer[]}

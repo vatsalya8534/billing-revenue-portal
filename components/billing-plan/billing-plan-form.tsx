@@ -48,12 +48,13 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
       const payload = {
         ...values,
       };
+      
 
       if (update && id) {
         res = await updateBillingPlan(payload, id);
       } else {
         res = await createBillingPlan(payload);
-      }
+      }      
 
       if (!res?.success) {
         toast.error("Error", {
@@ -61,7 +62,6 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
         });
       } else {
         router.push("/admin/billing-plan");
-        router.refresh(); 
       }
     });
   };

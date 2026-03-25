@@ -68,10 +68,10 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
         accessorKey: "totalCost",
         header: "Total cost till last update"
     },
-     {
+    {
         accessorKey: "currentGM",
         header: "Current GM%",
-        cell: ({row}) => (row.original.totalCost / row.original.totalRevenue) * 100 + " % " 
+        cell: ({ row }) => (((row.original.totalRevenue - row.original.totalCost) / row.original.totalRevenue) * 100).toFixed(2) + " % "
     },
     {
         id: "actions",
@@ -110,38 +110,60 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
 ]
 
 export function PLDataTable({ data }: { data: Project[] }) {
+    const [sorting, setSorting] = React.useState<SortingState>([]);
+    const [globalFilter, setGlobalFilter] = React.useState("");
+    const [project, setProject] = React.useState<any>(data);
+    const [selectedMonth, setSelectedMonth] = React.useState("");
+    const [selectedYear, setSelectedYear] = React.useState("");
+    const [selectedCompany, setSelectedCompany] = React.useState("");
 
-    const [sorting, setSorting] = React.useState<SortingState>([])
-    const [globalFilter, setGlobalFilter] = React.useState("")
-    const [project, setProject] = React.useState<any>(data)
+    const filteredData = React.useMemo(() => {
+        return project.filter((item: any) => {
+            const monthMatch = selectedMonth
+                ? new Date(item.startDate).getMonth() + 1 === Number(selectedMonth)
+                : true;
 
-    const globalFilterFn = (
-        row: any,
-        columnId: string,
-        filterValue: string
-    ) => {
+            const yearMatch = selectedYear
+                ? new Date(item.startDate).getFullYear() === Number(selectedYear)
+                : true;
+
+            const companyMatch = selectedCompany
+                ? item.company?.name === selectedCompany
+                : true;
+
+            const searchMatch = globalFilter
+                ? JSON.stringify(item)
+                    .toLowerCase()
+                    .includes(globalFilter.toLowerCase())
+                : true;
+
+            return monthMatch && yearMatch && companyMatch && searchMatch;
+        });
+    }, [project, selectedMonth, selectedYear, selectedCompany, globalFilter]);
+
+    const globalFilterFn = (row: any, columnId: string, filterValue: string) => {
         return String(row.getValue(columnId))
             .toLowerCase()
-            .includes(filterValue.toLowerCase())
-    }
+            .includes(filterValue.toLowerCase());
+    };
 
     const getAllProjects = async () => {
-        const projects = await getProjects()
-        setProject([...projects])
-    }
+        const projects = await getProjects();
+        setProject([...projects]);
+    };
 
     const deleteHandler = async (id: string) => {
         try {
             await deleteProject(id);
 
-            await getAllProjects()
+            await getAllProjects();
         } catch (error) {
-            toast.error("Failed to delete projects")
+            toast.error("Failed to delete projects");
         }
-    }
+    };
 
     const table = useReactTable({
-        data: project,
+        data: filteredData,
         columns: getColumns(deleteHandler),
         state: {
             sorting,
@@ -153,17 +175,74 @@ export function PLDataTable({ data }: { data: Project[] }) {
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
-    })
+    });
+
+    const companies = React.useMemo(() => {
+        const map = new Map();
+
+        project.forEach((p: any) => {
+            if (p.company?.id && !map.has(p.company.id)) {
+                map.set(p.company.id, p.company);
+            }
+        });
+
+        return Array.from(map.values());
+    }, [project]);
 
     return (
         <div className="space-y-4">
+            <div className="flex items-center gap-3 flex-wrap">
+                {/* Search */}
+                <Input
+                    placeholder="Search..."
+                    value={globalFilter ?? ""}
+                    onChange={(e) => setGlobalFilter(e.target.value)}
+                    className="w-56 bg-white"
+                />
 
-            <Input
-                placeholder="Search..."
-                value={globalFilter ?? ""}
-                onChange={(e) => setGlobalFilter(e.target.value)}
-                className="max-w-sm"
-            />
+                {/* Month Filter */}
+                <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="h-9 px-3 rounded-md border bg-white text-sm shadow-sm hover:border-gray-400 focus:outline-none"
+                >
+                    <option value="">All Months</option>
+                    {Array.from({ length: 12 }).map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                            {new Date(0, i).toLocaleString("default", { month: "long" })}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Year Filter */}
+                <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="h-9 px-3 rounded-md border bg-white text-sm shadow-sm hover:border-gray-400 focus:outline-none"
+                >
+                    <option value="">All Years</option>
+                    {[2024, 2025, 2026, 2027].map((year) => (
+                        <option key={year} value={year}>
+                            {year}
+                        </option>
+                    ))}
+                </select>
+
+                {/* Company Filter */}
+                <select
+                    value={selectedCompany}
+                    onChange={(e) => setSelectedCompany(e.target.value)}
+                    className="h-9 px-3 rounded-md border bg-white text-sm shadow-sm hover:border-gray-400 focus:outline-none"
+                >
+                    <option value="">All Companies</option>
+
+                    {companies.map((c: any) => (
+                        <option key={c.id} value={c.name}>
+                            {c.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
 
             <div className="rounded-md border">
                 <Table>
@@ -178,7 +257,7 @@ export function PLDataTable({ data }: { data: Project[] }) {
                                     >
                                         {flexRender(
                                             header.column.columnDef.header,
-                                            header.getContext()
+                                            header.getContext(),
                                         )}
 
                                         {{
@@ -199,7 +278,7 @@ export function PLDataTable({ data }: { data: Project[] }) {
                                         <TableCell key={cell.id}>
                                             {flexRender(
                                                 cell.column.columnDef.cell,
-                                                cell.getContext()
+                                                cell.getContext(),
                                             )}
                                         </TableCell>
                                     ))}
@@ -207,15 +286,17 @@ export function PLDataTable({ data }: { data: Project[] }) {
                             ))
                         ) : (
                             <TableRow>
-                                <TableCell colSpan={table.getAllColumns().length} className="text-center">
+                                <TableCell
+                                    colSpan={table.getAllColumns().length}
+                                    className="text-center"
+                                >
                                     No results.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
-
                 </Table>
             </div>
         </div>
-    )
+    );
 }

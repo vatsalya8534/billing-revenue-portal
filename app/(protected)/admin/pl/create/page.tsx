@@ -5,7 +5,7 @@ import ServiceTypeForm from "@/components/service-type/service-type-form";
 import { getCompanys } from "@/lib/actions/company";
 import { getBillingPlans } from "@/lib/actions/billing-plan";
 import PLForm from "@/components/pl/pl-form";
-import { Company } from "@/types";
+import { BillingPlan, Company } from "@/types";
 
 const ServiceTypeCreatePage = async () => {
     let companies = await getCompanys()
@@ -23,7 +23,7 @@ const ServiceTypeCreatePage = async () => {
             </CardHeader>
 
             <CardContent>
-                <PLForm billingCycles={[]} companies={companies as Company[]} billingPlans={billingPlans} update={false} />
+                <PLForm billingCycles={[]} companies={companies as Company[]} billingPlans={billingPlans.data as BillingPlan[]} update={false} />
             </CardContent>
         </Card>
     );

@@ -84,13 +84,15 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
     },
 ]
 
-export function BillingPlanDataTable({ data }: { data: BillingPlan[] }) {
+export function BillingPlanDataTable({ data }: { data: any }) {
+
+    console.log(data);
+    
 
     const [sorting, setSorting] = React.useState<SortingState>([])
     const [globalFilter, setGlobalFilter] = React.useState("")
     const [billingPlan, setBillingPlan] = React.useState<any>(data)
 
-    // 🔎 Global filter function
     const globalFilterFn = (
         row: any,
         columnId: string,
@@ -102,7 +104,7 @@ export function BillingPlanDataTable({ data }: { data: BillingPlan[] }) {
     }
 
     const getAllBillingPlans = async () => {
-        const billingPlans = await getBillingPlans()
+        const billingPlans : any = await getBillingPlans()
         setBillingPlan([...billingPlans])
     }
 

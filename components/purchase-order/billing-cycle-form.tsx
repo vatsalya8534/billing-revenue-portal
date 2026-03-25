@@ -1,3 +1,4 @@
+"use client"
 import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
@@ -9,13 +10,26 @@ import { Calendar } from '../ui/calendar';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { PaymentReceived } from '@prisma/client';
 import { Textarea } from '../ui/textarea';
+import { useEffect, useState } from 'react';
+import { Spinner } from '../ui/spinner';
 
 const BillingCycleForm = ({ index, control }: { index: number; control: any }) => {
-    return (
-        <div className='border p-4'>
-            <h1 className='font-bold mb-4 border-b'>{index + 1} Billing Cycle</h1>
-            <div className="grid grid-cols-2 gap-4">
 
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setLoading(false);
+        }, 2000);
+
+        return () => clearTimeout(timer); // cleanup
+    }, []);
+
+    if(loading) return <div className='h-full w-full flex justify-center items-center'><Spinner className='h-10 w-10' /></div> 
+
+    return (
+        <div className='p-4'>
+            <div className="grid grid-cols-2 gap-4">
                 {/* Billing Number / Invoice Number */}
                 <div className='space-y-2'>
                     <FormField
@@ -55,15 +69,16 @@ const BillingCycleForm = ({ index, control }: { index: number; control: any }) =
                     <FormField
                         control={control}
                         name={`billingCycles.${index}.collectedAmount`}
-                        render={({ field }) => (
-                            <FormItem>
+                        render={({ field }) => {
+                            
+                            return <FormItem>
                                 <FormLabel>Collected Amount</FormLabel>
                                 <FormControl>
                                     <Input type='number' placeholder="Enter Collected Amount" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
-                        )}
+                        }}
                     />
                 </div>
 
@@ -233,7 +248,7 @@ const BillingCycleForm = ({ index, control }: { index: number; control: any }) =
                             <FormItem>
                                 <FormLabel>TDS</FormLabel>
                                 <FormControl>
-                                    <Input placeholder="Enter TDS" {...field} />
+                                    <Input type='number' placeholder="Enter TDS" {...field} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>

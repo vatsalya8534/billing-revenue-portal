@@ -193,7 +193,7 @@ export async function updatePurchaseOrder(
   id: string
 ) {
   try {
-    const validatedData = purchaseOrderSchema.parse(data);
+    const validatedData = purchaseOrderSchema.parse(data);    
 
     await prisma.purchaseOrder.update({
       where: { id },
@@ -203,17 +203,13 @@ export async function updatePurchaseOrder(
         serviceTypeId: validatedData.serviceTypeId,
         contractDurationId: validatedData.contractDurationId,
         contractId: validatedData.contractId,
-
         startFrom: toLocalDate(validatedData.startFrom),
         endDate: toLocalDate(validatedData.endDate),
-
-
         paymentTerms: validatedData.paymentTerms,
         customerId: validatedData.customerId,
         billingPlanId: validatedData.billingPlanId,
         poOwner: validatedData.poOwner,
         status: validatedData.status,
-
         ageingDays:
           validatedData.ageingDays !== undefined
             ? String(validatedData.ageingDays)
@@ -234,7 +230,7 @@ export async function updatePurchaseOrder(
             paymentDueDate: toLocalDate(bc.paymentDueDate),
             paymentReceived: bc.paymentReceived,
             billingRemark: bc.billingRemark ?? "",
-            tds: bc.tds ?? "",
+            tds: String(bc.tds) ?? "",
           })),
         },
       },

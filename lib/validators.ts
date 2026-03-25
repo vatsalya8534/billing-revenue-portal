@@ -44,25 +44,16 @@ export const createUserSchema = userSchema.extend({
 /* ---------------- BILLING CYCLE ---------------- */
 export const billingCycleSchema = z.object({
   id: z.string().optional(),
-
-  // ❗ DO NOT require this in frontend
   purchaseOrderId: z.string().optional(),
-
   billingSubmittedDate: z.union([z.date(), z.string()]).nullable().optional(),
-
   paymentReceived: paymentReceivedEnum,
-
   paymentReceivedDate: z.union([z.date(), z.string()]).nullable().optional(),
-
   paymentDueDate: z.union([z.date(), z.string()]).nullable().optional(),
-
   billingRemark: z.string().optional(),
-
   collectedAmount: z.preprocess(
     (val) => (val !== undefined ? Number(val) : undefined),
     z.number().optional()
   ),
-
   invoiceAmount: z.preprocess(
     (val) => (val !== undefined ? Number(val) : undefined),
     z.number().optional()
@@ -71,7 +62,7 @@ export const billingCycleSchema = z.object({
   invoiceDate: z.union([z.date(), z.string()]).nullable().optional(),
 
   invoiceNumber: z.string().optional(),
-  tds: z.string().optional().default(""),
+  tds: z.coerce.number(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
 });
@@ -224,6 +215,8 @@ export const projectMonthlyPLSchema = z.object({
   month: z.int(),
   year: z.int(),
   billedAmount: z.coerce.number(),
+  fms: z.coerce.number(),
+  spare: z.coerce.number(),
   otherCost: z.any(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional()

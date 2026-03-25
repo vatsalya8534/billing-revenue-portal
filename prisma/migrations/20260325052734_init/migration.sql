@@ -2,9 +2,6 @@
 CREATE TYPE "Status" AS ENUM ('ACTIVE', 'INACTIVE');
 
 -- CreateEnum
-CREATE TYPE "POStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'PENDING', 'CLOSED');
-
--- CreateEnum
 CREATE TYPE "PaymentReceived" AS ENUM ('YES', 'NO');
 
 -- CreateEnum
@@ -12,6 +9,12 @@ CREATE TYPE "CompanyStatus" AS ENUM ('ACTIVE', 'INACTIVE', 'SUSPENDED');
 
 -- CreateEnum
 CREATE TYPE "OrderType" AS ENUM ('AMC', 'FMS', 'SOFTWARE', 'OTHER');
+
+-- CreateEnum
+CREATE TYPE "POStatus" AS ENUM ('LIVE', 'CLOSED');
+
+-- CreateEnum
+CREATE TYPE "BillingCycleType" AS ENUM ('START', 'MID', 'END');
 
 -- CreateTable
 CREATE TABLE "Role" (
@@ -48,7 +51,6 @@ CREATE TABLE "PurchaseOrder" (
     "customerPONumber" TEXT NOT NULL,
     "poAmount" DOUBLE PRECISION NOT NULL,
     "serviceTypeId" UUID NOT NULL,
-    "contractDurationId" UUID NOT NULL,
     "contractId" UUID NOT NULL,
     "startFrom" TIMESTAMP(3),
     "endDate" TIMESTAMP(3),
@@ -57,9 +59,12 @@ CREATE TABLE "PurchaseOrder" (
     "billingPlanId" UUID NOT NULL,
     "poOwner" TEXT NOT NULL,
     "remark" TEXT,
-    "status" "POStatus" NOT NULL DEFAULT 'ACTIVE',
+    "status" "POStatus" NOT NULL DEFAULT 'LIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "contractDurationId" UUID NOT NULL,
+    "ageingDays" TEXT,
+    "scope" TEXT NOT NULL,
 
     CONSTRAINT "PurchaseOrder_pkey" PRIMARY KEY ("id")
 );
@@ -67,17 +72,19 @@ CREATE TABLE "PurchaseOrder" (
 -- CreateTable
 CREATE TABLE "BillingCycle" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "billingNumber" TEXT NOT NULL,
-    "billingAmount" DOUBLE PRECISION,
-    "billingDate" TIMESTAMP(3),
     "billingSubmittedDate" TIMESTAMP(3),
     "paymentReceived" "PaymentReceived" NOT NULL DEFAULT 'NO',
     "paymentReceivedDate" TIMESTAMP(3),
-    "paymentReceivedAmount" DOUBLE PRECISION,
+    "paymentDueDate" TIMESTAMP(3),
     "billingRemark" TEXT,
     "purchaseOrderId" UUID NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "collectedAmount" DOUBLE PRECISION,
+    "invoiceAmount" DOUBLE PRECISION,
+    "invoiceDate" TIMESTAMP(3),
+    "invoiceNumber" TEXT NOT NULL,
+    "tds" TEXT NOT NULL,
 
     CONSTRAINT "BillingCycle_pkey" PRIMARY KEY ("id")
 );
@@ -99,6 +106,7 @@ CREATE TABLE "BillingPlan" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
     "name" TEXT NOT NULL,
     "totalBillingCycles" INTEGER NOT NULL,
+    "billingCycleType" "BillingCycleType" NOT NULL DEFAULT 'START',
     "remark" TEXT,
     "status" "Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -135,7 +143,7 @@ CREATE TABLE "ContractType" (
 -- CreateTable
 CREATE TABLE "Customer" (
     "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "customerCode" TEXT,
+    "customerCode" TEXT NOT NULL,
     "firstName" TEXT NOT NULL,
     "lastName" TEXT,
     "companyName" TEXT,
@@ -197,6 +205,7 @@ CREATE TABLE "Project" (
     "billingPlanId" UUID NOT NULL,
     "totalRevenue" DECIMAL(12,2) NOT NULL DEFAULT 0,
     "totalCost" DECIMAL(12,2) NOT NULL DEFAULT 0,
+    "status" "Status" NOT NULL DEFAULT 'ACTIVE',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -260,19 +269,19 @@ CREATE UNIQUE INDEX "ProjectMonthlyPL_projectId_month_year_key" ON "ProjectMonth
 ALTER TABLE "User" ADD CONSTRAINT "User_roleId_fkey" FOREIGN KEY ("roleId") REFERENCES "Role"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_billingPlanId_fkey" FOREIGN KEY ("billingPlanId") REFERENCES "BillingPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_contractDurationId_fkey" FOREIGN KEY ("contractDurationId") REFERENCES "ContractDuration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "ContractType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_billingPlanId_fkey" FOREIGN KEY ("billingPlanId") REFERENCES "BillingPlan"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "Customer"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_serviceTypeId_fkey" FOREIGN KEY ("serviceTypeId") REFERENCES "ServiceType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "PurchaseOrder" ADD CONSTRAINT "PurchaseOrder_contractDurationId_fkey" FOREIGN KEY ("contractDurationId") REFERENCES "ContractDuration"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "BillingCycle" ADD CONSTRAINT "BillingCycle_purchaseOrderId_fkey" FOREIGN KEY ("purchaseOrderId") REFERENCES "PurchaseOrder"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

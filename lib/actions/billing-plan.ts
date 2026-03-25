@@ -5,7 +5,6 @@ import { billingPlanSchema } from "../validators";
 import { formatError } from "../utils";
 import { z } from "zod";
 
-// ✅ Correct type from Zod schema
 type BillingPlanInput = z.infer<typeof billingPlanSchema>;
 
 // ---------------- GET ALL ----------------

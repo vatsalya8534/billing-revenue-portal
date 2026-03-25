@@ -7,7 +7,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/
 import { Input } from "../ui/input";
 import { useFieldArray } from "react-hook-form";
 import { Button } from "../ui/button";
-import { Card, CardContent } from "../ui/card";
+import { Card, CardContent, CardHeader } from "../ui/card";
 
 interface OtherCost {
   key: string;
@@ -18,21 +18,20 @@ interface BillingCycleField {
   month?: number;
   year?: number;
   billedAmount: number;
-  otherCost: OtherCost[];
+  otherCost: OtherCost[] | string;
 }
 
 interface PLBillingCycleProps {
   field: BillingCycleField;
   index: number;
   form: {
-    control: any; // react-hook-form control object
+    control: any;
     watch: any;
   } | null;
 }
 
 const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   if (!form) {
-    // If form is undefined, render fallback
     return (
       <AccordionItem value={`billing-cycle-${index}`}>
         <AccordionTrigger>Data not available</AccordionTrigger>
@@ -49,83 +48,136 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
   const [totalOtherBillAmount, setTotalOtherBillAmount] = useState(0);
   const [monthlyGMPercentage, setMonthlyGMPercentage] = useState(0);
-  const hasInitialized = useRef(false);
 
-  const { fields: otherFields, append, remove } = useFieldArray({
+  const initialized = useRef(false);
+
+  const { fields: otherFields, append, replace, remove } = useFieldArray({
     control: form.control,
     name: `billingCycle.${index}.otherCost`,
   });
 
-  const addMiscellaneousAmount = () => append({ key: "", value: 0 });
+  const billedAmount = Number(form.watch(`billingCycle.${index}.billedAmount`) || 0);
+  const fmsAmount = Number(form.watch(`billingCycle.${index}.fms`) || 0);
+  const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
 
-  const otherBills: OtherCost[] = form.watch(`billingCycle.${index}.otherCost`) || [];
-  const billedAmount: number = form.watch(`billingCycle.${index}.billedAmount`) || 0;
+  let otherBills: OtherCost[] = form.watch(`billingCycle.${index}.otherCost`) || [];
+
+  if (typeof otherBills === "string") {
+    try {
+      otherBills = JSON.parse(otherBills);
+    } catch {
+      otherBills = [];
+    }
+  }
 
   useEffect(() => {
-    if (otherBills.length > 0) {
-      const totalAmount = otherBills.reduce((sum, bill) => sum + Number(bill.value || 0), 0);
-      setTotalOtherBillAmount(totalAmount);
-      const gmPercent = billedAmount > 0 ? (totalAmount / billedAmount) * 100 : 0;
-      setMonthlyGMPercentage(Number(gmPercent.toFixed(2)));
-    } else {
-      setTotalOtherBillAmount(0);
-      setMonthlyGMPercentage(0);
-    }
+    if (!initialized.current) {
+      initialized.current = true;
 
-    if (!hasInitialized.current && field?.otherCost) {
-      hasInitialized.current = true;
-      let otherCostData: OtherCost[] = [];
+      let initialData: OtherCost[] = [];
 
       if (typeof field.otherCost === "string") {
         try {
-          otherCostData = JSON.parse(field.otherCost);
+          initialData = JSON.parse(field.otherCost);
         } catch {
-          console.error("Invalid JSON in otherCost:", field.otherCost);
+          initialData = [];
         }
       } else {
-        otherCostData = field.otherCost;
+        initialData = field.otherCost || [];
       }
 
-      if (otherCostData.length > 0) append(otherCostData);
+      if (initialData.length > 0) {
+        replace(initialData);
+      }
     }
-  }, [JSON.stringify(otherBills), billedAmount, append, field.otherCost]);
+  }, [field.otherCost, replace]);
+
+  useEffect(() => {
+    if (typeof otherBills === "string") return;
+
+    const otherTotal = otherBills.reduce(
+      (sum, bill) => sum + Number(bill?.value || 0),
+      0
+    );
+
+    const total = otherTotal + fmsAmount + spareAmount;
+    setTotalOtherBillAmount(total);
+
+    const gm =
+      billedAmount > 0 ? ((billedAmount - total) / billedAmount) * 100 : 0;
+
+    setMonthlyGMPercentage(Number(gm.toFixed(2)));
+  }, [JSON.stringify(otherBills), billedAmount, fmsAmount, spareAmount]);
+
+  const addMiscellaneousAmount = () => {
+    append({ key: "", value: 0 });
+  };
 
   return (
     <AccordionItem value={`billing-cycle-${index}`}>
       <AccordionTrigger>
         {monthName} {year}
       </AccordionTrigger>
+
       <AccordionContent>
         <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2 col-span-2">
-            <FormField
-              control={form.control}
-              name={`billingCycle.${index}.billedAmount`}
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Billing Amount</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="Enter Billing Amount" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
 
-          <div className="space-y-2 col-span-2">
+          <FormField
+            control={form.control}
+            name={`billingCycle.${index}.billedAmount`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Billing Amount</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name={`billingCycle.${index}.fms`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>FMS</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name={`billingCycle.${index}.spare`}
+            render={({ field }) => (
+              <FormItem className="col-span-2">
+                <FormLabel>Spare</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="col-span-2 space-y-2">
             <div className="flex justify-between items-center">
-              <h2>Total Other Bill Amount: ₹{totalOtherBillAmount.toLocaleString()}</h2>
-              <h2>Monthly GM%: {monthlyGMPercentage}%</h2>
-              <Button type="button" variant="default" onClick={addMiscellaneousAmount}>
-                Add Miscellaneous Amount
+              <h2>Total: ₹{totalOtherBillAmount.toLocaleString()}</h2>
+              <h2>GM%: {monthlyGMPercentage}%</h2>
+
+              <Button type="button" onClick={addMiscellaneousAmount}>
+                Add Misc
               </Button>
             </div>
 
-            {otherFields.map((field, ind) => (
-              <Card key={ind}>
+            {otherFields.map((item, ind) => "key" in item && <Card key={item.id}>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-3 gap-4">
+
                     <FormField
                       control={form.control}
                       name={`billingCycle.${index}.otherCost.${ind}.key`}
@@ -133,12 +185,12 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                         <FormItem>
                           <FormLabel>Key</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter Key" {...field} />
+                            <Input {...field} />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
+
                     <FormField
                       control={form.control}
                       name={`billingCycle.${index}.otherCost.${ind}.value`}
@@ -146,17 +198,29 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                         <FormItem>
                           <FormLabel>Value</FormLabel>
                           <FormControl>
-                            <Input type="number" placeholder="Enter Value" {...field} />
+                            <Input type="number" {...field} />
                           </FormControl>
-                          <FormMessage />
                         </FormItem>
                       )}
                     />
+
+                    <div className="mt-2 flex justify-end">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => remove(ind)}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+
                   </div>
+
                 </CardContent>
               </Card>
-            ))}
+            )}
           </div>
+
         </div>
       </AccordionContent>
     </AccordionItem>

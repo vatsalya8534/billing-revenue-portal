@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "ProjectMonthlyPL" ADD COLUMN     "fms" DECIMAL(12,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "spareParts" DECIMAL(12,2) NOT NULL DEFAULT 0;

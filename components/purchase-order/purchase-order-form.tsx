@@ -15,21 +15,22 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import BillingCycleForm from "./billing-cycle-form";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog";
 import { Calendar } from "../ui/calendar";
 import { Loader2, ArrowRight, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import { purchaseOrderSchema } from "@/lib/validators";
 import { createPurchaseOrder, updatePurchaseOrder } from "@/lib/actions/purschase-order";
-import { PurchaseOrder, POStatus, PaymentReceived } from "@prisma/client";
-import { BillingCycle, BillingPlan, Company, ContractDuration, ContractType, Customer, ServiceType } from "@/types";
+import { POStatus, PaymentReceived } from "@prisma/client";
+import { BillingPlan, Company, ContractDuration, ContractType, Customer, ServiceType } from "@/types";
 import z from "zod";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Card, CardContent } from "../ui/card";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
 
 interface Billing {
-  name: string; 
+  name: string;
   totalBillingCycles: number;
   gapInMonths: number; // dynamically define gap per cycle
   billingCycleType: "START" | "MID" | "END"; // default for this plan
@@ -81,7 +82,7 @@ const POForm = ({
   // ---------------- FORM ----------------
   const form = useForm<PurchaseOrderFormValues>({
     resolver: zodResolver(purchaseOrderSchema) as any,
-    defaultValues
+    defaultValues: data || defaultValues
   });
 
   const { fields, replace } = useFieldArray({
@@ -89,77 +90,73 @@ const POForm = ({
     name: "billingCycles"
   });
 
+
   // ---------------- WATCHERS ----------------
   const watchBillingPlan = form.watch("billingPlanId");
   const watchPOAmount = form.watch("poAmount");
   const startFrom = form.watch("startFrom");
   const endDate = form.watch("endDate"); // ✅ FIXED
-  const contractDurationId = form.watch("contractDurationId");
 
-  // ---------------- STATE ----------------
-  const [contractDurationData, setContractDurationData] =
-    useState<ContractDuration | null>(null);
 
   const [isPending, startTransition] = React.useTransition();
 
-  // ---------------- BILLING CYCLE GENERATOR ----------------
   const addBillingCycle = (
-  amount: number,
-  index: number,
-  plan: Billing,
-  startFrom: Date | string,
-  paymentDueInput?: Date | string // optional
-) => {
-  if (!startFrom) return;
+    amount: number,
+    index: number,
+    plan: Billing | undefined,
+    monthGap: number,
+    startFrom: Date | string,
+    paymentDueInput?: Date | string // optional
+  ) => {
+    if (!startFrom || !plan) return;
 
-  const start = moment(startFrom);
+    const start = moment(startFrom);
+    let invoiceDate = start.clone().add(monthGap * index, "months");
 
-  // Dynamic invoice date based on plan.gapInMonths
-  let invoiceDate = start.clone().add(plan.gapInMonths * index, "months");
-
-  // Apply Start / Mid / End for this cycle
-  let billingSubmittedDate: moment.Moment;
-  switch (plan.billingCycleType) {
-    case "START":
-      billingSubmittedDate = invoiceDate.clone().startOf("month");
-      invoiceDate = invoiceDate.clone().startOf("month");
-      break;
-    case "MID":
-      billingSubmittedDate = invoiceDate.clone().date(15);
-      invoiceDate = invoiceDate.clone().date(15);
-      break;
-    case "END":
-      billingSubmittedDate = invoiceDate.clone().startOf("month");
-      invoiceDate = invoiceDate.clone().endOf("month");
-      break;
-    default:
-      billingSubmittedDate = invoiceDate.clone();
-  }
-
-  return {
-    invoiceDate: invoiceDate.toDate(),
-    billingSubmittedDate: billingSubmittedDate.toDate(),
-    paymentDueDate: paymentDueInput ? moment(paymentDueInput).toDate() : undefined, // ✅ user can input
-    invoiceAmount: amount,
-    paymentReceived: PaymentReceived.NO,
-    paymentReceivedDate: null,
-    collectedAmount: 0,
-    tds: "",
-    billingRemark: "",
-    invoiceNumber: "",
-  };
-};
-
-
-  // ---------------- AGEING CALCULATION ----------------
-  useEffect(() => {
-    if (startFrom && endDate) {
-      const days = moment(endDate).diff(moment(startFrom), "days") + 1;
-
-      form.setValue("ageingDays", days >= 0 ? days : 0);
-    } else {
-      form.setValue("ageingDays", 0);
+    let billingSubmittedDate: moment.Moment;
+    switch (plan.billingCycleType) {
+      case "START":
+        billingSubmittedDate = invoiceDate.clone().startOf("month");
+        invoiceDate = invoiceDate.clone().startOf("month");
+        break;
+      case "MID":
+        billingSubmittedDate = invoiceDate.clone().date(15);
+        invoiceDate = invoiceDate.clone().date(15);
+        break;
+      case "END":
+        billingSubmittedDate = invoiceDate.clone().startOf("month");
+        invoiceDate = invoiceDate.clone().endOf("month");
+        break;
+      default:
+        billingSubmittedDate = invoiceDate.clone();
     }
+
+    return {
+      invoiceDate: invoiceDate.toDate(),
+      billingSubmittedDate: billingSubmittedDate.toDate(),
+      paymentDueDate: paymentDueInput ? moment(paymentDueInput).toDate() : undefined,
+      invoiceAmount: amount,
+      paymentReceived: PaymentReceived.NO,
+      paymentReceivedDate: null,
+      collectedAmount: 0,
+      tds: 0,
+      billingRemark: "",
+      invoiceNumber: "",
+    };
+  };
+
+  useEffect(() => {
+
+    if (!update) {
+      if (startFrom && endDate) {
+        const days = moment(endDate).diff(moment(startFrom), "days") + 1;
+
+        form.setValue("ageingDays", days >= 0 ? days : 0);
+      } else {
+        form.setValue("ageingDays", 0);
+      }
+    }
+
   }, [startFrom, endDate, form]);
 
   // ---------------- SUBMIT ----------------
@@ -169,6 +166,8 @@ const POForm = ({
         update && id
           ? await updatePurchaseOrder(values, id)
           : await createPurchaseOrder(values);
+
+      console.log(res)
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -180,27 +179,39 @@ const POForm = ({
 
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
-    if (!watchBillingPlan || !watchPOAmount || !startFrom) return;
+    if (!update) {
+      if (!watchBillingPlan || !watchPOAmount || !startFrom) return;
 
-    const bp = billingPlan.find((b) => b.id === watchBillingPlan);
-    if (!bp) return;
+      const start = moment(startFrom);
+      const end = moment(endDate);
 
-    const totalCycles = bp.totalBillingCycles || 1;
+      const months = Math.ceil(end.diff(start, "months", true));
 
-    const perCycleAmount =
-      Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
+      if (!watchBillingPlan) return;
 
-    const cycles = Array.from({ length: totalCycles }, (_, i) =>
-      addBillingCycle(
-        perCycleAmount,
-        i,
-        bp, // 👈 correct type
-        startFrom
-      )
-    ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
+      const bp: any = billingPlan.find((value) => value.id === watchBillingPlan);
 
-    // ✅ IMPORTANT: use replace instead of setValue
-    replace(cycles);
+      const monthGap = months / (bp?.totalBillingCycles ?? 1)
+
+      if (!bp) return;
+
+      const totalCycles = bp.totalBillingCycles || 1;
+
+      const perCycleAmount =
+        Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
+
+      const cycles = Array.from({ length: totalCycles }, (_, i) =>
+        addBillingCycle(
+          perCycleAmount,
+          i,
+          bp,
+          monthGap,
+          startFrom
+        )
+      ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
+
+      replace(cycles);
+    }
 
   }, [watchBillingPlan, watchPOAmount, startFrom, replace]);
 
@@ -209,25 +220,28 @@ const POForm = ({
   useEffect(() => {
     if (!update || !data) return;
 
-    const formattedCycles = (data.billingCycles ?? []).map((bc: any) => ({
-      invoiceNumber: bc.invoiceNumber ?? "",
-      invoiceAmount: Number(bc.invoiceAmount ?? 0),
-      collectedAmount: Number(bc.collectedamount ?? 0),
+    const formattedCycles = (data.billingCycles ?? []).map((bc: any) => {
+    
+      return {
+        invoiceNumber: bc.invoiceNumber ?? "",
+        invoiceAmount: Number(bc.invoiceAmount ?? 0),
+        collectedAmount: Number(bc.collectedAmount ?? 0),
 
-      invoiceDate: bc.invoiceDate ? new Date(bc.invoiceDate) : undefined,
-      billingSubmittedDate: bc.billingSubmittedDate
-        ? new Date(bc.billingSubmittedDate)
-        : undefined,
-      paymentReceivedDate: bc.paymentReceivedDate
-        ? new Date(bc.paymentReceivedDate)
-        : undefined,
-      paymentDueDate: bc.paymentDuedate
-        ? new Date(bc.paymentDuedate)
-        : undefined,
-
-      paymentReceived: bc.paymentReceived,
-      billingRemark: bc.billingRemark ?? ""
-    }));
+        invoiceDate: bc.invoiceDate ? new Date(bc.invoiceDate) : undefined,
+        billingSubmittedDate: bc.billingSubmittedDate
+          ? new Date(bc.billingSubmittedDate)
+          : undefined,
+        paymentReceivedDate: bc.paymentReceivedDate
+          ? new Date(bc.paymentReceivedDate)
+          : undefined,
+        paymentDueDate: bc.paymentDueDate
+          ? new Date(bc.paymentDueDate)
+          : undefined,
+        paymentReceived: bc.paymentReceived,
+        billingRemark: bc.billingRemark ?? "",
+        tds: bc.tds ?? ""
+      }
+    });
 
     form.reset({
       ...defaultValues,
@@ -339,7 +353,7 @@ const POForm = ({
                     step="0.01"
                     placeholder="Enter PO Amount"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
+
                   />
                 </FormControl>
                 <FormMessage />
@@ -572,6 +586,7 @@ const POForm = ({
           />
 
           <FormField
+
             control={form.control}
             name="billingPlanId"
             render={({ field }) => (
@@ -604,12 +619,51 @@ const POForm = ({
             )}
           />
 
-        </div>
+          {
+            fields.length > 0 && (
+              <div className="col-span-2 w-full">
+                <Card className="w-full">
+                  <CardContent className="p-2 sm:p-4">
+                    <Tabs defaultValue="tab-0" className="w-full">
+                      <TabsList className="flex w-max min-w-full gap-2">
+                        {fields.map((field, index) => {
+                          const date = moment(startFrom).add(index, "months");
+                          const year = date.year();
+                          const monthName = date.format("MMM"); // short name for mobile
 
-        {/* --- Billing Cycles --- */}
-        {fields.map((field, index) => (
-          <BillingCycleForm key={field.id} index={index} control={form.control} />
-        ))}
+                          return (
+                            <TabsTrigger
+                              key={index}
+                              value={`tab-${index}`}
+                              className="whitespace-nowrap px-3 py-1.5 text-xs sm:text-sm"
+                            >
+                              {monthName} {year}
+                            </TabsTrigger>
+                          );
+                        })}
+
+                      </TabsList>
+
+                      {fields.map((field, index) => (
+                        <TabsContent
+                          key={index}
+                          value={`tab-${index}`}
+                          className="w-full"
+                        >
+                          <BillingCycleForm
+                            index={index}
+                            control={form.control}
+                          />
+                        </TabsContent>
+                      ))}
+                    </Tabs>
+                  </CardContent>
+
+                </Card>
+              </div>
+            )
+          }
+        </div>
 
         {/* --- Customer & Status --- */}
         <div className="grid grid-cols-2 gap-4">

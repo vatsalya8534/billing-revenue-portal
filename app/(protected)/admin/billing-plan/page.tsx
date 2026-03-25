@@ -6,7 +6,7 @@ import { BillingPlanDataTable } from "./billing-plan-datatable"
 import { getBillingPlans } from "@/lib/actions/billing-plan"
 
 const RolesPage = async () => {
-  const billingPlans: BillingPlan[] = await getBillingPlans()
+  const billingPlans = await getBillingPlans()
 
   return (
     <Card>
@@ -17,7 +17,7 @@ const RolesPage = async () => {
         </Link>
       </CardHeader>
       <CardContent>
-        <BillingPlanDataTable data={billingPlans as BillingPlan[]} />
+        <BillingPlanDataTable data={billingPlans.data as BillingPlan[]} />
       </CardContent>
     </Card>
   )
