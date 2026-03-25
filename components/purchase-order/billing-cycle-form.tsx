@@ -256,8 +256,6 @@ const BillingCycleForm = ({ index, control }: { index: number; control: any }) =
                     />
                 </div>
 
-
-
                 {/* Billing Remark */}
                 <div className='space-y-2'>
                     <FormField

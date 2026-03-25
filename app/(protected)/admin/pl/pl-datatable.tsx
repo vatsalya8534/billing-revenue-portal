@@ -86,7 +86,14 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
                         </Button>
                     </DropdownMenuTrigger>
 
+
+
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild>
+                            <Link href={`/admin/pl/view/${id}`}>
+                                View
+                            </Link>
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
                             <Link href={`/admin/pl/edit/${id}`}>
                                 Edit

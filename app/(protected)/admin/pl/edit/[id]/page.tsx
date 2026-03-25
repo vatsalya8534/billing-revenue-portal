@@ -4,7 +4,7 @@ import RoleForm from "@/components/role/role-form"
 import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
 import { notFound } from "next/navigation"
-import { Project, Role } from "@/types"
+import { BillingPlan, Project, Role } from "@/types"
 import { getBillingCyclesByPOID, getprojectById } from "@/lib/actions/project"
 import PLForm from "@/components/pl/pl-form"
 import { getCompanys } from "@/lib/actions/company"
@@ -44,7 +44,7 @@ const ProjectEditPage = async ({
             </CardHeader>
 
             <CardContent>
-                <PLForm  billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans} />
+                <PLForm  billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans.data as BillingPlan[]} />
             </CardContent>
         </Card>
     )

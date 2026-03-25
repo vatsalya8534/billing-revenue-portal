@@ -106,7 +106,6 @@ const PLForm = ({
 
       const months = Math.ceil(end.diff(start, "months", true));
 
-
       if (!billingPlanId) return;
 
       const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
