@@ -119,7 +119,7 @@ export default async function PLViewPage({ params }: Props) {
                   
                   return <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">
                     <td className="p-4">{i + 1}</td>
-                    <td className="p-4">{moment().month(Number(bc.month)).format("MMMM")}</td>
+                    <td className="p-4">{moment().month(Number(bc.month)).format("MMMM")} {bc.year}</td>
                     <td className="p-4 text-right">₹{safeNumber(bc.billedAmount).toLocaleString()}</td>
                     <td className="p-4 text-right">₹{safeNumber(bc.fms).toLocaleString()}</td>
                     <td className="p-4 text-right">₹{safeNumber(bc.spare).toLocaleString()}</td>

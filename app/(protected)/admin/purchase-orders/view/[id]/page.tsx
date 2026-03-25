@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import moment from "moment";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -147,9 +148,8 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
           <Detail label="Billing Plan" value={po.billingPlan?.name} />
           <Detail
             label="Duration"
-            value={`${
-              po.contractDuration?.totalNumberOfMonths || "-"
-            } months`}
+            value={`${po.contractDuration?.totalNumberOfMonths || "-"
+              } months`}
           />
           <Detail label="Contract" value={po.contract?.name} />
         </Card>
@@ -183,6 +183,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
               <thead>
                 <tr className="bg-gray-100 text-gray-700">
                   <th className="text-left p-4">#</th>
+                  <th className="text-left p-4">Month</th>
                   <th className="text-left p-4">Invoice</th>
                   <th className="text-right p-4">Amount</th>
                   <th className="text-right p-4">Collected</th>
@@ -199,6 +200,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
                     className="border-b last:border-none hover:bg-gray-50 transition"
                   >
                     <td className="p-4">{i + 1}</td>
+                    <td className="p-4">{moment(bc.invoiceDate).format("MMMM")} {moment(bc.invoiceDate).format("YYYY")}</td>
                     <td className="p-4">{bc.invoiceNumber}</td>
                     <td className="p-4 text-right">
                       ₹{bc.invoiceAmount}
@@ -209,17 +211,17 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
                     <td className="p-4">
                       {bc.invoiceDate
                         ? format(
-                            new Date(bc.invoiceDate),
-                            "dd/MM/yyyy"
-                          )
+                          new Date(bc.invoiceDate),
+                          "dd/MM/yyyy"
+                        )
                         : "-"}
                     </td>
                     <td className="p-4">
                       {bc.paymentDueDate
                         ? format(
-                            new Date(bc.paymentDueDate),
-                            "dd/MM/yyyy"
-                          )
+                          new Date(bc.paymentDueDate),
+                          "dd/MM/yyyy"
+                        )
                         : "-"
                       }
                     </td>
