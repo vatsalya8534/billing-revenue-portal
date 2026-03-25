@@ -90,6 +90,8 @@ const POForm = ({
     name: "billingCycles"
   });
 
+  const [monthGap, setMonthGap] = useState(0);
+
 
   // ---------------- WATCHERS ----------------
   const watchBillingPlan = form.watch("billingPlanId");
@@ -192,13 +194,13 @@ const POForm = ({
       const bp: any = billingPlan.find((value) => value.id === watchBillingPlan);
 
       const monthGap = months / (bp?.totalBillingCycles ?? 1)
+      setMonthGap(monthGap)
 
       if (!bp) return;
 
       const totalCycles = bp.totalBillingCycles || 1;
 
-      const perCycleAmount =
-        Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
+      const perCycleAmount = Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
 
       const cycles = Array.from({ length: totalCycles }, (_, i) =>
         addBillingCycle(
@@ -627,7 +629,7 @@ const POForm = ({
                     <Tabs defaultValue="tab-0" className="w-full">
                       <TabsList className="flex w-max min-w-full gap-2">
                         {fields.map((field, index) => {
-                          const date = moment(startFrom).add(index, "months");
+                          const date = moment(startFrom).add(monthGap * index, "months");
                           const year = date.year();
                           const monthName = date.format("MMM"); // short name for mobile
 
