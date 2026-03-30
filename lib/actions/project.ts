@@ -29,6 +29,13 @@ export interface PLData {
   projects: PLProjectData[];
 }
 
+interface MonthlyDetailsParams {
+  month: number;
+  year: number;
+  company?: string;
+  project?: string;
+}
+
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 
@@ -82,6 +89,7 @@ export async function createProject(data: Project) {
     }
   }
 }
+
 export async function getprojectById(id: string) {
   try {
 
@@ -337,20 +345,24 @@ export async function getPLData(year: number): Promise<PLData> {
 
   // ================= MONTHLY =================
   const monthlyData: PLMonthlyData[] = monthNames.map((month, index) => {
-    const monthRecords = records.filter(
-      (r) => Number(r.month) === index
-    );
+  const monthRecords = records.filter((r) => {
+    const monthValue = Array.isArray(r.month)
+      ? Number(r.month[0])
+      : Number(r.month);
 
-    let revenue = 0;
-    let cost = 0;
-
-    for (const rec of monthRecords) {
-      revenue += Number(rec.billedAmount || 0);
-      cost += calculateCost(rec);
-    }
-
-    return { month, revenue, cost };
+    return monthValue === index;
   });
+
+  let revenue = 0;
+  let cost = 0;
+
+  for (const rec of monthRecords) {
+    revenue += Number(rec.billedAmount || 0);
+    cost += calculateCost(rec);
+  }
+
+  return { month, revenue, cost };
+});
 
   // ================= PROJECT =================
   const projectMap: Record<string, PLProjectData> = {};
@@ -386,7 +398,6 @@ export async function getPLData(year: number): Promise<PLData> {
 }
 
 // ================= STATUS =================
-
 export async function getPLStatusData(year: number, month: number) {
   const data = await getPLData(year);
 
@@ -408,7 +419,6 @@ export async function getPLStatusData(year: number, month: number) {
 }
 
 // ================= SUMMARY =================
-
 export async function getPLSummary(year: number) {
   const data = await getPLData(year);
 
@@ -545,7 +555,6 @@ export async function filterProjectData(filters: any) {
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalResourceCount = 0;
-  let totalProfit = 0;
 
   const projects = await prisma.project.findMany({
     where,
@@ -568,7 +577,7 @@ export async function filterProjectData(filters: any) {
 
       if (billingCycle?.data && billingCycle.data.length > 0) {
         for (const cycle of billingCycle.data) {
-          console.log(cycle.spare);
+      
           
           totalFMSValue += Number(cycle.fms);
           totalSpareValue += Number(cycle.spare)
@@ -587,4 +596,102 @@ export async function filterProjectData(filters: any) {
     totalProfit: (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2),
     data: JSON.parse(JSON.stringify(projects))
   }
+}
+
+export async function getMonthlyRevenueCost(year: number) {
+  const data = await getPLData(year);
+
+  return {
+    revenue: data.monthly.map((m) => ({
+      month: m.month,
+      value: Number(m.revenue || 0),
+    })),
+    cost: data.monthly.map((m) => ({
+      month: m.month,
+      value: Number(m.cost || 0),
+    })),
+  };
+}
+
+export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
+  const { month, year, company, project } = params;
+  
+  const dbMonth = month -1;
+
+  const data = await prisma.projectMonthlyPL.findMany({
+    where: {
+      month: dbMonth,
+      year,
+
+      ...(project && {
+        projectId: project,
+      }),
+
+      ...(company && {
+        project: {
+          companyId: company,
+        },
+      }),
+    },
+
+    include: {
+      project: {
+        include: {
+          company: true,
+        },
+      },
+    },
+  });
+
+
+
+  return data.map((item) => ({
+    month,
+    year,
+    companyName: item.project.company.name,
+    projectName: item.project.projectName,
+    billed: Number(item.billedAmount || 0),
+  }));
+}
+
+// ✅ Cost Details
+export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
+  const { month, year, company, project } = params;
+
+  const dbMonth = month - 1;
+
+  const data = await prisma.projectMonthlyPL.findMany({
+    where: {
+      month: dbMonth,
+      year,
+
+      ...(project && {
+        projectId: project,
+      }),
+
+      ...(company && {
+        project: {
+          companyId: company,
+        },
+      }),
+    },
+
+    include: {
+      project: {
+        include: {
+          company: true,
+        },
+      },
+    },
+  });
+
+  return data.map((item) => ({
+    month,
+    year,
+    companyName: item.project.company.name,
+    projectName: item.project.projectName,
+    fms: Number(item.fms || 0),
+    spare: Number(item.spare || 0),
+    other: item.otherCost || {},
+  }));
 }

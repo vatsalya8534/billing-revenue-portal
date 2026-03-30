@@ -1,6 +1,5 @@
 import { getCompanys } from '@/lib/actions/company';
 import { getProjects } from '@/lib/actions/project'
-import React from 'react'
 import { PLDashboardComponent } from './pl-dashboard-component';
 
 const PLDashboard = async () => {

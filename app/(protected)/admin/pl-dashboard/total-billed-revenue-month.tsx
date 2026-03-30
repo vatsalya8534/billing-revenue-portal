@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { TrendingUp } from "lucide-react";
+import { useState, useEffect } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -28,59 +26,54 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 
-export const description = "Horizontal bar chart with year filter";
+import { getMonthlyRevenueCost } from "@/lib/actions/project";
 
-const rawData = [
-  { year: 2024, month: 1, value: 186 },
-  { year: 2024, month: 2, value: 305 },
-  { year: 2024, month: 3, value: 237 },
-  { year: 2024, month: 4, value: 73 },
-  { year: 2024, month: 5, value: 209 },
-  { year: 2024, month: 6, value: 214 },
-
-  { year: 2025, month: 1, value: 150 },
-  { year: 2025, month: 2, value: 280 },
-  { year: 2025, month: 3, value: 200 },
-  { year: 2025, month: 4, value: 90 },
-  { year: 2025, month: 5, value: 250 },
-  { year: 2025, month: 6, value: 300 },
-];
+type Props = {
+  onMonthClick?: (data: { month: number; year: number }) => void;
+};
 
 const chartConfig = {
   value: {
-    label: "Billing",
+    label: "Revenue",
     color: "var(--chart-1)",
   },
 } satisfies ChartConfig;
 
-// 📅 Month labels
-const months = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+export function TotalBilledChart({ onMonthClick }: Props) {
+  const currentYear = new Date().getFullYear().toString();
+  const [year, setYear] = useState(currentYear);
+  const [data, setData] = useState<{ month: string; value: number }[]>([]);
+  const [loading, setLoading] = useState(false);
 
-export function TotalBilledChart() {
-  const [year, setYear] = useState("2025");
+  // 🔥 Fetch from DB
+  useEffect(() => {
+    async function load() {
+      try {
+        setLoading(true);
+        const res = await getMonthlyRevenueCost(Number(year));
+        setData(
+          res.revenue.map((d, i) => ({
+            ...d,
+            monthNumber: i + 1,
+            year: Number(year),
+          }))
+        );
+      } catch (err) {
+        console.error("Error fetching revenue:", err);
+        setData([]);
+      } finally {
+        setLoading(false);
+      }
+    }
 
-  // 🎯 Filter + fill missing months
-  const chartData = useMemo(() => {
-    const filtered = rawData.filter(
-      (d) => d.year.toString() === year
-    );
-
-    // ensure Jan–Dec always present
-    return months.map((m, index) => {
-      const found = filtered.find((d) => d.month === index + 1);
-
-      return {
-        month: m,
-        value: found?.value || 0,
-      };
-    });
+    load();
   }, [year]);
 
-  const years = [...new Set(rawData.map((d) => d.year))];
+  const currentYears = new Date().getFullYear();
 
+  const years = Array.from({ length: 3 }, (_, i) =>
+    (currentYears - i).toString()
+  );
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -89,14 +82,14 @@ export function TotalBilledChart() {
           <CardDescription>Jan - Dec</CardDescription>
         </div>
 
-        {/* 🎛️ Year Filter */}
+        {/* Year Filter */}
         <Select value={year} onValueChange={setYear}>
           <SelectTrigger className="w-[120px] rounded-xl">
             <SelectValue placeholder="Year" />
           </SelectTrigger>
           <SelectContent>
             {years.map((y) => (
-              <SelectItem key={y} value={y.toString()}>
+              <SelectItem key={y} value={y}>
                 {y}
               </SelectItem>
             ))}
@@ -107,16 +100,13 @@ export function TotalBilledChart() {
       <CardContent>
         <ChartContainer config={chartConfig}>
           <BarChart
-            accessibilityLayer
-            data={chartData}
+            data={data}
             layout="vertical"
             margin={{ left: 10 }}
-            height={500}
+            height={400}
           >
-            {/* Value Axis */}
             <XAxis type="number" hide />
 
-            {/* Month Axis */}
             <YAxis
               dataKey="month"
               type="category"
@@ -134,9 +124,21 @@ export function TotalBilledChart() {
               dataKey="value"
               fill="var(--color-value)"
               radius={5}
+              onClick={(data: any) => {
+                onMonthClick?.({
+                  month: data.monthNumber,
+                  year: data.year,
+                });
+              }}
             />
           </BarChart>
         </ChartContainer>
+
+        {loading && (
+          <p className="text-sm text-muted-foreground mt-2">
+            Loading...
+          </p>
+        )}
       </CardContent>
     </Card>
   );

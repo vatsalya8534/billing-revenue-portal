@@ -5,7 +5,6 @@ import { format } from "date-fns";
 import { CalendarIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     Select,
     SelectContent,
@@ -22,67 +21,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { filterProjectData } from "@/lib/actions/project";
+import { filterProjectData, getBillingDetailsByMonth, getCostDetailsByMonth } from "@/lib/actions/project";
 import { TotalBilledChart } from "./total-billed-revenue-month";
 import { TotalCostChart } from "./total-cost-revenue-month";
-
-const rawData = [
-    {
-        year: 2026,
-        month: 1,
-        label: "Jan 2026",
-        billed: 120000,
-        fms: 20000,
-        spare: 10000,
-        otherCost: 5000,
-        totalCost: 35000,
-        profit: 85000,
-    },
-    {
-        year: 2026,
-        month: 2,
-        label: "Feb 2026",
-        billed: 95000,
-        fms: 18000,
-        spare: 8000,
-        otherCost: 4000,
-        totalCost: 30000,
-        profit: 65000,
-    },
-    {
-        year: 2026,
-        month: 3,
-        label: "Mar 2026",
-        billed: 140000,
-        fms: 25000,
-        spare: 12000,
-        otherCost: 6000,
-        totalCost: 43000,
-        profit: 97000,
-    },
-    {
-        year: 2026,
-        month: 4,
-        label: "Apr 2026",
-        billed: 110000,
-        fms: 21000,
-        spare: 9000,
-        otherCost: 5000,
-        totalCost: 35000,
-        profit: 75000,
-    },
-    {
-        year: 2025,
-        month: 12,
-        label: "Dec 2025",
-        billed: 100000,
-        fms: 15000,
-        spare: 7000,
-        otherCost: 3000,
-        totalCost: 25000,
-        profit: 75000,
-    },
-];
 
 export function PLDashboardComponent({ companies, projects }: any) {
     const [mounted, setMounted] = useState(false)
@@ -104,6 +45,16 @@ export function PLDashboardComponent({ companies, projects }: any) {
         endDate: undefined as Date | undefined,
     });
 
+    const [selectedMonth, setSelectedMonth] = useState<{
+        month: number;
+        year: number;
+    } | null>(null);
+
+    const [billingDetails, setBillingDetails] = useState<any[]>([]);
+    const [costDetails, setCostDetails] = useState<any[]>([]);
+    const [activeTable, setActiveTable] = useState<"billing" | "cost" | null>(null);
+
+
     const updateFilter = (key: string, value: any) => {
         const updated = { ...filters, [key]: value };
         setFilters(updated);
@@ -121,7 +72,6 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
     const filterData = async () => {
         let res = await filterProjectData(filters)
-        console.log(res);
 
         setFilteredValues(res.data)
         setTotalValues({
@@ -139,6 +89,29 @@ export function PLDashboardComponent({ companies, projects }: any) {
         filterData()
         setMounted(true);
     }, [JSON.stringify(filters)])
+
+    useEffect(() => {
+        if (!selectedMonth) return;
+
+        const { month, year } = selectedMonth;
+
+        async function loadDetails() {
+            const billing = await getBillingDetailsByMonth({
+                month,
+                year,
+            });
+
+            const cost = await getCostDetailsByMonth({
+                month,
+                year,
+            });
+
+            setBillingDetails(billing);
+            setCostDetails(cost);
+        }
+
+        loadDetails();
+    }, [selectedMonth]);
 
 
     if (mounted) {
@@ -383,79 +356,87 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 </Card>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <TotalBilledChart />
-                    <TotalCostChart />
+                    <TotalBilledChart
+                        onMonthClick={(data) => {
+                            setSelectedMonth(data);
+                            setActiveTable("billing");
+                        }}
+                    />
+                    <TotalCostChart
+                        onMonthClick={(data) => {
+                            setSelectedMonth(data);
+                            setActiveTable("cost");
+                        }}
+                    />
                 </div>
 
-                <Card className="mt-4">
-                    <CardHeader>
-                        <h2>Billing Amont In Detail</h2>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>
-                                        Month
-                                    </TableHead>
-                                    <TableHead>
-                                        Year
-                                    </TableHead>
-                                    <TableHead>
-                                        Company Name
-                                    </TableHead>
-                                    <TableHead>
-                                        Project Name
-                                    </TableHead>
-                                    <TableHead>
-                                        Billing Amount (Month)
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
+                {activeTable === "billing" && (
+                    <Card className="mt-4">
+                        <CardHeader>
+                            <h2>Billing Amount In Detail</h2>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Month</TableHead>
+                                        <TableHead>Year</TableHead>
+                                        <TableHead>Company Name</TableHead>
+                                        <TableHead>Project Name</TableHead>
+                                        <TableHead>Billing Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {billingDetails.map((item, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell>{item.month}</TableCell>
+                                            <TableCell>{item.year}</TableCell>
+                                            <TableCell>{item.companyName}</TableCell>
+                                            <TableCell>{item.projectName}</TableCell>
+                                            <TableCell>{item.billed}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
 
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-
-                <Card className="mt-4">
-                    <CardHeader>
-                        <h2>Total Cost  In Detail</h2>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>
-                                        Month
-                                    </TableHead>
-                                    <TableHead>
-                                        Year
-                                    </TableHead>
-                                    <TableHead>
-                                        Company Name
-                                    </TableHead>
-                                    <TableHead>
-                                        Project Name
-                                    </TableHead>
-                                    <TableHead>
-                                        FMS 
-                                    </TableHead>
-                                    <TableHead>
-                                        Spare 
-                                    </TableHead>
-                                    <TableHead>
-                                        Other 
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
+                {activeTable === "cost" && (
+                    <Card className="mt-4">
+                        <CardHeader>
+                            <h2>Total Cost In Detail</h2>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Month</TableHead>
+                                        <TableHead>Year</TableHead>
+                                        <TableHead>Company Name</TableHead>
+                                        <TableHead>Project Name</TableHead>
+                                        <TableHead>FMS</TableHead>
+                                        <TableHead>Spare</TableHead>
+                                        <TableHead>Other</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {costDetails.map((item, i) => (
+                                        <TableRow key={i}>
+                                            <TableCell>{item.month}</TableCell>
+                                            <TableCell>{item.year}</TableCell>
+                                            <TableCell>{item.companyName}</TableCell>
+                                            <TableCell>{item.projectName}</TableCell>
+                                            <TableCell>{item.fms}</TableCell>
+                                            <TableCell>{item.spare}</TableCell>
+                                            <TableCell>{JSON.stringify(item.other)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
             </div>
         );
     }
