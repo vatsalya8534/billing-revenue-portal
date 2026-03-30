@@ -97,8 +97,7 @@ const POForm = ({
   const watchBillingPlan = form.watch("billingPlanId");
   const watchPOAmount = form.watch("poAmount");
   const startFrom = form.watch("startFrom");
-  const endDate = form.watch("endDate"); // ✅ FIXED
-
+  const endDate = form.watch("endDate");
 
   const [isPending, startTransition] = React.useTransition();
 
@@ -137,7 +136,7 @@ const POForm = ({
       invoiceDate: invoiceDate.toDate(),
       billingSubmittedDate: billingSubmittedDate.toDate(),
       paymentDueDate: paymentDueInput ? moment(paymentDueInput).toDate() : undefined,
-      invoiceAmount: amount,
+      invoiceAmount: Math.round(amount),
       paymentReceived: PaymentReceived.NO,
       paymentReceivedDate: null,
       collectedAmount: 0,
@@ -194,6 +193,7 @@ const POForm = ({
       const bp: any = billingPlan.find((value) => value.id === watchBillingPlan);
 
       const monthGap = months / (bp?.totalBillingCycles ?? 1)
+
       setMonthGap(monthGap)
 
       if (!bp) return;

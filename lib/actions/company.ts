@@ -9,7 +9,7 @@ export async function getCompanys() {
   return await prisma.company.findMany({
     orderBy: {
       createdAt: 'desc'
-    },
+    }
   })
 }
 

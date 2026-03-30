@@ -4,7 +4,7 @@ import { Project } from "@/types";
 import { prisma } from "../prisma";
 import { projectSchema } from "../validators";
 import { formatError } from "../utils";
-
+import { buildFilters } from "../filter";
 
 export interface PLMonthlyData {
   month: string;
@@ -252,31 +252,31 @@ function getTotalAmount(data: any) {
       const fms = Number(billingCycle.fms) || 0;
       const spare = Number(billingCycle.spare) || 0;
 
-      // ✅ Revenue ONLY from billed amount
-      amount.totalRevenue += billed;
+      if (billed !== 0 || fms !== 0 || spare !== 0) {
+        amount.totalRevenue += billed;
 
-      // ✅ Cost includes FMS + Spare
-      amount.totalCost += fms + spare;
+        amount.totalCost += fms + spare;
 
-      let otherCostData: any[] = [];
+        let otherCostData: any[] = [];
 
-      if (typeof billingCycle.otherCost === "string") {
-        try {
-          otherCostData = JSON.parse(billingCycle.otherCost);
-        } catch (e) {
-          console.error("Invalid JSON:", billingCycle.otherCost);
+        if (typeof billingCycle.otherCost === "string") {
+          try {
+            otherCostData = JSON.parse(billingCycle.otherCost);
+          } catch (e) {
+            console.error("Invalid JSON:", billingCycle.otherCost);
+          }
+        } else {
+          otherCostData = billingCycle.otherCost || [];
         }
-      } else {
-        otherCostData = billingCycle.otherCost || [];
-      }
 
-      for (const otherCost of otherCostData) {
-        if (
-          otherCost?.key !== "FMS" &&
-          otherCost?.key !== "SPARE" &&
-          isFinite(otherCost?.value)
-        ) {
-          amount.totalCost += Number(otherCost.value);
+        for (const otherCost of otherCostData) {
+          if (
+            otherCost?.key !== "FMS" &&
+            otherCost?.key !== "SPARE" &&
+            isFinite(otherCost?.value)
+          ) {
+            amount.totalCost += Number(otherCost.value);
+          }
         }
       }
     }
@@ -517,7 +517,7 @@ export async function fetchPLPageData(projectId: string) {
       fms: b.fms,
       spare: b.spare,
       otherCost,
-      profit: otherCost === 0 ? 0 :  ((Number(billedAmount) - (Number(otherCost) + Number(b.fms) + Number(b.spare))) / Number(billedAmount)) * 100  
+      profit: otherCost === 0 ? 0 : ((Number(billedAmount) - (Number(otherCost) + Number(b.fms) + Number(b.spare))) / Number(billedAmount)) * 100
     };
   });
 
@@ -534,4 +534,57 @@ export async function fetchPLPageData(projectId: string) {
     totalCost,
     gmPercent,
   };
+}
+
+export async function filterProjectData(filters: any) {
+  const where = buildFilters(filters);
+
+  let totalPOValue = 0;
+  let totalBilledValue = 0;
+  let totalCostValue = 0;
+  let totalFMSValue = 0;
+  let totalSpareValue = 0;
+  let totalResourceCount = 0;
+  let totalProfit = 0;
+
+  const projects = await prisma.project.findMany({
+    where,
+    include: {
+      company: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (projects.length > 0) {
+    for (const project of projects) {
+      totalPOValue += Number(project.poValue);
+      totalBilledValue += Number(project.totalRevenue);
+      totalCostValue += Number(project.totalCost);
+      totalResourceCount += Number(project.resourceCount);
+
+      let billingCycle = await getBillingCyclesByPOID(project.id)
+
+      if (billingCycle?.data && billingCycle.data.length > 0) {
+        for (const cycle of billingCycle.data) {
+          console.log(cycle.spare);
+          
+          totalFMSValue += Number(cycle.fms);
+          totalSpareValue += Number(cycle.spare)
+        }
+      }
+    }
+  }
+
+  return {
+    totalPOValue: totalPOValue,
+    totalBilledValue: totalBilledValue,
+    totalCostValue: totalCostValue,
+    totalFMSValue: totalFMSValue,
+    totalSpareValue: totalSpareValue,
+    totalResourceCount: totalResourceCount,
+    totalProfit: (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2),
+    data: JSON.parse(JSON.stringify(projects))
+  }
 }
