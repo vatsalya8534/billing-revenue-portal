@@ -260,7 +260,12 @@ function getTotalAmount(data: any) {
       const fms = Number(billingCycle.fms) || 0;
       const spare = Number(billingCycle.spare) || 0;
 
-      if (billed !== 0 || fms !== 0 || spare !== 0) {
+      console.log(fms);
+      console.log(spare);
+      console.log(billed);
+
+
+      if (billed !== 0 && (fms !== 0 || spare !== 0)) {
         amount.totalRevenue += billed;
 
         amount.totalCost += fms + spare;
@@ -345,24 +350,24 @@ export async function getPLData(year: number): Promise<PLData> {
 
   // ================= MONTHLY =================
   const monthlyData: PLMonthlyData[] = monthNames.map((month, index) => {
-  const monthRecords = records.filter((r) => {
-    const monthValue = Array.isArray(r.month)
-      ? Number(r.month[0])
-      : Number(r.month);
+    const monthRecords = records.filter((r) => {
+      const monthValue = Array.isArray(r.month)
+        ? Number(r.month[0])
+        : Number(r.month);
 
-    return monthValue === index;
+      return monthValue === index;
+    });
+
+    let revenue = 0;
+    let cost = 0;
+
+    for (const rec of monthRecords) {
+      revenue += Number(rec.billedAmount || 0);
+      cost += calculateCost(rec);
+    }
+
+    return { month, revenue, cost };
   });
-
-  let revenue = 0;
-  let cost = 0;
-
-  for (const rec of monthRecords) {
-    revenue += Number(rec.billedAmount || 0);
-    cost += calculateCost(rec);
-  }
-
-  return { month, revenue, cost };
-});
 
   // ================= PROJECT =================
   const projectMap: Record<string, PLProjectData> = {};
@@ -577,8 +582,8 @@ export async function filterProjectData(filters: any) {
 
       if (billingCycle?.data && billingCycle.data.length > 0) {
         for (const cycle of billingCycle.data) {
-      
-          
+
+
           totalFMSValue += Number(cycle.fms);
           totalSpareValue += Number(cycle.spare)
         }
@@ -615,8 +620,8 @@ export async function getMonthlyRevenueCost(year: number) {
 
 export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
   const { month, year, company, project } = params;
-  
-  const dbMonth = month -1;
+
+  const dbMonth = month - 1;
 
   const data = await prisma.projectMonthlyPL.findMany({
     where: {
