@@ -75,7 +75,7 @@ const PLForm = ({
     append({
       month,
       year,
-      billedAmount: amount ?? 0,
+      billedAmount: Math.floor(amount) ?? 0,
       fms: 0,
       spare: 0,
       otherCost: [],
@@ -112,7 +112,7 @@ const PLForm = ({
 
       const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1)
 
-      let totalAmountPerCycle = Number((poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(2));
+      let totalAmountPerCycle = Number((poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(0));
 
       if(isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
 
@@ -330,7 +330,7 @@ const PLForm = ({
                 name="orderType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status</FormLabel>
+                    <FormLabel>Order type</FormLabel>
                     <FormControl>
                       <Select
                         defaultValue={field.value}
