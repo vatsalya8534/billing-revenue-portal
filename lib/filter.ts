@@ -11,8 +11,6 @@ type Filters = {
 export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
     const where: Prisma.ProjectWhereInput = {};
 
-    console.log(filters);
-
 
     if (filters.company && filters.company !== "all") {
         where.companyId = filters.company;

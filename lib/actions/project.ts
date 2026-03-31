@@ -34,6 +34,8 @@ interface MonthlyDetailsParams {
   year: number;
   company?: string;
   project?: string;
+  startDate?: any;
+  endDate?: any;
 }
 
 const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -343,9 +345,11 @@ function calculateCost(rec: any): number {
 // ================= MAIN =================
 
 export async function getPLData(year: number, filters?: any): Promise<PLData> {
+  console.log(filters);
+
   const records = await prisma.projectMonthlyPL.findMany({
     where: {
-      year ,
+      year,
       ...(filters.project && filters.project !== "all" && {
         projectId: filters.project,
       }),
@@ -357,6 +361,30 @@ export async function getPLData(year: number, filters?: any): Promise<PLData> {
           },
         },
       }),
+
+      ...(filters.startDate || filters.endDate
+        ? {
+          project: {
+            is: {
+              ...(filters.company && filters.company !== "all" && {
+                companyId: filters.company,
+              }),
+
+              ...(filters.startDate && {
+                startDate: {
+                  gte: new Date(filters.startDate),
+                },
+              }),
+
+              ...(filters.endDate && {
+                endDate: {
+                  lte: new Date(filters.endDate),
+                },
+              }),
+            },
+          },
+        }
+        : {}),
     },
     include: {
       project: {
@@ -366,7 +394,7 @@ export async function getPLData(year: number, filters?: any): Promise<PLData> {
       },
     },
   });
-  
+
 
   // ================= MONTHLY =================
   const monthlyData: PLMonthlyData[] = monthNames.map((month, index) => {
@@ -624,7 +652,7 @@ export async function filterProjectData(filters: any) {
 }
 
 export async function getMonthlyRevenueCost(year: number, filters: any) {
-  const data = await getPLData(year, filters);  
+  const data = await getPLData(year, filters);
 
   return {
     revenue: data.monthly.map((m) => ({
