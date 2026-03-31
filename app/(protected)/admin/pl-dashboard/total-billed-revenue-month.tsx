@@ -30,6 +30,7 @@ import { getMonthlyRevenueCost } from "@/lib/actions/project";
 
 type Props = {
   onMonthClick?: (data: { month: number; year: number }) => void;
+  filters: any
 };
 
 const chartConfig = {
@@ -39,7 +40,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function TotalBilledChart({ onMonthClick }: Props) {
+export function TotalBilledChart({ onMonthClick, filters }: Props) {
   const currentYear = new Date().getFullYear().toString();
   const [year, setYear] = useState(currentYear);
   const [data, setData] = useState<{ month: string; value: number }[]>([]);
@@ -50,7 +51,7 @@ export function TotalBilledChart({ onMonthClick }: Props) {
     async function load() {
       try {
         setLoading(true);
-        const res = await getMonthlyRevenueCost(Number(year));
+        const res = await getMonthlyRevenueCost(Number(year) , filters);
         setData(
           res.revenue.map((d, i) => ({
             ...d,
@@ -67,7 +68,7 @@ export function TotalBilledChart({ onMonthClick }: Props) {
     }
 
     load();
-  }, [year]);
+  }, [year , JSON.stringify(filters)]);
 
   const currentYears = new Date().getFullYear();
 

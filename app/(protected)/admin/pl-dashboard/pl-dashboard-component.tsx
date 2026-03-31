@@ -89,9 +89,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
     useEffect(() => {
         filterData()
         setMounted(true);
-    }, [JSON.stringify(filters)])
 
-    useEffect(() => {
         if (!selectedMonth) return;
 
         const { month, year } = selectedMonth;
@@ -100,11 +98,15 @@ export function PLDashboardComponent({ companies, projects }: any) {
             const billing = await getBillingDetailsByMonth({
                 month,
                 year,
+                project: filters.project,
+                company: filters.company
             });
 
             const cost: any = await getCostDetailsByMonth({
                 month,
                 year,
+                project: filters.project,
+                company: filters.company
             });
 
             setBillingDetails(billing);
@@ -138,7 +140,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
         loadDetails();
 
-    }, [selectedMonth]);
+    }, [JSON.stringify(filters), selectedMonth])
 
 
     if (mounted) {
@@ -383,13 +385,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 </Card>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <TotalBilledChart
+                    <TotalBilledChart filters={filters}
                         onMonthClick={(data) => {
                             setSelectedMonth(data);
                             setActiveTable("billing");
                         }}
                     />
                     <TotalCostChart
+                        filters={filters}
                         onMonthClick={(data) => {
                             setSelectedMonth(data);
                             setActiveTable("cost");

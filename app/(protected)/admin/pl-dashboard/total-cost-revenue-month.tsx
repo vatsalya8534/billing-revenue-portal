@@ -31,6 +31,7 @@ import { any } from "zod";
 
 type Props = {
   onMonthClick?: (data: { month: number; year: number }) => void;
+  filters: any
 };
 
 const chartConfig = {
@@ -40,7 +41,7 @@ const chartConfig = {
   },
 } satisfies ChartConfig;
 
-export function TotalCostChart({ onMonthClick }: Props) {
+export function TotalCostChart({ onMonthClick, filters }: Props) {
   const currentYear = new Date().getFullYear().toString();
   const [year, setYear] = useState(currentYear);
   const [data, setData] = useState<{ month: string; value: number }[]>([]);
@@ -51,7 +52,7 @@ export function TotalCostChart({ onMonthClick }: Props) {
     async function fetchData() {
       try {
         setLoading(true);
-        const res = await getMonthlyRevenueCost(Number(year));
+        const res = await getMonthlyRevenueCost(Number(year), filters);
         setData(
           res.cost.map((d, i) => ({
             ...d,
@@ -68,7 +69,7 @@ export function TotalCostChart({ onMonthClick }: Props) {
     }
 
     fetchData();
-  }, [year]);
+  }, [year, JSON.stringify(filters)]);
 
   const currentYears = new Date().getFullYear();
 

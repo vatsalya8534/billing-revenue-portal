@@ -342,11 +342,31 @@ function calculateCost(rec: any): number {
 
 // ================= MAIN =================
 
-export async function getPLData(year: number): Promise<PLData> {
+export async function getPLData(year: number, filters?: any): Promise<PLData> {
   const records = await prisma.projectMonthlyPL.findMany({
-    where: { year },
-    include: { project: true },
+    where: {
+      year ,
+      ...(filters.project && filters.project !== "all" && {
+        projectId: filters.project,
+      }),
+
+      ...(filters.company && filters.company !== "all" && {
+        project: {
+          is: {
+            companyId: filters.company,
+          },
+        },
+      }),
+    },
+    include: {
+      project: {
+        include: {
+          company: true,
+        },
+      },
+    },
   });
+  
 
   // ================= MONTHLY =================
   const monthlyData: PLMonthlyData[] = monthNames.map((month, index) => {
@@ -603,8 +623,8 @@ export async function filterProjectData(filters: any) {
   }
 }
 
-export async function getMonthlyRevenueCost(year: number) {
-  const data = await getPLData(year);
+export async function getMonthlyRevenueCost(year: number, filters: any) {
+  const data = await getPLData(year, filters);  
 
   return {
     revenue: data.monthly.map((m) => ({
@@ -648,8 +668,6 @@ export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
     },
   });
 
-
-
   return data.map((item) => ({
     month,
     year,
@@ -661,7 +679,9 @@ export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
 
 // ✅ Cost Details
 export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
+
   const { month, year, company, project } = params;
+
 
   const dbMonth = month - 1;
 
@@ -670,13 +690,15 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
       month: dbMonth,
       year,
 
-      ...(project && {
+      ...(project && project !== "all" && {
         projectId: project,
       }),
 
-      ...(company && {
+      ...(company && company !== "all" && {
         project: {
-          companyId: company,
+          is: {
+            companyId: company,
+          },
         },
       }),
     },
