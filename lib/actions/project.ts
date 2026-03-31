@@ -639,6 +639,10 @@ export async function filterProjectData(filters: any) {
     }
   }
 
+  let profit: number = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+
+  if (isNaN(profit)) { profit = 0 }
+
   return {
     totalPOValue: totalPOValue,
     totalBilledValue: totalBilledValue,
@@ -646,7 +650,7 @@ export async function filterProjectData(filters: any) {
     totalFMSValue: totalFMSValue,
     totalSpareValue: totalSpareValue,
     totalResourceCount: totalResourceCount,
-    totalProfit: (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2),
+    totalProfit: profit,
     data: JSON.parse(JSON.stringify(projects))
   }
 }
@@ -687,7 +691,7 @@ export async function getBillingDetailsByMonth(params: MonthlyDetailsParams, fil
           },
         },
       }),
-       ...(filters.startDate || filters.endDate
+      ...(filters.startDate || filters.endDate
         ? {
           project: {
             is: {
@@ -755,7 +759,7 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams, filter
         },
       }),
 
-       ...(filters.startDate || filters.endDate
+      ...(filters.startDate || filters.endDate
         ? {
           project: {
             is: {
