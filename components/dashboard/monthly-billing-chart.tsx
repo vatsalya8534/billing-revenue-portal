@@ -184,7 +184,7 @@ export function MonthlyBillingChartCard({ plData }: MonthlyBillingChartCardProps
                       fontSize={15}
                       fill="#fff"
                       formatter={(val: number) =>
-                        val ===0 ? "" : " ₹" + val.toFixed(2)
+                        val === 0 ? "" : " ₹" + val.toFixed(2)
                       }
                     />
                   </Bar>
@@ -198,3 +198,5 @@ export function MonthlyBillingChartCard({ plData }: MonthlyBillingChartCardProps
     </>
   );
 }
+
+

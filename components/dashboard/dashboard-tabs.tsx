@@ -7,17 +7,17 @@ import {
   TabsTrigger,
   TabsContent,
 } from "@/components/ui/tabs";
-import { Accordion } from "@/components/ui/accordion";
+
 
 import { MonthlyBillingChartCard } from "./monthly-billing-chart";
 import { MonthlyPLChart } from "./monthly-pl-chart";
 import { BillingStatusChart } from "./billing-status-chart";
 import { PLStatusChart } from "./pl-status-chart";
 
-import PLBillingCycle from "@/components/pl/pl-billing-cycle";
-
 import { useForm, useFieldArray } from "react-hook-form";
 import { Form } from "@/components/ui/form";
+import UpcomingPayments from "./upcomming-payment";
+import RevenueByCompany from "@/components/dashboard/revenue";
 
 // ================= TYPES =================
 interface BillingCycleField {
@@ -35,6 +35,9 @@ interface DashboardStats {
   currentMonth: string;
   billingThisMonth: number;
   totalBilledAmount: number;
+  totalCollectedAmount: number;
+  totalOverdueAmount: number;
+  collectionEfficiency: number;
 }
 
 interface DashboardTabsProps {
@@ -61,6 +64,8 @@ export function DashboardTabs({ stats, plData }: DashboardTabsProps) {
     name: "billingCycle",
   });
 
+  
+
   return (
     <div className="space-y-6">
       <Tabs
@@ -78,10 +83,46 @@ export function DashboardTabs({ stats, plData }: DashboardTabsProps) {
 
         {/* ================= REVENUE TAB ================= */}
         <TabsContent value="revenue">
-          <div className="space-y-4">
+          <div className="space-y-6">
 
-            {/* Cards */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* ================= KPI CARDS ================= */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-gray-500">Total Revenue</p>
+                <h2 className="text-2xl font-bold">
+                  ₹{stats.totalBilledAmount || 0}
+                </h2>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-gray-500">Collected</p>
+                <h2 className="text-2xl font-bold text-green-600">
+                  ₹{stats.totalCollectedAmount || 0}
+                </h2>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-gray-500">Outstanding</p>
+                <h2 className="text-2xl font-bold text-yellow-600">
+                  ₹{(stats.totalBilledAmount || 0) - (stats.totalCollectedAmount || 0)}
+                </h2>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-gray-500">Overdue</p>
+                <h2 className="text-2xl font-bold text-red-600">
+                  ₹{stats.totalOverdueAmount || 0}
+                </h2>
+              </div>
+
+              <div className="p-4 border rounded-lg bg-white shadow-sm">
+                <p className="text-sm text-gray-500">Efficiency</p>
+                <h2 className="text-2xl font-bold">
+                  {stats.collectionEfficiency || 0}%
+                </h2>
+              </div>
+
               <div className="p-4 border rounded-lg bg-white shadow-sm">
                 <p className="text-sm text-gray-500">Bill Count</p>
                 <h2 className="text-2xl font-bold">
@@ -89,39 +130,61 @@ export function DashboardTabs({ stats, plData }: DashboardTabsProps) {
                 </h2>
               </div>
 
-              <div className="p-4 border rounded-lg bg-white shadow-sm">
-                <p className="text-sm text-gray-500">
-                  Billing This Month ({stats.currentMonth})
-                </p>
-                <h2 className="text-2xl font-bold">
-                  ₹{stats.billingThisMonth || 0}
-                </h2>
+            </div>
+
+            {/* ================= ALERTS ================= */}
+            <div className="space-y-2">
+              {stats.totalOverdueAmount > 100000 && (
+                <div className="p-3 bg-red-100 text-red-700 rounded">
+                  ⚠️ High overdue amount
+                </div>
+              )}
+
+              {stats.collectionEfficiency < 60 && (
+                <div className="p-3 bg-yellow-100 text-yellow-700 rounded">
+                  ⚠️ Low collection efficiency
+                </div>
+              )}
+            </div>
+
+            {/* ================= CHARTS ================= */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <div className="border rounded-lg p-6 bg-white shadow-sm">
+                <h3 className="text-lg font-semibold mb-4 text-center">
+                  Monthly Billing Trend
+                </h3>
+                <MonthlyBillingChartCard />
               </div>
 
-              <div className="p-4 border rounded-lg bg-white shadow-sm">
-                <p className="text-sm text-gray-500">
-                  Total Billed Amount
-                </p>
-                <h2 className="text-2xl font-bold">
-                  ₹{stats.totalBilledAmount || 0}
-                </h2>
+              <div className="border rounded-lg p-6 bg-white shadow-sm">
+                <h3 className="text-lg font-semibold mb-4 text-center">
+                  Billing Status
+                </h3>
+                <BillingStatusChart />
               </div>
+
             </div>
 
-            {/* Charts */}
-            <div className="border rounded-lg p-6 bg-white shadow-sm">
-              <h3 className="text-lg font-semibold mb-4 text-center">
-                Monthly Billing Trend
-              </h3>
-              <MonthlyBillingChartCard />
+            {/* ================= FUTURE SECTIONS ================= */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <div className="border rounded-lg p-6 bg-white shadow-sm">
+                <h3 className="text-lg font-semibold mb-4">
+                  Revenue by Company
+                </h3>
+                <RevenueByCompany />
+              </div>
+
+              <div className="border rounded-lg p-6 bg-white shadow-sm">
+                <h3 className="text-lg font-semibold mb-4">
+                  Upcoming Payments
+                </h3>
+                <UpcomingPayments />
+              </div>
+
             </div>
 
-            <div className="border rounded-lg p-6 bg-white shadow-sm">
-              <h3 className="text-lg font-semibold mb-4 text-center">
-                Billing Status
-              </h3>
-              <BillingStatusChart />
-            </div>
           </div>
         </TabsContent>
 

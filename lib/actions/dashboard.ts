@@ -3,219 +3,286 @@
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
 
-// ---------------- DASHBOARD STATS ----------------
-export async function getDashboardStats() {
+// ================= TYPES =================
+export interface DashboardStats {
+  billCount: number;
+  billingThisMonth: number;
+  totalBilledAmount: number;
+  totalCollectedAmount: number;
+  totalOverdueAmount: number;
+  collectionEfficiency: number;
+  currentMonth: string;
+}
+
+// ================= COMMON HELPERS =================
+function normalizeAmount(billed: number, collected: number) {
+  const safeCollected = Math.min(collected, billed);
+  const pending = billed - safeCollected;
+
+  return { billed, collected: safeCollected, pending };
+}
+
+function getCycleDate(c: any): Date | null {
+  return (
+    c.billingSubmittedDate ??
+    c.invoiceDate ??
+    c.paymentDueDate ??
+    null
+  );
+}
+
+// ================= DASHBOARD STATS =================
+export async function getDashboardStats(): Promise<DashboardStats> {
   const now = new Date();
-
-  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const billCount = await prisma.billingCycle.count();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
 
-  const billingThisMonthAgg = await prisma.billingCycle.aggregate({
-    where: {
-      billingSubmittedDate: {
-        gte: startOfMonth,
-        lte: endOfMonth,
-      },
-    },
-    _sum: {
-      invoiceAmount: true,
-    },
-  });
-
-  const totalBilledAgg = await prisma.purchaseOrder.aggregate({
-    _sum: {
-      poAmount: true,
-    },
-  });
-
-  // ✅ TOTAL OVERDUE CALCULATION
-  const overdueCycles = await prisma.billingCycle.findMany({
-    where: {
-      paymentDueDate: {
-        not: null,
-      },
-    },
+  const cycles = await prisma.billingCycle.findMany({
     select: {
       invoiceAmount: true,
       collectedAmount: true,
+      billingSubmittedDate: true,
+      invoiceDate: true,
       paymentDueDate: true,
     },
   });
 
+  let totalBilled = 0;
+  let totalCollected = 0;
   let totalOverdue = 0;
 
-  overdueCycles.forEach((cycle) => {
-    const billingAmt = Number(cycle.invoiceAmount || 0);
-    const paidAmt = Number(cycle.collectedAmount || 0);
+  let billedThisMonth = 0;
+  let collectedThisMonth = 0;
 
-    if (!cycle.paymentDueDate) return;
+  for (const c of cycles) {
+    const billed = Number(c.invoiceAmount || 0);
+    const rawCollected = Number(c.collectedAmount || 0);
 
-    const dueDate = new Date(cycle.paymentDueDate);
-    dueDate.setHours(0, 0, 0, 0);
+    const { collected, pending } = normalizeAmount(billed, rawCollected);
 
-    if (dueDate < today && paidAmt < billingAmt) {
-      totalOverdue += billingAmt - paidAmt;
+    totalBilled += billed;
+    totalCollected += collected;
+
+    const date = getCycleDate(c);
+    if (!date) continue;
+
+    const d = new Date(date);
+
+    // ✅ current month
+    if (
+      d.getMonth() === currentMonth &&
+      d.getFullYear() === currentYear
+    ) {
+      billedThisMonth += billed;
+      collectedThisMonth += collected;
     }
-  });
 
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-  ];
+    // ✅ overdue
+    if (c.paymentDueDate) {
+      const due = new Date(c.paymentDueDate);
+      due.setHours(0, 0, 0, 0);
+
+      if (due < today && pending > 0) {
+        totalOverdue += pending;
+      }
+    }
+  }
+
+  const collectionEfficiency = billedThisMonth
+    ? Number(((collectedThisMonth / billedThisMonth) * 100).toFixed(2))
+    : 0;
 
   return {
-    billCount,
-    billingThisMonth: billingThisMonthAgg._sum.invoiceAmount || 0,
-    totalBilledAmount: totalBilledAgg._sum.poAmount || 0,
-    totalOverdueAmount: totalOverdue, // ✅ NEW FIELD
-    currentMonth: months[now.getMonth()],
+    billCount: cycles.length,
+    billingThisMonth: billedThisMonth,
+    totalBilledAmount: totalBilled,
+    totalCollectedAmount: totalCollected,
+    totalOverdueAmount: totalOverdue,
+    collectionEfficiency,
+    currentMonth: now.toLocaleString("default", { month: "short" }),
   };
 }
 
-// ---------------- PIE CHART ----------------
+// ================= PIE CHART =================
 export async function getBillingStatusData(year: number, month?: number) {
-  const start = new Date(year, (month || 1) - 1, 1);
-  const end = month
-    ? new Date(year, month, 0, 23, 59, 59)
-    : new Date(year, 11, 31, 23, 59, 59);
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const cycles = await prisma.billingCycle.findMany({
-    where: {
-      OR: [
-        { billingSubmittedDate: { gte: start, lte: end } },
-        { paymentDueDate: { gte: start, lte: end } },
-      ],
-    },
     select: {
       invoiceAmount: true,
       collectedAmount: true,
-      paymentReceived: true,
       billingSubmittedDate: true,
+      invoiceDate: true,
       paymentDueDate: true,
     },
   });
 
-  let billGenerated = 0;
-  let paymentReceived = 0;
+  let bill = 0;
+  let paid = 0;
   let overdue = 0;
 
-  for (const cycle of cycles) {
-    const billingAmt = Number(cycle.invoiceAmount || 0);
-    const paidAmt = Number(cycle.collectedAmount || 0);
+  for (const c of cycles) {
+    const date = getCycleDate(c);
+    if (!date) continue;
 
-    const billingDate = cycle.billingSubmittedDate;
-    const dueDateRaw = cycle.paymentDueDate;
+    const d = new Date(date);
 
-    if (billingDate && billingDate >= start && billingDate <= end) {
-      billGenerated += billingAmt;
+    if (d.getFullYear() !== year) continue;
+    if (month && d.getMonth() !== month - 1) continue;
 
-      if (cycle.paymentReceived === "YES") {
-        paymentReceived += paidAmt;
-      }
-    }
+    const billed = Number(c.invoiceAmount || 0);
+    const rawCollected = Number(c.collectedAmount || 0);
 
-    if (dueDateRaw && paidAmt < billingAmt) {
-      const dueDate = new Date(dueDateRaw);
-      dueDate.setHours(0, 0, 0, 0);
+    const { collected, pending } = normalizeAmount(billed, rawCollected);
 
-      if (dueDate < today && dueDate >= start && dueDate <= end) {
-        overdue += billingAmt - paidAmt;
+    bill += billed;
+    paid += collected;
+
+    if (c.paymentDueDate) {
+      const due = new Date(c.paymentDueDate);
+      due.setHours(0, 0, 0, 0);
+
+      if (due < today && pending > 0) {
+        overdue += pending;
       }
     }
   }
 
   return [
-    { status: "Bill Generated", value: billGenerated },
-    { status: "Payment Received", value: paymentReceived },
+    { status: "Bill Generated", value: bill },
+    { status: "Payment Received", value: paid },
     { status: "Overdue", value: overdue },
   ];
 }
 
-// ---------------- MONTHLY CHART ----------------
+// ================= MONTHLY CHART =================
 export async function getMonthlyBillingData(year: number) {
   const now = new Date();
-  const currentMonthIndex = now.getMonth();
+  const currentMonth = now.getMonth();
 
   const cycles = await prisma.billingCycle.findMany({
-    where: {
-      billingSubmittedDate: {
-        gte: new Date(year, 0, 1),
-        lte: new Date(year, 11, 31),
-      },
-    },
     select: {
       invoiceAmount: true,
       collectedAmount: true,
-      paymentReceived: true,
+      invoiceDate: true,
       billingSubmittedDate: true,
+      paymentDueDate: true,
     },
   });
 
   const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec"
   ];
 
-  const monthlyData = months.map((month, index) => ({
-    month,
+  const data = months.map((m, i) => ({
+    month: m,
     billing: 0,
     payment: 0,
-    index,
+    overdue: 0,
+    index: i,
   }));
 
-  cycles.forEach((cycle) => {
-    if (!cycle.billingSubmittedDate) return;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    const monthIndex = new Date(cycle.billingSubmittedDate).getMonth();
+  cycles.forEach((c) => {
+    // ✅ FIX: Use invoiceDate first 
+    const date = c.invoiceDate ?? c.billingSubmittedDate;
+    if (!date) return;
 
-    monthlyData[monthIndex].billing += Number(cycle.invoiceAmount || 0);
+    const d = new Date(date);
 
-    if (cycle.paymentReceived === "YES") {
-      monthlyData[monthIndex].payment += Number(cycle.collectedAmount || 0);
+    // ✅ Filter by year
+    if (d.getFullYear() !== year) return;
+
+    const i = d.getMonth();
+
+    const billing = Number(c.invoiceAmount || 0);
+    const paid = Number(c.collectedAmount || 0);
+
+    data[i].billing += billing;
+    data[i].payment += paid;
+
+    // ✅ Overdue logic
+    if (c.paymentDueDate && paid < billing) {
+      const due = new Date(c.paymentDueDate);
+      due.setHours(0, 0, 0, 0);
+
+      if (due < today) {
+        data[i].overdue += billing - paid;
+      }
     }
   });
 
+  // ✅ Remove future months (only for current year)
   if (year === now.getFullYear()) {
-    monthlyData.forEach((m) => {
-      if (m.index > currentMonthIndex) {
-        m.billing = 0;
-        m.payment = 0;
+    data.forEach((d) => {
+      if (d.index > currentMonth) {
+        d.billing = 0;
+        d.payment = 0;
+        d.overdue = 0;
       }
     });
   }
 
-  return monthlyData;
+  return data;
 }
 
-// ---------------- TABLE DETAILS ----------------
+// ================= UPCOMING PAYMENTS =================
+export async function getUpcomingPayments() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const cycles = await prisma.billingCycle.findMany({
+    select: {
+      invoiceNumber: true,
+      invoiceAmount: true,
+      collectedAmount: true,
+      paymentDueDate: true,
+    },
+  });
+
+  return cycles
+    .map((c) => {
+      const billed = Number(c.invoiceAmount || 0);
+      const collected = Number(c.collectedAmount || 0);
+
+      const pending = billed - collected;
+
+      return {
+        invoiceNumber: c.invoiceNumber || "-",
+        paymentDueDate: c.paymentDueDate,
+        invoiceAmount: pending,
+      };
+    })
+    .filter(
+      (c) =>
+        c.paymentDueDate &&
+        new Date(c.paymentDueDate) >= today &&
+        c.invoiceAmount > 0
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.paymentDueDate!).getTime() -
+        new Date(b.paymentDueDate!).getTime()
+    );
+}
+
+// ================= TABLE DETAILS =================
 export async function getBillingStatusDetails(
   status: string,
   year: number,
   month?: number
 ) {
-  const start = new Date(year, (month || 1) - 1, 1);
-  const end = month
-    ? new Date(year, month, 0, 23, 59, 59)
-    : new Date(year, 11, 31, 23, 59, 59);
-
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
   const cycles = await prisma.billingCycle.findMany({
-    where: {
-      OR: [
-        { billingSubmittedDate: { gte: start, lte: end } },
-        { paymentDueDate: { gte: start, lte: end } },
-      ],
-    },
     include: {
       purchaseOrder: {
         include: {
@@ -229,32 +296,32 @@ export async function getBillingStatusDetails(
 
   return cycles
     .filter((cycle) => {
-      const billingAmt = Number(cycle.invoiceAmount || 0);
-      const paidAmt = Number(cycle.collectedAmount || 0);
+      const billed = Number(cycle.invoiceAmount || 0);
+      const collected = Number(cycle.collectedAmount || 0);
 
-      const billingDate = cycle.billingSubmittedDate;
-      const dueDateRaw = cycle.paymentDueDate;
+      const { pending } = normalizeAmount(billed, collected);
 
-      if (status === "Bill Generated") {
-        return billingDate && billingDate >= start && billingDate <= end;
-      }
+      const date = getCycleDate(cycle);
+      if (!date) return false;
+
+      const d = new Date(date);
+
+      if (d.getFullYear() !== year) return false;
+      if (month && d.getMonth() !== month - 1) return false;
+
+      if (status === "Bill Generated") return true;
 
       if (status === "Payment Received") {
-        return (
-          cycle.paymentReceived === "YES" &&
-          billingDate &&
-          billingDate >= start &&
-          billingDate <= end
-        );
+        return collected > 0;
       }
 
       if (status === "Overdue") {
-        if (!dueDateRaw) return false;
+        if (!cycle.paymentDueDate) return false;
 
-        const dueDate = new Date(dueDateRaw);
-        dueDate.setHours(0, 0, 0, 0);
+        const due = new Date(cycle.paymentDueDate);
+        due.setHours(0, 0, 0, 0);
 
-        return dueDate < today && paidAmt < billingAmt;
+        return due < today && pending > 0;
       }
 
       return false;
@@ -262,15 +329,10 @@ export async function getBillingStatusDetails(
     .map((cycle) => ({
       id: cycle.id,
       poNumber: cycle.purchaseOrder.customerPONumber,
-
       invoiceNumber: cycle.invoiceNumber || "-",
-
-     
       companyName: cycle.purchaseOrder.customer?.companyName || "-",
-
       serviceName: cycle.purchaseOrder.ServiceType?.name || "-",
       billingPlan: cycle.purchaseOrder.billingPlan?.name || "-",
-
       amount: Number(cycle.invoiceAmount || 0),
 
       startDate: cycle.purchaseOrder.startFrom
