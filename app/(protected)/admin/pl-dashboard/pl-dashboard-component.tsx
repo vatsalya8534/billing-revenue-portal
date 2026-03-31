@@ -102,7 +102,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 year,
             });
 
-            const cost = await getCostDetailsByMonth({
+            const cost: any = await getCostDetailsByMonth({
                 month,
                 year,
             });
@@ -125,9 +125,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                 item.other = sum
 
-                if(isNaN(item.other)) {
+                if (isNaN(item.other)) {
                     item.other = 0;
                 }
+
+                item.totalCost = Number(item.fms) + Number(item.spare) + Number(item.other);
+                item.profitPercentage = ((item.billedAmount - item.totalCost) / item.billedAmount) * 100
             }
 
             setCostDetails(cost);
@@ -439,9 +442,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                         <TableHead>Year</TableHead>
                                         <TableHead>Company Name</TableHead>
                                         <TableHead>Project Name</TableHead>
+                                        <TableHead>Billing Amount</TableHead>
                                         <TableHead>FMS</TableHead>
                                         <TableHead>Spare</TableHead>
                                         <TableHead>Other</TableHead>
+                                        <TableHead>total Cost</TableHead>
+                                        <TableHead>GM %</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -451,9 +457,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             <TableCell>{item.year}</TableCell>
                                             <TableCell>{item.companyName}</TableCell>
                                             <TableCell>{item.projectName}</TableCell>
+                                            <TableCell>{item.billedAmount}</TableCell>
                                             <TableCell>{item.fms}</TableCell>
                                             <TableCell>{item.spare}</TableCell>
                                             <TableCell>{item.other ?? 0}</TableCell>
+                                            <TableCell>{item.totalCost ?? 0}</TableCell>
+                                            <TableCell>{item.profitPercentage.toFixed(2) ?? 0} %</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

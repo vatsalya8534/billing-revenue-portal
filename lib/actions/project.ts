@@ -693,6 +693,7 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
   return data.map((item) => ({
     month,
     year,
+    billedAmount: item.billedAmount,
     companyName: item.project.company.name,
     projectName: item.project.projectName,
     fms: Number(item.fms || 0),
