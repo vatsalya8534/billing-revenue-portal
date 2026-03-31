@@ -19,11 +19,12 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { filterProjectData, getBillingDetailsByMonth, getCostDetailsByMonth } from "@/lib/actions/project";
 import { TotalBilledChart } from "./total-billed-revenue-month";
 import { TotalCostChart } from "./total-cost-revenue-month";
+import moment from "moment";
 
 export function PLDashboardComponent({ companies, projects }: any) {
     const [mounted, setMounted] = useState(false)
@@ -107,10 +108,33 @@ export function PLDashboardComponent({ companies, projects }: any) {
             });
 
             setBillingDetails(billing);
+
+            for (const item of cost) {
+                let sum = 0;
+
+                if (typeof item.other === "string") {
+
+                    let otherData = JSON.parse(item.other);
+
+                    if (Array.isArray(otherData)) {
+                        for (const item of otherData) {
+                            sum += Number(item.value);
+                        }
+                    }
+                }
+
+                item.other = sum
+
+                if(isNaN(item.other)) {
+                    item.other = 0;
+                }
+            }
+
             setCostDetails(cost);
         }
 
         loadDetails();
+
     }, [selectedMonth]);
 
 
@@ -389,7 +413,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                 <TableBody>
                                     {billingDetails.map((item, i) => (
                                         <TableRow key={i}>
-                                            <TableCell>{item.month}</TableCell>
+                                            <TableCell>{moment().month(item.month - 1).format("MMMM")}</TableCell>
                                             <TableCell>{item.year}</TableCell>
                                             <TableCell>{item.companyName}</TableCell>
                                             <TableCell>{item.projectName}</TableCell>
@@ -423,13 +447,13 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                 <TableBody>
                                     {costDetails.map((item, i) => (
                                         <TableRow key={i}>
-                                            <TableCell>{item.month}</TableCell>
+                                            <TableCell>{moment().month(item.month - 1).format("MMMM")}</TableCell>
                                             <TableCell>{item.year}</TableCell>
                                             <TableCell>{item.companyName}</TableCell>
                                             <TableCell>{item.projectName}</TableCell>
                                             <TableCell>{item.fms}</TableCell>
                                             <TableCell>{item.spare}</TableCell>
-                                            <TableCell>{JSON.stringify(item.other)}</TableCell>
+                                            <TableCell>{item.other ?? 0}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

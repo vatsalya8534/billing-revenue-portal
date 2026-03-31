@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, LabelList, XAxis, YAxis } from "recharts";
 
 import {
   Card,
@@ -104,6 +104,16 @@ export function TotalBilledChart({ onMonthClick }: Props) {
             layout="vertical"
             margin={{ left: 10 }}
             height={400}
+            onClick={(state: any) => {
+              if (state?.activePayload?.length) {
+                const payload = state.activePayload[0].payload;
+
+                onMonthClick?.({
+                  month: payload.monthNumber,
+                  year: payload.year,
+                });
+              }
+            }}
           >
             <XAxis type="number" hide />
 
@@ -113,6 +123,7 @@ export function TotalBilledChart({ onMonthClick }: Props) {
               tickLine={false}
               axisLine={false}
               tickMargin={10}
+              interval={0}
             />
 
             <ChartTooltip
@@ -124,13 +135,33 @@ export function TotalBilledChart({ onMonthClick }: Props) {
               dataKey="value"
               fill="var(--color-value)"
               radius={5}
-              onClick={(data: any) => {
-                onMonthClick?.({
-                  month: data.monthNumber,
-                  year: data.year,
-                });
-              }}
-            />
+            >
+              <LabelList
+                dataKey="value"
+                position="insideRight"
+                fontSize={12}
+                fill="#fff"
+                content={(props: any) => {
+                  const { x, y, width, height, value } = props;
+
+                  if (value === 0) return null;
+
+                  return (
+                    <text
+                      x={x + width / 2}
+                      y={y + height / 1.5}
+                      fill="#fff"
+                      textAnchor="middle"
+                      dominantBaseline="middle"
+                      fontSize={12}
+                    >
+                      ₹{value.toFixed(2)}
+                    </text>
+                  );
+                }}
+              />
+
+            </Bar>
           </BarChart>
         </ChartContainer>
 
