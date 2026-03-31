@@ -355,8 +355,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                             </TableHeader>
                             <TableBody>
                                 {
-                                    filteredValues.length > 0 && filteredValues.map((project: any, index: number) => (
-                                        <TableRow key={index}>
+                                    filteredValues.length > 0 && filteredValues.map((project: any, index: number) => {
+                                        let profit = Math.floor(((project.totalRevenue - project.totalCost) / project.totalRevenue) * 100)
+                                        
+                                        if(isNaN(profit)) profit = 0
+
+                                        return <TableRow key={index}>
                                             <TableCell>
                                                 {project.company.name}
                                             </TableCell>
@@ -373,10 +377,10 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                                 {project.totalCost}
                                             </TableCell>
                                             <TableCell>
-                                                {(((project.totalRevenue - project.totalCost) / project.totalRevenue) * 100).toFixed(2)} %
+                                                {profit} %
                                             </TableCell>
                                         </TableRow>
-                                    ))
+                                    })
                                 }
 
                             </TableBody>

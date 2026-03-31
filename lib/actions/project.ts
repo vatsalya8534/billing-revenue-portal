@@ -639,7 +639,7 @@ export async function filterProjectData(filters: any) {
     }
   }
 
-  let profit: number = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+  let profit: number = Math.round(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
 
   if (isNaN(profit)) { profit = 0 }
 
