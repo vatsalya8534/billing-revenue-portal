@@ -78,7 +78,7 @@ export function TotalBilledChart({ onMonthClick }: Props) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Monthly Billing</CardTitle>
+          <CardTitle>Monthly Billing By Revenue</CardTitle>
           <CardDescription>Jan - Dec</CardDescription>
         </div>
 

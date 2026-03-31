@@ -438,7 +438,6 @@ export async function getPLSummary(year: number) {
 }
 
 // ================= DETAILS =================
-
 export async function getPLStatusDetails(
   status: string,
   year: number,
@@ -555,6 +554,7 @@ export async function filterProjectData(filters: any) {
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalResourceCount = 0;
+  let totalProfit = 0;
 
   const projects = await prisma.project.findMany({
     where,

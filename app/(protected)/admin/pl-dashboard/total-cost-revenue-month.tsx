@@ -80,7 +80,7 @@ export function TotalCostChart({ onMonthClick }: Props) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Monthly Cost</CardTitle>
+          <CardTitle>Monthly Cost By Cost</CardTitle>
           <CardDescription>Jan - Dec</CardDescription>
         </div>
 
