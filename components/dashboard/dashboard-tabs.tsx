@@ -83,21 +83,21 @@ export function DashboardTabs({ stats, plData }: DashboardTabsProps) {
               <div className="p-4 border rounded-lg bg-white shadow-sm">
                 <p className="text-sm text-gray-500">Total Revenue</p>
                 <h2 className="text-2xl font-bold">
-                  ₹{stats.totalBilledAmount || 0}
+                  ₹{Math.round(stats.totalBilledAmount) || 0}
                 </h2>
               </div>
 
               <div className="p-4 border rounded-lg bg-white shadow-sm">
                 <p className="text-sm text-gray-500">Collected</p>
                 <h2 className="text-2xl font-bold text-green-600">
-                  ₹{stats.totalCollectedAmount || 0}
+                  ₹{Math.round(stats.totalCollectedAmount) || 0}
                 </h2>
               </div>
 
               <div className="p-4 border rounded-lg bg-white shadow-sm">
                 <p className="text-sm text-gray-500">Bill Growth</p>
                 <h2 className="text-2xl font-bold text-blue-600">
-                  {stats.billGrowth?.toFixed(2) || 0}%
+                  {stats.billGrowth?.toFixed(0) || 0}%
                 </h2>
               </div>
 
@@ -122,7 +122,7 @@ export function DashboardTabs({ stats, plData }: DashboardTabsProps) {
             </div>
 
             {/* ================= CHARTS ================= */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 gap-6">
               <div className="border rounded-lg p-6 bg-white shadow-sm">
                 <h3 className="text-lg font-semibold mb-4 text-center">
                   Monthly Billing Trend
