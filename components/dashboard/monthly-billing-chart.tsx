@@ -124,7 +124,13 @@ export function MonthlyBillingChartCard({ plData }: MonthlyBillingChartCardProps
                   barCategoryGap="10%"
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} />
-                  <XAxis type="number" tickFormatter={(val) => val.toLocaleString()} />
+                  <XAxis
+                    type="number"
+                    scale="log"
+                    domain={[1, 'auto']} // Start at 1 (or 0.1) instead of 0
+                    allowDataOverflow
+                    tickFormatter={(val) => val.toLocaleString()}
+                  />
                   <YAxis type="category" dataKey="month" />
                   <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
 
@@ -168,7 +174,13 @@ export function MonthlyBillingChartCard({ plData }: MonthlyBillingChartCardProps
                   barCategoryGap="10%"
                 >
                   <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} />
-                  <XAxis type="number" tickFormatter={(val) => val.toLocaleString()} />
+                  <XAxis
+                    type="number"
+                    scale="log"
+                    domain={[1, 'auto']} // Start at 1 (or 0.1) instead of 0
+                    allowDataOverflow
+                    tickFormatter={(val) => val.toLocaleString()}
+                  />
                   <YAxis type="category" dataKey="month" />
                   <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
 
