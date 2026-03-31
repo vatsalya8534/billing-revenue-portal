@@ -469,7 +469,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             <TableCell>{item.spare}</TableCell>
                                             <TableCell>{item.other ?? 0}</TableCell>
                                             <TableCell>{item.totalCost ?? 0}</TableCell>
-                                            <TableCell>{item.profitPercentage.toFixed(2) ?? 0} %</TableCell>
+                                            <TableCell>{Math.round(item.profitPercentage) ?? 0} %</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
