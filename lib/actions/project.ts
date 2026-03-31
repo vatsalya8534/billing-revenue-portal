@@ -666,7 +666,7 @@ export async function getMonthlyRevenueCost(year: number, filters: any) {
   };
 }
 
-export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
+export async function getBillingDetailsByMonth(params: MonthlyDetailsParams, filters: any) {
   const { month, year, company, project } = params;
 
   const dbMonth = month - 1;
@@ -676,15 +676,40 @@ export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
       month: dbMonth,
       year,
 
-      ...(project && {
+      ...(project && project !== "all" && {
         projectId: project,
       }),
 
-      ...(company && {
+      ...(company && company !== "all" && {
         project: {
-          companyId: company,
+          is: {
+            companyId: company,
+          },
         },
       }),
+       ...(filters.startDate || filters.endDate
+        ? {
+          project: {
+            is: {
+              ...(filters.company && filters.company !== "all" && {
+                companyId: filters.company,
+              }),
+
+              ...(filters.startDate && {
+                startDate: {
+                  gte: new Date(filters.startDate),
+                },
+              }),
+
+              ...(filters.endDate && {
+                endDate: {
+                  lte: new Date(filters.endDate),
+                },
+              }),
+            },
+          },
+        }
+        : {}),
     },
 
     include: {
@@ -706,7 +731,7 @@ export async function getBillingDetailsByMonth(params: MonthlyDetailsParams) {
 }
 
 // ✅ Cost Details
-export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
+export async function getCostDetailsByMonth(params: MonthlyDetailsParams, filters: any) {
 
   const { month, year, company, project } = params;
 
@@ -729,6 +754,30 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
           },
         },
       }),
+
+       ...(filters.startDate || filters.endDate
+        ? {
+          project: {
+            is: {
+              ...(filters.company && filters.company !== "all" && {
+                companyId: filters.company,
+              }),
+
+              ...(filters.startDate && {
+                startDate: {
+                  gte: new Date(filters.startDate),
+                },
+              }),
+
+              ...(filters.endDate && {
+                endDate: {
+                  lte: new Date(filters.endDate),
+                },
+              }),
+            },
+          },
+        }
+        : {}),
     },
 
     include: {
@@ -740,7 +789,7 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
     },
   });
 
-  return data.map((item) => ({
+  return JSON.parse(JSON.stringify(data.map((item) => ({
     month,
     year,
     billedAmount: item.billedAmount,
@@ -749,5 +798,5 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams) {
     fms: Number(item.fms || 0),
     spare: Number(item.spare || 0),
     other: item.otherCost || {},
-  }));
+  }))));
 }

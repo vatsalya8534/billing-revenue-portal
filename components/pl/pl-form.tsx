@@ -104,6 +104,8 @@ const PLForm = ({
       const start = moment(startDate);
       const end = moment(endDate);
 
+      form.setValue("billingCycle", [])
+
       const months = Math.ceil(end.diff(start, "months", true));
 
       if (!billingPlanId) return;

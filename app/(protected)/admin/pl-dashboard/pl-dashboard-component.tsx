@@ -100,14 +100,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 year,
                 project: filters.project,
                 company: filters.company
-            });
+            }, filters);
 
             const cost: any = await getCostDetailsByMonth({
                 month,
                 year,
                 project: filters.project,
                 company: filters.company
-            });
+            }, filters);
 
             setBillingDetails(billing);
 
@@ -146,7 +146,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
     if (mounted) {
         return (
             <div className="space-y-4">
-                <div className="bg-white border rounded-2xl shadow-sm p-5 space-y-5">
+                <div className="border rounded-2xl shadow-sm p-5 space-y-5">
 
                     {/* Header */}
                     <div className="flex items-center justify-between">
@@ -158,7 +158,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                         {/* Company */}
                         <div className="space-y-2">
-                            <Label className="text-sm text-muted-foreground">Company</Label>
+                            <Label className="">Company</Label>
                             <Select
                                 value={filters.company}
                                 onValueChange={(value) => updateFilter("company", value)}
@@ -179,7 +179,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                         {/* Project */}
                         <div className="space-y-2">
-                            <Label className="text-sm text-muted-foreground">Project</Label>
+                            <Label className="">Project</Label>
                             <Select
                                 value={filters.project}
                                 onValueChange={(value) => updateFilter("project", value)}
@@ -200,14 +200,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                         {/* From Date */}
                         <div className="space-y-2">
-                            <Label className="text-sm text-muted-foreground">From Date</Label>
+                            <Label className="">From Date</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
                                         className="w-full justify-start rounded-xl text-left font-normal"
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        <CalendarIcon className="mr-2 " />
                                         {filters.startDate
                                             ? format(filters.startDate, "PPP")
                                             : "Select date"}
@@ -225,14 +225,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                         {/* To Date */}
                         <div className="space-y-2">
-                            <Label className="text-sm text-muted-foreground">To Date</Label>
+                            <Label className="">To Date</Label>
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
                                         className="w-full justify-start rounded-xl text-left font-normal"
                                     >
-                                        <CalendarIcon className="mr-2 h-4 w-4 text-muted-foreground" />
+                                        <CalendarIcon className="mr-2 " />
                                         {filters.endDate
                                             ? format(filters.endDate, "PPP")
                                             : "Select date"}
@@ -262,37 +262,28 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-6 gap-4">
+                <div className="grid grid-cols-5 gap-4">
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total PO Value</span>
-                                <span>{totalValues.totalPOValue}</span>
+                                <span className="font-bold">Total PO Value</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalPOValue}</span>
                             </div>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total Billed Value</span>
-                                <span>{totalValues.totalBilledValue}</span>
+                                <span className="font-bold">Total Billed Value</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalBilledValue}</span>
                             </div>
                         </CardContent>
                     </Card>
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total Cost Value</span>
-                                <span>{totalValues.totalCostValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span>Total Resouces Count</span>
-                                <span>{totalValues.totalResourceCount}</span>
+                                <span className="font-bold">Total Cost Value</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalCostValue}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -300,8 +291,8 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total FMS Value</span>
-                                <span>{totalValues.totalFMSValue}</span>
+                                <span className="font-bold">Total Resouces Count</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalResourceCount}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -309,8 +300,8 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total Spare Value</span>
-                                <span>{totalValues.totalSpareValue}</span>
+                                <span className="font-bold">Total FMS Value</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalFMSValue}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -318,8 +309,17 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span>Total GM %</span>
-                                <span>{totalValues.totalProfit}</span>
+                                <span className="font-bold">Total Spare Value</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalSpareValue}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent>
+                            <div className="flex justify-between">
+                                <span className="font-bold">Total GM %</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalProfit} %</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -327,7 +327,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                 <Card className="mt-4">
                     <CardHeader>
-                        <h2>Profit and Lost</h2>
+                        <h2 className="text-xl font-bold">Profit and Lost</h2>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -403,7 +403,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 {activeTable === "billing" && (
                     <Card className="mt-4">
                         <CardHeader>
-                            <h2>Billing Amount In Detail</h2>
+                            <h2 className="text-xl font-bold">Billing Amount In Detail</h2>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -435,7 +435,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 {activeTable === "cost" && (
                     <Card className="mt-4">
                         <CardHeader>
-                            <h2>Total Cost In Detail</h2>
+                            <h2 className="text-xl font-bold">Total Cost In Detail</h2>
                         </CardHeader>
                         <CardContent>
                             <Table>
