@@ -5,6 +5,7 @@ import { format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import moment from "moment";
+import { CardContent } from "@/components/ui/card";
 
 const safeNumber = (value: any) => {
   const num = Number(value);
@@ -48,7 +49,22 @@ export default async function PLViewPage({ params }: Props) {
     return <p className="p-6 text-red-600 font-semibold">Project not found.</p>;
   }
 
-  const { project, billingCycles, totalRevenue, totalCost, gmPercent } = data;
+  const { project, billingCycles } = data;
+
+  // Calculate totals for the new summary cards
+  const totalValues = {
+    totalPOValue: safeNumber(project.poValue),
+    totalBilledValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.billedAmount), 0),
+    totalCostValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.fms + b.spare + b.otherCost), 0),
+    totalResourceCount: safeNumber(project.resourceCount),
+    totalFMSValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.fms), 0),
+    totalSpareValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.spare), 0),
+    totalProfit: (() => {
+      const totalRevenue = billingCycles.reduce((sum, b) => sum + safeNumber(b.billedAmount), 0);
+      const totalCost = billingCycles.reduce((sum, b) => sum + safeNumber(b.fms + b.spare + b.otherCost), 0);
+      return totalRevenue === 0 ? 0 : ((totalRevenue - totalCost) / totalRevenue) * 100;
+    })(),
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
@@ -61,21 +77,70 @@ export default async function PLViewPage({ params }: Props) {
       </div>
 
       {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <Card>
-          <p className="text-sm text-gray-500">Total Revenue</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">₹{totalRevenue.toLocaleString()}</p>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total PO Value</span>
+              <span className="text-blue-500 font-bold">₹{totalValues.totalPOValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
         </Card>
+
         <Card>
-          <p className="text-sm text-gray-500">Total Cost</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">₹{totalCost.toLocaleString()}</p>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total Billed Value</span>
+              <span className="text-blue-500 font-bold">₹{totalValues.totalBilledValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
         </Card>
+
         <Card>
-          <p className="text-sm text-gray-500">GM%</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">{gmPercent.toFixed(2)}%</p>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total Cost Value</span>
+              <span className="text-blue-500 font-bold">₹{totalValues.totalCostValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total Resource Count</span>
+              <span className="text-blue-500 font-bold">{totalValues.totalResourceCount}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total FMS Value</span>
+              <span className="text-blue-500 font-bold">₹{totalValues.totalFMSValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total Spare Value</span>
+              <span className="text-blue-500 font-bold">₹{totalValues.totalSpareValue.toLocaleString()}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent>
+            <div className="flex justify-between">
+              <span className="font-bold">Total GM %</span>
+              <span className="text-blue-500 font-bold">{Math.round(totalValues.totalProfit)}%</span>
+            </div>
+          </CardContent>
         </Card>
       </div>
-
       {/* BASIC DETAILS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="Project Details">
@@ -108,26 +173,31 @@ export default async function PLViewPage({ params }: Props) {
                   <th className="text-right p-4">Billed Amount</th>
                   <th className="text-right p-4">FMS</th>
                   <th className="text-right p-4">Spare</th>
-                  <th className="text-right p-4">total</th>
+                  <th className="text-right p-4">Other Cost</th>
+                  <th className="text-right p-4">Total Cost</th>
+                  <th className="text-right p-4">Profit (₹)</th>
                   <th className="text-right p-4">GM%</th>
-
                 </tr>
               </thead>
               <tbody>
                 {billingCycles.map((bc: any, i: number) => {
-                  console.log(bc);
-                  
-                  return <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">
-                    <td className="p-4">{i + 1}</td>
-                    <td className="p-4">{moment().month(Number(bc.month)).format("MMMM")} {bc.year}</td>
-                    <td className="p-4 text-right">₹{safeNumber(bc.billedAmount).toLocaleString()}</td>
-                    <td className="p-4 text-right">₹{safeNumber(bc.fms).toLocaleString()}</td>
-                    <td className="p-4 text-right">₹{safeNumber(bc.spare).toLocaleString()}</td>
+                  const totalCost = safeNumber(bc.fms + bc.spare + bc.otherCost);
+                  const profitAmount = safeNumber(bc.billedAmount - totalCost);
+                  const profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : (profitAmount / bc.billedAmount) * 100;
 
-                    <td className="p-4 text-right">₹{safeNumber(bc.otherCost).toLocaleString()}</td>
-                    <td className="p-4 text-right">{safeNumber(bc.profit.toFixed(2)).toLocaleString()}%</td>
-
-                  </tr>
+                  return (
+                    <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">
+                      <td className="p-4">{i + 1}</td>
+                      <td className="p-4">{moment().month(Number(bc.month)).format("MMMM")} {bc.year}</td>
+                      <td className="p-4 text-right">₹{safeNumber(bc.billedAmount).toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{safeNumber(bc.fms).toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{safeNumber(bc.spare).toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{safeNumber(bc.otherCost).toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{totalCost.toLocaleString()}</td>
+                      <td className="p-4 text-right">₹{Math.round(profitAmount).toLocaleString()}</td>
+                      <td className="p-4 text-right">{Math.round(profitPercent)}%</td>
+                    </tr>
+                  )
                 })}
               </tbody>
             </table>

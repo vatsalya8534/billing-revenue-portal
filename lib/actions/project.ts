@@ -550,9 +550,13 @@ export async function fetchPLPageData(projectId: string) {
   const project = projectRes.data;
   const billingCycles = billingRes.success && billingRes.data ? billingRes.data : [];
 
+  // Map billing cycles with safe numbers and calculate profit
   const billingCyclesSafe = billingCycles.map((b: any) => {
     const billedAmount = safeNumber(b.billedAmount);
+    const fms = safeNumber(b.fms);
+    const spare = safeNumber(b.spare);
 
+    // Parse otherCost safely
     let otherCost = 0;
     if (b.otherCost) {
       try {
@@ -564,39 +568,55 @@ export async function fetchPLPageData(projectId: string) {
 
         if (!Array.isArray(parsed)) parsed = [];
 
-        // <-- Fix: specify sum type
         otherCost = parsed.reduce((sum: number, c: any) => sum + safeNumber(c.value), 0);
       } catch (err) {
         otherCost = 0;
       }
     }
 
+    const totalCost = fms + spare + otherCost;
+    const profitAmount = billedAmount - totalCost;
+    const profitPercent = billedAmount === 0 ? 0 : (profitAmount / billedAmount) * 100;
+
     return {
       id: b.id,
       month: b.month,
       year: b.year,
       billedAmount,
-      fms: b.fms,
-      spare: b.spare,
+      fms,
+      spare,
       otherCost,
-      profit: otherCost === 0 ? 0 : ((Number(billedAmount) - (Number(otherCost) + Number(b.fms) + Number(b.spare))) / Number(billedAmount)) * 100
+      totalCost,
+      profitAmount,
+      profitPercent
     };
   });
 
-  // ✅ Calculate totals
-  const totalRevenue = billingCyclesSafe.reduce((sum, b) => sum + b.billedAmount, 0);
-  const totalCost = billingCyclesSafe.reduce((sum, b) => sum + b.otherCost, 0);
-  const gmPercent = totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
+  // ================== TOTALS ==================
+  const totalBilledValue = billingCyclesSafe.reduce((sum, b) => sum + b.billedAmount, 0);
+  const totalCostValue = billingCyclesSafe.reduce((sum, b) => sum + b.totalCost, 0);
+  const totalFMSValue = billingCyclesSafe.reduce((sum, b) => sum + b.fms, 0);
+  const totalSpareValue = billingCyclesSafe.reduce((sum, b) => sum + b.spare, 0);
+  const totalResourceCount = safeNumber(project.resourceCount);
+  const totalPOValue = safeNumber(project.poValue);
+  const totalProfit = totalBilledValue === 0 ? 0 : ((totalBilledValue - totalCostValue) / totalBilledValue) * 100;
 
   return {
     success: true,
     project,
     billingCycles: billingCyclesSafe,
-    totalRevenue,
-    totalCost,
-    gmPercent,
+    totals: {
+      totalPOValue,
+      totalBilledValue,
+      totalCostValue,
+      totalResourceCount,
+      totalFMSValue,
+      totalSpareValue,
+      totalProfit
+    }
   };
 }
+
 
 export async function filterProjectData(filters: any) {
   const where = buildFilters(filters);
