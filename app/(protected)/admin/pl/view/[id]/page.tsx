@@ -53,17 +53,13 @@ export default async function PLViewPage({ params }: Props) {
 
   // Calculate totals for the new summary cards
   const totalValues = {
-    totalPOValue: safeNumber(project.poValue),
-    totalBilledValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.billedAmount), 0),
-    totalCostValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.fms + b.spare + b.otherCost), 0),
-    totalResourceCount: safeNumber(project.resourceCount),
-    totalFMSValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.fms), 0),
-    totalSpareValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.spare), 0),
-    totalProfit: (() => {
-      const totalRevenue = billingCycles.reduce((sum, b) => sum + safeNumber(b.billedAmount), 0);
-      const totalCost = billingCycles.reduce((sum, b) => sum + safeNumber(b.fms + b.spare + b.otherCost), 0);
-      return totalRevenue === 0 ? 0 : ((totalRevenue - totalCost) / totalRevenue) * 100;
-    })(),
+    totalPOValue: project.poValue,
+    totalBilledValue: project.totalRevenue,
+    totalCostValue: project.totalCost,
+    totalResourceCount: project.resourceCount,
+    totalFMSValue: billingCycles.reduce((sum, b) => sum + b.fms, 0),
+    totalSpareValue: billingCycles.reduce((sum, b) => sum + b.spare, 0),
+    totalProfit: Math.round((Number(project.totalRevenue) - Number(project.totalCost)) / Number(project.totalRevenue) * 100) 
   };
 
   return (
@@ -183,7 +179,9 @@ export default async function PLViewPage({ params }: Props) {
                 {billingCycles.map((bc: any, i: number) => {
                   const totalCost = safeNumber(bc.fms + bc.spare + bc.otherCost);
                   const profitAmount = safeNumber(bc.billedAmount - totalCost);
-                  const profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : (profitAmount / bc.billedAmount) * 100;
+                  let profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : (profitAmount / bc.billedAmount) * 100;
+
+                  if(bc.billedAmount === profitAmount) profitPercent = 0 
 
                   return (
                     <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">
