@@ -29,13 +29,13 @@ import moment from "moment";
 
 const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-const years : number[] = [];
+const years: number[] = [];
 
 let date = new Date()
 const currentYear = date.getFullYear()
 
 for (let num = 2010; num <= currentYear; num++) {
-   years.push(num);
+    years.push(num);
 }
 
 export function PLDashboardComponent({ companies, projects }: any) {
@@ -91,10 +91,10 @@ export function PLDashboardComponent({ companies, projects }: any) {
         let res = await filterProjectData(filters)
 
         console.log(filters);
-        
+
 
         console.log(res);
-        
+
 
         setFilteredValues(res.data)
         setTotalValues({
@@ -399,6 +399,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                         <Table>
                             <TableHeader>
                                 <TableRow>
+                                     <TableHead>
+                                        Month
+                                    </TableHead>
+                                     <TableHead>
+                                        Year
+                                    </TableHead>
                                     <TableHead>
                                         Company Name
                                     </TableHead>
@@ -412,6 +418,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                         Total Billed Revenue upto last update
                                     </TableHead>
                                     <TableHead>
+                                        Total FMS  upto last update
+                                    </TableHead>
+                                     <TableHead>
+                                        Total Spare  upto last update
+                                    </TableHead>
+                                     <TableHead>
                                         Total Cost  upto last update
                                     </TableHead>
                                     <TableHead>
@@ -422,11 +434,48 @@ export function PLDashboardComponent({ companies, projects }: any) {
                             <TableBody>
                                 {
                                     filteredValues.length > 0 && filteredValues.map((project: any, index: number) => {
-                                        let profit = Math.floor(((project.totalRevenue - project.totalCost) / project.totalRevenue) * 100)
+                                        let totalBilledValue = 0;
+                                        let totalCostValue = 0;
+                                        let totalFmsValue = 0;
+                                        let totalSpareValue = 0;
+                                        let totalOtherCost = 0;
+
+                                        for (const cycle of project.monthlyPLs) {                                            
+                                            if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
+                                                totalBilledValue += Number(cycle.billedAmount);
+                                                totalFmsValue += Number(cycle.fms);
+                                                totalSpareValue += Number(cycle.spare); 
+                                                totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
+
+                                                if (typeof cycle.otherCost === "string") {
+                                                    let otherBilling = JSON.parse(cycle.otherCost);
+
+                                                    if (Array.isArray(otherBilling)) {
+                                                        for (const bill of otherBilling) {
+                                                            if (bill && typeof bill === "object" && !Array.isArray(bill)) {
+                                                                if ("value" in bill) {
+                                                                    totalOtherCost += Number(bill.value);
+                                                                    totalCostValue += Number(bill.value);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                        }
+
+                                        let profit = Math.floor(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
 
                                         if (isNaN(profit)) profit = 0
 
                                         return <TableRow key={index}>
+                                            <TableCell>
+                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")}
+                                            </TableCell>
+                                            <TableCell>
+                                                {filters.year}
+                                            </TableCell>
                                             <TableCell>
                                                 {project.company.name}
                                             </TableCell>
@@ -437,10 +486,16 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                                 {project.poValue}
                                             </TableCell>
                                             <TableCell>
-                                                {project.totalRevenue}
+                                                {totalBilledValue}
                                             </TableCell>
                                             <TableCell>
-                                                {project.totalCost}
+                                                {totalFmsValue}
+                                            </TableCell>
+                                            <TableCell>
+                                                {totalSpareValue}
+                                            </TableCell>
+                                            <TableCell>
+                                                {totalCostValue}
                                             </TableCell>
                                             <TableCell>
                                                 {profit} %

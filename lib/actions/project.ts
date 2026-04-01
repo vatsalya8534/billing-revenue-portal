@@ -262,12 +262,7 @@ function getTotalAmount(data: any) {
       const fms = Number(billingCycle.fms) || 0;
       const spare = Number(billingCycle.spare) || 0;
 
-      console.log(fms);
-      console.log(spare);
-      console.log(billed);
-
-
-      if (billed !== 0 && (fms !== 0 || spare !== 0)) {
+      if (billed != 0 && (fms != 0 || spare != 0)) {
         amount.totalRevenue += billed;
 
         amount.totalCost += fms + spare;
@@ -345,8 +340,6 @@ function calculateCost(rec: any): number {
 // ================= MAIN =================
 
 export async function getPLData(year: number, filters?: any): Promise<PLData> {
-  console.log(filters);
-
   const records = await prisma.projectMonthlyPL.findMany({
     where: {
       year,
@@ -651,9 +644,6 @@ export async function filterProjectData(filters: any) {
       createdAt: "desc",
     },
   });
-
-  console.log({ filters });
-
 
   if (projects.length > 0) {
     for (const project of projects) {
