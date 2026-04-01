@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import {
     Select,
     SelectContent,
+    SelectGroup,
     SelectItem,
     SelectTrigger,
     SelectValue,
@@ -25,6 +26,17 @@ import { filterProjectData, getBillingDetailsByMonth, getCostDetailsByMonth } fr
 import { TotalBilledChart } from "./total-billed-revenue-month";
 import { TotalCostChart } from "./total-cost-revenue-month";
 import moment from "moment";
+
+const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+const years : number[] = [];
+
+let date = new Date()
+const currentYear = date.getFullYear()
+
+for (let num = 2010; num <= currentYear; num++) {
+   years.push(num);
+}
 
 export function PLDashboardComponent({ companies, projects }: any) {
     const [mounted, setMounted] = useState(false)
@@ -44,6 +56,8 @@ export function PLDashboardComponent({ companies, projects }: any) {
         project: "all",
         startDate: undefined as Date | undefined,
         endDate: undefined as Date | undefined,
+        month: "all",
+        year: "all",
     });
 
     const [selectedMonth, setSelectedMonth] = useState<{
@@ -67,12 +81,20 @@ export function PLDashboardComponent({ companies, projects }: any) {
             project: "all",
             startDate: undefined,
             endDate: undefined,
+            month: 'all',
+            year: 'all',
         };
         setFilters(reset)
     };
 
     const filterData = async () => {
         let res = await filterProjectData(filters)
+
+        console.log(filters);
+        
+
+        console.log(res);
+        
 
         setFilteredValues(res.data)
         setTotalValues({
@@ -248,6 +270,50 @@ export function PLDashboardComponent({ companies, projects }: any) {
                             </Popover>
                         </div>
 
+                        <div className="space-y-2">
+                            <Label className="">Month</Label>
+                            <Select
+                                defaultValue={filters.month}
+                                onValueChange={(v) => updateFilter("month", v)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Order type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Months</SelectItem>
+                                    <SelectGroup>
+                                        {
+                                            allMonths.map((month, index) => (
+                                                <SelectItem value={index.toString()} key={index}>{month}</SelectItem>
+                                            ))
+                                        }
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="">Year</Label>
+                            <Select
+                                defaultValue={filters.year}
+                                onValueChange={(v) => updateFilter("year", v)}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Order type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Year</SelectItem>
+                                    <SelectGroup>
+                                        {
+                                            years.map((year, index) => (
+                                                <SelectItem value={year.toString()} key={index}>{year}</SelectItem>
+                                            ))
+                                        }
+                                    </SelectGroup>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
                         {/* Reset Button (desktop inline) */}
                         <div className="flex items-end">
                             <Button
@@ -357,8 +423,8 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                 {
                                     filteredValues.length > 0 && filteredValues.map((project: any, index: number) => {
                                         let profit = Math.floor(((project.totalRevenue - project.totalCost) / project.totalRevenue) * 100)
-                                        
-                                        if(isNaN(profit)) profit = 0
+
+                                        if (isNaN(profit)) profit = 0
 
                                         return <TableRow key={index}>
                                             <TableCell>

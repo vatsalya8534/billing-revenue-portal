@@ -627,31 +627,71 @@ export async function filterProjectData(filters: any) {
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalResourceCount = 0;
-  let totalProfit = 0;
 
   const projects = await prisma.project.findMany({
     where,
     include: {
       company: true,
+      monthlyPLs: {
+        where: {
+          ...(filters.month &&
+            filters.month !== "all" && {
+            month: Number(filters.month),
+          }),
+
+          ...(filters.year &&
+            filters.year !== "all" && {
+            year: Number(filters.year),
+          }),
+        },
+      }
+
     },
     orderBy: {
       createdAt: "desc",
     },
   });
 
+  console.log({ filters });
+
+
   if (projects.length > 0) {
     for (const project of projects) {
       totalPOValue += Number(project.poValue);
-      totalBilledValue += Number(project.totalRevenue);
-      totalCostValue += Number(project.totalCost);
       totalResourceCount += Number(project.resourceCount);
 
-      let billingCycle = await getBillingCyclesByPOID(project.id)
+      if (filters.year === "all" && filters.month === "all") {
+        totalBilledValue += Number(project.totalRevenue);
+        totalCostValue += Number(project.totalCost);
+        console.log("fasfafds");
 
-      if (billingCycle?.data && billingCycle.data.length > 0) {
-        for (const cycle of billingCycle.data) {
+      } else {
+        if (project.monthlyPLs && project.monthlyPLs.length > 0) {
+          for (const cycle of project.monthlyPLs) {
+            totalBilledValue += Number(cycle.billedAmount);
+            totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
 
+            let otherCostData = []
 
+            if (typeof cycle.otherCost === "string") {
+              try {
+                otherCostData = JSON.parse(cycle.otherCost);
+              } catch (e) {
+                console.error("Invalid JSON:", cycle.otherCost);
+              }
+            }
+
+            for (const otherCost of otherCostData) {
+              if(otherCost.value)
+              totalCostValue += Number(otherCost.value);
+            }
+
+          }
+        }
+      }
+
+      if (project.monthlyPLs && project.monthlyPLs.length > 0) {
+        for (const cycle of project.monthlyPLs) {
           totalFMSValue += Number(cycle.fms);
           totalSpareValue += Number(cycle.spare)
         }

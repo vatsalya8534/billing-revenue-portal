@@ -6,11 +6,12 @@ type Filters = {
     search?: string;
     startDate?: Date;
     endDate?: Date;
+    month?: string;
+    year?: string;
 };
 
 export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
     const where: Prisma.ProjectWhereInput = {};
-
 
     if (filters.company && filters.company !== "all") {
         where.companyId = filters.company;
@@ -19,6 +20,7 @@ export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
     if (filters.project && filters.project !== "all") {
         where.id = filters.project;
     }
+
     if (filters.startDate) {
         const start = filters.startDate
             ? new Date(new Date(filters.startDate).setHours(0, 0, 0, 0))
@@ -44,6 +46,19 @@ export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
         };
     }
 
+    where.monthlyPLs = {
+        some: {
+            ...(filters.month &&
+                filters.month !== "all" && {
+                month: Number(filters.month),
+            }),
+
+            ...(filters.year &&
+                filters.year !== "all" && {
+                year: Number(filters.year),
+            }),
+        },
+    };
 
     return where;
 }

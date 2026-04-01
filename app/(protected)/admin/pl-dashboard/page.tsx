@@ -9,7 +9,6 @@ const PLDashboard = async () => {
     return (
         <div>
             <PLDashboardComponent companies={JSON.parse(JSON.stringify(companies))} projects={JSON.parse(JSON.stringify(projects))} />
-            
         </div>
     )
 }
