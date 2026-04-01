@@ -399,11 +399,8 @@ export function PLDashboardComponent({ companies, projects }: any) {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                     <TableHead>
-                                        Month
-                                    </TableHead>
-                                     <TableHead>
-                                        Year
+                                    <TableHead>
+                                        Month/Year
                                     </TableHead>
                                     <TableHead>
                                         Company Name
@@ -420,11 +417,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                     <TableHead>
                                         Total FMS  upto last update
                                     </TableHead>
-                                     <TableHead>
+                                    <TableHead>
                                         Total Spare  upto last update
                                     </TableHead>
-                                     <TableHead>
-                                        Total Cost  upto last update
+                                    <TableHead>
+                                        Total Other Cost  upto last update
+                                    </TableHead>
+                                    <TableHead>
+                                        Total Cost  (FMS + SPARE + OTHER)
                                     </TableHead>
                                     <TableHead>
                                         Current GM%
@@ -440,11 +440,11 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                         let totalSpareValue = 0;
                                         let totalOtherCost = 0;
 
-                                        for (const cycle of project.monthlyPLs) {                                            
+                                        for (const cycle of project.monthlyPLs) {
                                             if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
                                                 totalBilledValue += Number(cycle.billedAmount);
                                                 totalFmsValue += Number(cycle.fms);
-                                                totalSpareValue += Number(cycle.spare); 
+                                                totalSpareValue += Number(cycle.spare);
                                                 totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
 
                                                 if (typeof cycle.otherCost === "string") {
@@ -471,10 +471,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         return <TableRow key={index}>
                                             <TableCell>
-                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")}
-                                            </TableCell>
-                                            <TableCell>
-                                                {filters.year}
+                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")} /  {filters.year}
                                             </TableCell>
                                             <TableCell>
                                                 {project.company.name}
@@ -493,6 +490,9 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             </TableCell>
                                             <TableCell>
                                                 {totalSpareValue}
+                                            </TableCell>
+                                             <TableCell>
+                                                {totalOtherCost}
                                             </TableCell>
                                             <TableCell>
                                                 {totalCostValue}
