@@ -465,7 +465,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         }
 
-                                        let profit = Math.floor(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+                                        let profit = Math.round(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
 
                                         if (isNaN(profit)) profit = 0
 
