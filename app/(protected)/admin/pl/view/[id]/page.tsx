@@ -192,8 +192,8 @@ export default async function PLViewPage({ params }: Props) {
                       <td className="p-4 text-right">₹{safeNumber(bc.spare).toLocaleString()}</td>
                       <td className="p-4 text-right">₹{safeNumber(bc.otherCost).toLocaleString()}</td>
                       <td className="p-4 text-right">₹{totalCost.toLocaleString()}</td>
-                      <td className="p-4 text-right">₹{Math.round(profitAmount).toLocaleString()}</td>
-                      <td className="p-4 text-right">{Math.round(profitPercent)}%</td>
+                      <td className="p-4 text-right">₹{profitAmount.toLocaleString()}</td>
+                      <td className="p-4 text-right">{profitPercent}%</td>
                     </tr>
                   )
                 })}

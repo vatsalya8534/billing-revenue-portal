@@ -71,7 +71,7 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
     {
         accessorKey: "currentGM",
         header: "Current GM%",
-        cell: ({ row }) => (((row.original.totalRevenue - row.original.totalCost) / row.original.totalRevenue) * 100).toFixed(2) + " % "
+        cell: ({ row }) => (((row.original.totalRevenue - row.original.totalCost) / row.original.totalRevenue) * 100) + " % "
     },
     {
         id: "actions",
@@ -85,8 +85,6 @@ const getColumns = (onDelete: (id: string) => void): ColumnDef<any>[] => [
                             <MoreHorizontal />
                         </Button>
                     </DropdownMenuTrigger>
-
-
 
                     <DropdownMenuContent align="end">
                         <DropdownMenuItem asChild>

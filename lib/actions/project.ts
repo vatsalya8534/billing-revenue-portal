@@ -620,6 +620,7 @@ export async function filterProjectData(filters: any) {
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalResourceCount = 0;
+  let totalProfitPercentage = 0;
 
   const projects = await prisma.project.findMany({
     where,
@@ -647,51 +648,16 @@ export async function filterProjectData(filters: any) {
 
   if (projects.length > 0) {
     for (const project of projects) {
+      let res = getDetailsByProject(project)
       totalPOValue += Number(project.poValue);
-      totalResourceCount += Number(project.resourceCount);
-
-      if (filters.year === "all" && filters.month === "all") {
-        totalBilledValue += Number(project.totalRevenue);
-        totalCostValue += Number(project.totalCost);
-        console.log("fasfafds");
-
-      } else {
-        if (project.monthlyPLs && project.monthlyPLs.length > 0) {
-          for (const cycle of project.monthlyPLs) {
-            totalBilledValue += Number(cycle.billedAmount);
-            totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
-
-            let otherCostData = []
-
-            if (typeof cycle.otherCost === "string") {
-              try {
-                otherCostData = JSON.parse(cycle.otherCost);
-              } catch (e) {
-                console.error("Invalid JSON:", cycle.otherCost);
-              }
-            }
-
-            for (const otherCost of otherCostData) {
-              if(otherCost.value)
-              totalCostValue += Number(otherCost.value);
-            }
-
-          }
-        }
-      }
-
-      if (project.monthlyPLs && project.monthlyPLs.length > 0) {
-        for (const cycle of project.monthlyPLs) {
-          totalFMSValue += Number(cycle.fms);
-          totalSpareValue += Number(cycle.spare)
-        }
-      }
+      totalBilledValue += res.totalBilledValue
+      totalCostValue += res.totalCostValue
+      totalFMSValue += res.totalFmsValue
+      totalSpareValue += res.totalSpareValue
+      totalResourceCount += project.resourceCount
+      totalProfitPercentage += res.profit
     }
   }
-
-  let profit: number = Math.round(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
-
-  if (isNaN(profit)) { profit = 0 }
 
   return {
     totalPOValue: totalPOValue,
@@ -700,7 +666,7 @@ export async function filterProjectData(filters: any) {
     totalFMSValue: totalFMSValue,
     totalSpareValue: totalSpareValue,
     totalResourceCount: totalResourceCount,
-    totalProfit: profit,
+    totalProfit: totalProfitPercentage / (projects.length ?? 1),
     data: JSON.parse(JSON.stringify(projects))
   }
 }
@@ -853,4 +819,50 @@ export async function getCostDetailsByMonth(params: MonthlyDetailsParams, filter
     spare: Number(item.spare || 0),
     other: item.otherCost || {},
   }))));
+}
+
+function getDetailsByProject(project: any) {
+  let totalBilledValue = 0;
+  let totalCostValue = 0;
+  let totalFmsValue = 0;
+  let totalSpareValue = 0;
+  let totalOtherCost = 0;
+
+  for (const cycle of project.monthlyPLs) {
+    if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
+      totalBilledValue += Number(cycle.billedAmount);
+      totalFmsValue += Number(cycle.fms);
+      totalSpareValue += Number(cycle.spare);
+      totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
+
+      if (typeof cycle.otherCost === "string") {
+        let otherBilling = JSON.parse(cycle.otherCost);
+
+        if (Array.isArray(otherBilling)) {
+          for (const bill of otherBilling) {
+            if (bill && typeof bill === "object" && !Array.isArray(bill)) {
+              if ("value" in bill) {
+                totalOtherCost += Number(bill.value);
+                totalCostValue += Number(bill.value);
+              }
+            }
+          }
+        }
+      }
+    }
+
+  }
+
+  let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+
+  if (isNaN(profit)) profit = 0
+
+  return {
+    totalBilledValue,
+    totalCostValue,
+    totalFmsValue,
+    totalSpareValue,
+    totalOtherCost,
+    profit
+  }
 }

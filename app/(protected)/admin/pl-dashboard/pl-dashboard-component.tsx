@@ -90,12 +90,6 @@ export function PLDashboardComponent({ companies, projects }: any) {
     const filterData = async () => {
         let res = await filterProjectData(filters)
 
-        console.log(filters);
-
-
-        console.log(res);
-
-
         setFilteredValues(res.data)
         setTotalValues({
             totalPOValue: res.totalPOValue,
@@ -465,7 +459,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         }
 
-                                        let profit = Math.round(((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+                                        let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
 
                                         if (isNaN(profit)) profit = 0
 
@@ -590,7 +584,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             <TableCell>{item.spare}</TableCell>
                                             <TableCell>{item.other ?? 0}</TableCell>
                                             <TableCell>{item.totalCost ?? 0}</TableCell>
-                                            <TableCell>{Math.round(item.profitPercentage) ?? 0} %</TableCell>
+                                            <TableCell>{(item.profitPercentage) ?? 0} %</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
