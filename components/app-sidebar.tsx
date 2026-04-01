@@ -5,6 +5,7 @@ import {
   IconBriefcase,
   IconBuilding,
   IconContract,
+  IconPackage,
   IconReceipt,
   IconTrendingUp,
   IconTypeface,
@@ -86,6 +87,11 @@ const data = {
       title: "Roles",
       url: "/admin/roles",
       icon: IconUserCog,
+    },
+    {
+      title: "Module",
+      url: "/admin/module",
+      icon: IconPackage,
     },
   ],
   navSecondary: [

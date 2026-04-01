@@ -459,9 +459,9 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         }
 
-                                        let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+                                        let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
 
-                                        if (isNaN(profit)) profit = 0
+                                        if (!(profit)) profit = "0"
 
                                         return <TableRow key={index}>
                                             <TableCell>
@@ -485,7 +485,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             <TableCell>
                                                 {totalSpareValue}
                                             </TableCell>
-                                             <TableCell>
+                                            <TableCell>
                                                 {totalOtherCost}
                                             </TableCell>
                                             <TableCell>
@@ -505,14 +505,14 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                 <div className="grid grid-cols-2 gap-4">
                     <TotalBilledChart filters={filters}
-                        onMonthClick={(data) => {
+                        onMonthClick={(data: any) => {
                             setSelectedMonth(data);
                             setActiveTable("billing");
                         }}
                     />
                     <TotalCostChart
                         filters={filters}
-                        onMonthClick={(data) => {
+                        onMonthClick={(data: any) => {
                             setSelectedMonth(data);
                             setActiveTable("cost");
                         }}
@@ -584,7 +584,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                             <TableCell>{item.spare}</TableCell>
                                             <TableCell>{item.other ?? 0}</TableCell>
                                             <TableCell>{item.totalCost ?? 0}</TableCell>
-                                            <TableCell>{(item.profitPercentage) ?? 0} %</TableCell>
+                                            <TableCell>{(Number(item.profitPercentage).toFixed(2)) ?? 0} %</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>

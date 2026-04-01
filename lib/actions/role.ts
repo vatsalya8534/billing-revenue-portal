@@ -13,7 +13,7 @@ export async function getRoles() {
   })
 }
 
-export async function createRole(data: Role) {
+export async function createRole(data: any) {
 
   try {
     const role = roleSchema.parse(data)
@@ -22,9 +22,18 @@ export async function createRole(data: Role) {
       data: {
         name: role.name,
         remark: role.remark,
-        status: role.status
-      }
-    })
+        status: role.status,
+        roleModules: {
+          create: data.modules.map((m: any) => ({
+            moduleId: m.moduleId,
+            canView: m.canView,
+            canCreate: m.canCreate,
+            canEdit: m.canEdit,
+            canDelete: m.canDelete,
+          })),
+        },
+      },
+    });
 
     return {
       success: true,
@@ -42,7 +51,10 @@ export async function getRoleById(id: string) {
   try {
 
     let role = await prisma.role.findFirst({
-      where: { id }
+      where: { id },
+      include: {
+        roleModules: true
+      }
     })
 
     if (role) {
@@ -67,19 +79,28 @@ export async function getRoleById(id: string) {
 }
 
 
-export async function updateRole(data: Role, id: string) {
+export async function updateRole(data: any, id: string) {
   try {
 
     const role = roleSchema.parse(data)
-
     await prisma.role.update({
       where: { id },
       data: {
         name: role.name,
         remark: role.remark,
-        status: role.status
-      }
-    })
+        status: role.status,
+        roleModules: {
+          deleteMany: {}, // deletes all existing roleModules for this role
+          create: data.modules.map((m: any) => ({
+            moduleId: m.moduleId,
+            canView: m.canView,
+            canCreate: m.canCreate,
+            canEdit: m.canEdit,
+            canDelete: m.canDelete,
+          })),
+        },
+      },
+    });
 
     return {
       success: true,

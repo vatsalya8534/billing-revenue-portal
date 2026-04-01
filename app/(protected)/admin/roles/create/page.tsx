@@ -2,8 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RoleForm from "@/components/role/role-form";
 import Link from "next/link";
+import { getModules } from "@/lib/actions/module-action";
 
 const RoleCreatePage = async () => {
+
+  const modules = await getModules(); 
+
   return (
     <Card>
       <CardHeader>
@@ -16,7 +20,7 @@ const RoleCreatePage = async () => {
       </CardHeader>
 
       <CardContent>
-        <RoleForm update={false} />
+        <RoleForm update={false} modules={modules}  />
       </CardContent>
     </Card>
   );

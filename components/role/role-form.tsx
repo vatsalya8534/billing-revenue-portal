@@ -10,7 +10,7 @@ import { Loader2, ArrowRight } from "lucide-react";
 import { roleSchema } from "@/lib/validators";
 import { roleDefaultValues } from "@/lib/constants";
 import { createRole, updateRole } from "@/lib/actions/role";
-import { Role, Status } from "@prisma/client";
+import { Status } from "@prisma/client";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 
 import { z } from "zod";
+import { Module } from "@/types";
 
-const RoleForm = ({ data, update = false }: { data?: Role; update: boolean; }) => {
+const RoleForm = ({ data, update = false, modules }: { data?: any; update: boolean; modules: Module[] }) => {
+
   const router = useRouter();
   const id = data?.id;
 
@@ -30,12 +32,15 @@ const RoleForm = ({ data, update = false }: { data?: Role; update: boolean; }) =
 
   const [isPending, startTransition] = React.useTransition();
 
+  const [selectedModules, setSelectedModules] = React.useState<any[]>(data.roleModules ?? []);
+
   const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values: any) => {
     startTransition(async () => {
       let res;
 
       const payload = {
         ...values,
+        modules: selectedModules,
       };
 
       if (update && id) {
@@ -109,6 +114,73 @@ const RoleForm = ({ data, update = false }: { data?: Role; update: boolean; }) =
             </FormItem>
           )}
         />
+
+        <div className="flex flex-col gap-3">
+          <FormLabel>Assign Modules & Permissions</FormLabel>
+
+          {/* ✅ 3 MODULES PER ROW */}
+          <div className="grid grid-cols-3 gap-4">
+            {modules.map((m) => {
+              const selected = selectedModules.find(
+                (sm) => sm.moduleId === m.id,
+              );
+
+              return (
+                <div key={m.id} className="border rounded-md p-3">
+                  {/* MODULE NAME */}
+                  <div className="font-medium mb-3 text-left">{m.name}</div>
+
+                  {/* ✅ HORIZONTAL PERMISSIONS */}
+                  <div className="flex flex-wrap gap-3 justify-left text-spacebetween">
+                    {["view", "create", "edit", "delete"].map((perm) => {
+                      const key =
+                        "can" + perm.charAt(0).toUpperCase() + perm.slice(1);
+
+                      return (
+                        <label key={perm} className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={selected?.[key] || false}
+                            onChange={() => {
+                              setSelectedModules((prev) => {
+                                const exists = prev.find(
+                                  (p) => p.moduleId === m.id,
+                                );
+
+                                if (!exists) {
+                                  return [
+                                    ...prev,
+                                    {
+                                      moduleId: m.id,
+                                      canView: perm === "view",
+                                      canCreate: perm === "create",
+                                      canEdit: perm === "edit",
+                                      canDelete: perm === "delete",
+                                    },
+                                  ];
+                                }
+
+                                return prev.map((p) =>
+                                  p.moduleId === m.id
+                                    ? {
+                                      ...p,
+                                      [key]: !p[key],
+                                    }
+                                    : p,
+                                );
+                              });
+                            }}
+                          />
+                          {perm}
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Submit */}
         <div className="flex gap-3">

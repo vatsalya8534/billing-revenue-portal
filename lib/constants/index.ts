@@ -39,6 +39,13 @@ export const clientDefaultValues = {
   status: Status.ACTIVE,
 };
 
+export const moduleDefaultValues = {
+  name: "",
+  description: "",
+  role: "",
+  status: Status.ACTIVE,
+};
+
 export const purchaseOrderDefaultValues = {
   customerPONumber: "",
   poAmount: 0,

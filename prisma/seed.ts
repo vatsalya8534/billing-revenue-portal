@@ -6,6 +6,37 @@ import { Status } from "@prisma/client"
 async function main() {
     console.log("Seeding database...")
 
+    const modules = [
+        { name: "Dashboard", route: "/admin/dashboard" },
+        { name: "P&L", route: "/admin/pl" },
+        { name: "Contract Type", route: "/admin/contract-type" },
+        { name: "Service Type", route: "/admin/service-type" },
+        { name: "Billing Plan", route: "/admin/billing-plan" },
+        { name: "Contract Duration", route: "/admin/contract-duration" },
+        { name: "Customer", route: "/admin/customer" },
+        { name: "Company", route: "/admin/company" },
+        { name: "Users", route: "/admin/users" },
+        { name: "Roles", route: "/admin/roles" },
+    ];
+
+    const createdModules = [];
+
+    for (const mod of modules) {
+        const m = await prisma.module.upsert({
+            where: { route: mod.route },
+            update: {},
+            create: {
+                name: mod.name,
+                route: mod.route,
+                description: mod.name,
+            },
+        });
+
+        createdModules.push(m);
+    }
+
+    console.log("Modules seeded");
+
     const password = await bcrypt.hash("admin123", 10)
 
     const adminRole = await prisma.role.upsert({
@@ -17,6 +48,26 @@ async function main() {
             status: Status.ACTIVE
         }
     })
+
+    for (const module of createdModules) {
+        await prisma.roleModule.upsert({
+            where: {
+                roleId_moduleId: {
+                    roleId: adminRole.id,
+                    moduleId: module.id,
+                },
+            },
+            update: {},
+            create: {
+                roleId: adminRole.id,
+                moduleId: module.id,
+                canView: true,
+                canCreate: true,
+                canEdit: true,
+                canDelete: true,
+            },
+        });
+    }
 
     await prisma.user.upsert({
         where: { email: "admin@example.com" },

@@ -48,6 +48,8 @@ model Role {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]
+
+  roleModules RoleModule[]
 }
 
 model User {
@@ -65,6 +67,35 @@ model User {
   role      Role     @relation(fields: [roleId], references: [id])
 }
 
+model Module {
+  id          String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String @unique(map: "module_name_idx")
+  description String
+  route       String @unique
+  status      Status @default(ACTIVE)
+
+  roleModules RoleModule[]
+
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  updatedAt DateTime @updatedAt @db.Timestamp(6)
+}
+
+model RoleModule {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  roleId   String @db.Uuid
+  moduleId String @db.Uuid
+
+  canView   Boolean @default(true)
+  canCreate Boolean @default(false)
+  canEdit   Boolean @default(false)
+  canDelete Boolean @default(false)
+
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, moduleId])
+}
+
 model PurchaseOrder {
   id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   customerPONumber   String
@@ -76,6 +107,7 @@ model PurchaseOrder {
   paymentTerms       String
   customerId         String           @db.Uuid
   billingPlanId      String           @db.Uuid
+  companyId          String?          @db.Uuid
   poOwner            String
   remark             String?
   status             POStatus         @default(LIVE)
@@ -90,6 +122,7 @@ model PurchaseOrder {
   contract           ContractType     @relation(fields: [contractId], references: [id])
   customer           Customer         @relation(fields: [customerId], references: [id])
   ServiceType        ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  company            Company?         @relation(fields: [companyId], references: [id])
 }
 
 model BillingCycle {
@@ -106,7 +139,7 @@ model BillingCycle {
   invoiceAmount        Float?
   invoiceDate          DateTime?
   invoiceNumber        String
-  tds                  Decimal   @default(0) @db.Decimal(12, 2)
+  tds                  Decimal         @default(0) @db.Decimal(12, 2)
   purchaseOrder        PurchaseOrder   @relation(fields: [purchaseOrderId], references: [id])
 }
 
@@ -200,7 +233,8 @@ model Company {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  projects Project[]
+  projects      Project[]
+  purchaseOrder PurchaseOrder[]
 }
 
 model Project {

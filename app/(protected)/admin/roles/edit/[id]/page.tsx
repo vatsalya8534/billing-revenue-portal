@@ -5,6 +5,7 @@ import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
 import { notFound } from "next/navigation"
 import { Role } from "@/types"
+import { getModules } from "@/lib/actions/module-action"
 
 const RoleEditPage = async ({
     params,
@@ -20,6 +21,8 @@ const RoleEditPage = async ({
 
     if (!role) return notFound()
 
+    const modules = await getModules();
+
     return (
         <Card>
             <CardHeader>
@@ -32,7 +35,7 @@ const RoleEditPage = async ({
             </CardHeader>
 
             <CardContent>
-                <RoleForm update={true} data={role.data} />
+                <RoleForm update={true} data={role.data} modules={modules} />
             </CardContent>
         </Card>
     )

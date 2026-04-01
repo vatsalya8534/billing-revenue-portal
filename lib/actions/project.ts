@@ -655,7 +655,7 @@ export async function filterProjectData(filters: any) {
       totalFMSValue += res.totalFmsValue
       totalSpareValue += res.totalSpareValue
       totalResourceCount += project.resourceCount
-      totalProfitPercentage += res.profit
+      totalProfitPercentage += Number(res.profit)
     }
   }
 
@@ -853,9 +853,9 @@ function getDetailsByProject(project: any) {
 
   }
 
-  let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100)
+  let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
 
-  if (isNaN(profit)) profit = 0
+  if (!profit) profit = "0";
 
   return {
     totalBilledValue,

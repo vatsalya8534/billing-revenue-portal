@@ -22,6 +22,17 @@ export const roleSchema = z.object({
   updatedAt: z.date().nullable().optional(),
 });
 
+/* ---------------- Module ---------------- */
+export const moduleSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1, "Name is required"),
+  description: z.string().min(1, "Description is required"),
+  route: z.string().optional(),
+  status: z.enum(Object.values(Status)),
+  createdAt: z.string().nullable().optional(),
+  updatedAt: z.string().nullable().optional(),
+});
+
 /* ---------------- USER ---------------- */
 export const userSchema = z.object({
   id: z.string().optional(),
