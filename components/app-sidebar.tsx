@@ -99,7 +99,43 @@ const data = {
   ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  user?: {
+    name?: string;
+    email?: string;
+    image?: string;
+    allowedRoutes?: string[];
+  };
+};
+
+function filterNav(navMain: any[], allowedRoutes: string[]) {
+  return navMain
+    .map((section) => {
+      if (!section.items) {
+        return allowedRoutes.includes(section.url) ? section : null;
+      }
+
+      const filteredItems = section.items.filter((item: any) =>
+        allowedRoutes.includes(item.url),
+      );
+
+      if (filteredItems.length === 0) return null;
+
+      return {
+        ...section,
+        items: filteredItems,
+      };
+    })
+    .filter(Boolean);
+}
+
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
+
+  const allowedRoutes = user?.allowedRoutes || [];
+  console.log(allowedRoutes);
+  
+  const filteredNav = filterNav(data.navMain, allowedRoutes);
+
   return (
     <Sidebar
       collapsible="icon"
@@ -124,7 +160,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="overflow-y-auto">
-        <NavMain items={data.navMain} />
+        <NavMain items={filteredNav} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
 

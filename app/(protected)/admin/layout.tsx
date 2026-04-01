@@ -5,14 +5,39 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { prisma } from "@/lib/prisma"
 import { redirect } from "next/navigation"
 
 export default async function ({ children }: { children: React.ReactNode }) {
 
-  const session = await auth() 
+  const session: any = await auth()
 
-  if(!session) redirect("/login")
-  
+  if (!session) redirect("/login")
+
+  const userRoles = session?.user?.email
+    ? await prisma.user.findUnique({
+      where: { email: session.user.email },
+      include: {
+        role: {
+          include: {
+            roleModules: {
+              include: {
+                module: true,
+              },
+            },
+          },
+        },
+      },
+    })
+    : null;
+
+  const allowedRoutes = userRoles?.role?.roleModules?.map((rm) => rm.module.route) || []
+
+  const user = userRoles ? {
+    name: userRoles.firstName || undefined,
+    email: userRoles.email || undefined,
+    allowedRoutes,
+  } : undefined;
 
   return (
     <SidebarProvider
@@ -23,7 +48,7 @@ export default async function ({ children }: { children: React.ReactNode }) {
         } as React.CSSProperties
       }
     >
-      <AppSidebar />
+      <AppSidebar user={user} />
       <SidebarInset>
         <SiteHeader />
         <div className="flex flex-1 flex-col">

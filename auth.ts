@@ -30,8 +30,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                     include: { role: true }
                 })
 
-                console.log(user);
-
                 // check if user exist and if the password matches
                 if (user && user.password) {
                     const isMatched = await bycrpt.compare(credentials.password as string, user.password)
