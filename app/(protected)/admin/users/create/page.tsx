@@ -4,9 +4,16 @@ import UserForm from "@/components/user/user-form";
 import Link from "next/link";
 import { Role } from "@prisma/client";
 import { getRoles } from "@/lib/actions/role";
+import { canAccess } from "@/lib/rbac";
+import { redirect } from "next/navigation";
 
 const UserCreatePage = async () => {
-  const roles = await getRoles();
+
+  const route = "/admin/users";
+  const canCreate = await canAccess(route, "create");
+  if (!canCreate) {
+    redirect("/404");
+  }
 
   return (
     <Card>

@@ -1,28 +1,36 @@
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { getModules } from "@/lib/actions/module-action";
-import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { Module } from "@/types";
-import { ModuleDataTable } from "./module-data-table";
+import ModuleDataTable from "./module-data-table";
+import { canAccess, getUserPermissions } from "@/lib/rbac";
 
 const ModulePage = async () => {
 
   const modules = await getModules();
 
+  const route = "/admin/module";
+  const canView = await canAccess(route, "view")
+  if (!canView) {
+    redirect("/404");
+  }
+
+  const canCreate = await canAccess(route, "create");
+  const canEdit = await canAccess(route, "edit");
+  const canDelete = await canAccess(route, "delete");
+
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Modules</CardTitle>
-        <Link href="/admin/module/create">
-          <Button className="bg-blue-500 hover:bg-blue-600">Create Module</Button>
-        </Link>
-      </CardHeader>
-      <CardContent>
-        <ModuleDataTable data={modules} />
-      </CardContent>
-    </Card>
+    <ModuleDataTable data={modules}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      title="Module"
+      actions={
+        canCreate && (
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/module/create">Add Module</Link>
+          </Button>
+        )
+      } />
   );
 };
 

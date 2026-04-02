@@ -1,26 +1,36 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { BillingPlan } from "@/types"
-import { BillingPlanDataTable } from "./billing-plan-datatable"
 import { getBillingPlans } from "@/lib/actions/billing-plan"
+import { canAccess, getUserPermissions } from "@/lib/rbac"
+import { redirect } from "next/navigation"
+import BillingPlanDataTable from "./billing-plan-datatable"
 
 const RolesPage = async () => {
   const billingPlans = await getBillingPlans()
 
+  const route = "/admin/billing-plan";
+  const canView = await canAccess(route, "view")
+  if (!canView) {
+    redirect("/404");
+  }
+
+  const canCreate = await canAccess(route, "create");
+  const canEdit = await canAccess(route, "edit");
+  const canDelete = await canAccess(route, "delete");
+
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Billing Plans</CardTitle>
-        <Link href="/admin/billing-plan/create">
-          <Button className="bg-blue-500 hover:bg-blue-600">Create Billing Plan</Button>
-        </Link>
-      </CardHeader>
-      <CardContent>
-        <BillingPlanDataTable data={billingPlans.data as BillingPlan[]} />
-      </CardContent>
-    </Card>
-  )
+    <BillingPlanDataTable data={billingPlans}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      title="Billing Plan"
+      actions={
+        canCreate && (
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/billing-plan/create">Add Billing Plan</Link>
+          </Button>
+        )
+      } />
+  );
 }
 
 export default RolesPage

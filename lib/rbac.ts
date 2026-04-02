@@ -1,10 +1,15 @@
+import { auth } from "@/auth";
 import { prisma } from "./prisma";
 
+export async function getUserPermissions() {
 
-// ✅ get full user with permissions
-export async function getUserPermissions(email: string) {
+  const session: any = await auth();
+  if (!session?.user?.email) {
+    return
+  }
+
   return prisma.user.findUnique({
-    where: { email },
+    where: { email: session.user.email },
     include: {
       role: {
         include: {
@@ -19,15 +24,18 @@ export async function getUserPermissions(email: string) {
   });
 }
 
-export function canAccess(user: any, route: string, action: string) {
+export async function canAccess(route: string, action: string) {
+
+  let user = await getUserPermissions();
 
   if (!user) return false;
 
-  // ✅ FIXED ADMIN CHECK (FINAL)
   if (user.role?.name?.toLowerCase().includes("admin")) return true;
 
   const permission = user.role.roleModules.find(
-    (rm: any) => rm.module.route === route,
+    (rm: any) => {
+      return rm.module.route === route
+    }
   );
 
   if (!permission) return false;
@@ -38,4 +46,19 @@ export function canAccess(user: any, route: string, action: string) {
   if (action === "delete") return !!permission.canDelete;
 
   return false;
+}
+
+
+export async function getAllowedRoute(route: any) {
+
+  const canView = await canAccess(route, "view")
+  const canCreate = await canAccess(route, "create");
+  const canEdit = await canAccess(route, "edit");
+  const canDelete = await canAccess(route, "delete");
+
+  if (canView || canCreate || canEdit || canDelete) {
+    return route;
+  }
+
+  return "";
 }

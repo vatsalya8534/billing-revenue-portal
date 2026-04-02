@@ -3,13 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import RoleForm from "@/components/role/role-form"
 import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { BillingPlan, Project, Role } from "@/types"
 import { getBillingCyclesByPOID, getprojectById } from "@/lib/actions/project"
 import PLForm from "@/components/pl/pl-form"
 import { getCompanys } from "@/lib/actions/company"
 import { getBillingPlans } from "@/lib/actions/billing-plan"
 import { Company } from "@prisma/client"
+import { canAccess } from "@/lib/rbac"
 
 const ProjectEditPage = async ({
     params,
@@ -32,6 +33,14 @@ const ProjectEditPage = async ({
 
     project = JSON.parse(JSON.stringify(project))
 
+    const route = "/admin/pl";
+    const canEdit = await canAccess(route, "edit")
+
+    if (!canEdit) {
+        redirect("/404");
+    }
+
+
     return (
         <Card>
             <CardHeader>
@@ -44,7 +53,7 @@ const ProjectEditPage = async ({
             </CardHeader>
 
             <CardContent>
-                <PLForm  billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans.data as BillingPlan[]} />
+                <PLForm billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans as BillingPlan[]} />
             </CardContent>
         </Card>
     )

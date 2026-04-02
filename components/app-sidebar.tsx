@@ -5,6 +5,7 @@ import {
   IconBriefcase,
   IconBuilding,
   IconContract,
+  IconDashboard,
   IconPackage,
   IconReceipt,
   IconTrendingUp,
@@ -36,6 +37,11 @@ const data = {
     avatar: "/avatars/shadcn.jpg",
   },
   navMain: [
+    {
+      title: "Dashboard",
+      url: "/admin/dashboard",
+      icon: IconDashboard,
+    },
     {
       title: "Revenue",
       url: "/admin/purchase-orders",
@@ -133,7 +139,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   const allowedRoutes = user?.allowedRoutes || [];
   console.log(allowedRoutes);
-  
+
   const filteredNav = filterNav(data.navMain, allowedRoutes);
 
   return (

@@ -16,10 +16,8 @@ export async function getBillingPlans() {
       },
     });
 
-    return {
-      success: true,
-      data,
-    };
+    return data;
+    
   } catch (error) {
     return {
       success: false,

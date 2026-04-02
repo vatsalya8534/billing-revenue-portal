@@ -1,27 +1,36 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { DataTable } from "@/components/ui/data-table"
-import { columns } from "./column"
 import { getUsers } from "@/lib/actions/users"
-import { UserDataTable } from "./user-datatable"
-import { User } from "@/types"
+import { redirect } from "next/navigation";
+import { canAccess, getUserPermissions } from "@/lib/rbac"
+import UserDataTable from "./user-datatable"
 
 export default async function UsersPage() {
-  const users = await getUsers() 
+  const users = await getUsers()
+
+  const route = "/admin/users";
+
+  const canView = await canAccess(route, "view")
+
+  if (!canView) {
+    redirect("/404");
+  }
+
+  const canCreate = await canAccess(route, "create");
+  const canEdit = await canAccess(route, "edit");
+  const canDelete = await canAccess(route, "delete");
 
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Users</CardTitle>
-        <Link href="/admin/users/create">
-          <Button className="bg-blue-500 hover:bg-blue-600">Create User</Button>
-        </Link>
-      </CardHeader>
-
-      <CardContent>
-        <UserDataTable data={users as User[]} />
-      </CardContent>
-    </Card>
+    <UserDataTable data={users}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      title="User"
+      actions={
+        canCreate && (
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/users/create">Add Create</Link>
+          </Button>
+        )
+      } />
   )
 }

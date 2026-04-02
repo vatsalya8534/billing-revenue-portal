@@ -2,8 +2,9 @@ import BillingPlanForm from "@/components/billing-plan/billing-plan-form"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getBillingPlanById } from "@/lib/actions/billing-plan"
+import { canAccess } from "@/lib/rbac"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 const BillingPlanEditPage = async ({
     params,
@@ -18,6 +19,13 @@ const BillingPlanEditPage = async ({
     const billingPlan = await getBillingPlanById(id)
 
     if (!billingPlan) return notFound()
+
+    const route = "/admin/billing-plan";
+    const canEdit = await canAccess(route, "edit")
+    if (!canEdit) {
+        redirect("/404");
+    }
+
 
     return (
         <Card>

@@ -8,6 +8,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getcompanyById } from "@/lib/actions/company"
 import CompanyForm from "@/components/company/company-form"
+import { canAccess } from "@/lib/rbac"
 
 export default async function EditCompanyPage({
   params,
@@ -25,6 +26,13 @@ export default async function EditCompanyPage({
 
   if (!company) {
     notFound()
+  }
+
+  const route = "/admin/company";
+
+  const canEdit = await canAccess(route, "edit")
+  if (!canEdit) {
+    redirect("/404");
   }
 
   return (

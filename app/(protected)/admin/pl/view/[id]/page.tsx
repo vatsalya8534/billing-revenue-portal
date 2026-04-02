@@ -6,6 +6,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import moment from "moment";
 import { CardContent } from "@/components/ui/card";
+import { canAccess } from "@/lib/rbac";
+import { redirect } from "next/navigation";
 
 const safeNumber = (value: any) => {
   const num = Number(value);
@@ -59,8 +61,15 @@ export default async function PLViewPage({ params }: Props) {
     totalResourceCount: project.resourceCount,
     totalFMSValue: billingCycles.reduce((sum, b) => sum + b.fms, 0),
     totalSpareValue: billingCycles.reduce((sum, b) => sum + b.spare, 0),
-    totalProfit: Math.round((Number(project.totalRevenue) - Number(project.totalCost)) / Number(project.totalRevenue) * 100) 
+    totalProfit: Math.round((Number(project.totalRevenue) - Number(project.totalCost)) / Number(project.totalRevenue) * 100)
   };
+
+  const route = "/admin/pl";
+  const canView = await canAccess(route, "view")
+  if (!canView) {
+    redirect("/404");
+  }
+
 
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
@@ -179,9 +188,9 @@ export default async function PLViewPage({ params }: Props) {
                 {billingCycles.map((bc: any, i: number) => {
                   const totalCost = safeNumber(bc.fms + bc.spare + bc.otherCost);
                   const profitAmount = safeNumber(bc.billedAmount - totalCost);
-                  let profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : (profitAmount / bc.billedAmount) * 100;
+                  let profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : ((profitAmount / bc.billedAmount) * 100).toFixed(2);
 
-                  if(bc.billedAmount === profitAmount) profitPercent = 0 
+                  if (bc.billedAmount === profitAmount) profitPercent = 0
 
                   return (
                     <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">

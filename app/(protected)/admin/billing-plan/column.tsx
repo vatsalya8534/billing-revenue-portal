@@ -1,24 +1,35 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+"use client"
+
 import { ColumnDef } from "@tanstack/react-table"
-import { EditIcon, MoreHorizontal, Trash } from "lucide-react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { EditIcon, Trash } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 export const getUsersColumns = ({
   canEdit,
   canDelete,
   onDelete,
 }: any): ColumnDef<any>[] => {
-  const baseColumns: ColumnDef<any>[] = [
-    { accessorKey: "username", header: "Username" },
-    { accessorKey: "firstName", header: "First Name" },
-    { accessorKey: "lastName", header: "Last Name" },
+  const columns: ColumnDef<any>[] = [
     {
-      accessorKey: "role",
-      header: "Role",
-      cell: ({ row }) =>
-        row.original.roleId && row.original?.role.name,
+      accessorKey: "name",
+      header: "Name",
+    },
+    {
+      accessorKey: "totalBillingCycles",
+      header: "Total Billing Cycles",
+      cell: ({ row }) => row.original.totalBillingCycles ?? "-",
+    },
+    {
+      accessorKey: "billingCycleType",
+      header: "Billing Cycle Type",
+      cell: ({ row }) => row.original.billingCycleType ?? "-",
+    },
+    {
+      accessorKey: "remark",
+      header: "Remark",
+      cell: ({ row }) => row.original.remark ?? "-",
     },
     {
       accessorKey: "createdAt",
@@ -43,8 +54,9 @@ export const getUsersColumns = ({
     },
   ];
 
+  // ✅ Add Action column only if permission exists
   if (canEdit || canDelete) {
-    baseColumns.push({
+    columns.push({
       id: "actions",
       header: "Action",
       cell: ({ row }) => {
@@ -58,7 +70,7 @@ export const getUsersColumns = ({
                 size="icon"
                 className="bg-orange-500 hover:bg-orange-600"
               >
-                <Link href={`/admin/users/edit/${id}`}>
+                <Link href={`/admin/billing-plan/edit/${id}`}>
                   <EditIcon size={16} />
                 </Link>
               </Button>
@@ -79,5 +91,5 @@ export const getUsersColumns = ({
     });
   }
 
-  return baseColumns;
+  return columns;
 };

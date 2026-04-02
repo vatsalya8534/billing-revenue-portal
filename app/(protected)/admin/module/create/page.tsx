@@ -1,9 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ModuleForm from "@/components/user/module-form";
+import { canAccess } from "@/lib/rbac";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
 const ModuleCreatePage = async () => {
+
+  const route = "/admin/module";
+  const canCreate = await canAccess(route, "create")
+  if (!canCreate) {
+    redirect("/404");
+  }
 
   return (
     <Card>
@@ -18,7 +26,7 @@ const ModuleCreatePage = async () => {
       </CardHeader>
 
       <CardContent>
-        <ModuleForm update={false}  />
+        <ModuleForm update={false} />
       </CardContent>
     </Card>
   );

@@ -6,10 +6,19 @@ import { getCompanys } from "@/lib/actions/company";
 import { getBillingPlans } from "@/lib/actions/billing-plan";
 import PLForm from "@/components/pl/pl-form";
 import { BillingPlan, Company } from "@/types";
+import { canAccess } from "@/lib/rbac";
+import { redirect } from "next/navigation";
 
 const ServiceTypeCreatePage = async () => {
     let companies = await getCompanys()
     let billingPlans = await getBillingPlans()
+
+    const route = "/admin/pl";
+    const canCreate = await canAccess(route, "create")
+
+    if (!canCreate) {
+        redirect("/404");
+    }
 
     return (
         <Card>
@@ -23,7 +32,7 @@ const ServiceTypeCreatePage = async () => {
             </CardHeader>
 
             <CardContent>
-                <PLForm billingCycles={[]} companies={companies as Company[]} billingPlans={billingPlans.data as BillingPlan[]} update={false} />
+                <PLForm billingCycles={[]} companies={companies as Company[]} billingPlans={billingPlans as BillingPlan[]} update={false} />
             </CardContent>
         </Card>
     );

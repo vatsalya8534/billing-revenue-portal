@@ -6,32 +6,22 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { prisma } from "@/lib/prisma"
+import { getAllowedRoute, getUserPermissions } from "@/lib/rbac"
 import { redirect } from "next/navigation"
 
 export default async function ({ children }: { children: React.ReactNode }) {
 
   const session: any = await auth()
 
-  if (!session) redirect("/login")
+  if (!session || !session.user || !session.user.email) redirect("/login")
 
-  const userRoles = session?.user?.email
-    ? await prisma.user.findUnique({
-      where: { email: session.user.email },
-      include: {
-        role: {
-          include: {
-            roleModules: {
-              include: {
-                module: true,
-              },
-            },
-          },
-        },
-      },
+  const userRoles = await getUserPermissions()
+
+  const allowedRoutes = await Promise.all(
+    (userRoles?.role?.roleModules || []).map(async (rm) => {
+      return await getAllowedRoute(rm.module.route);
     })
-    : null;
-
-  const allowedRoutes = userRoles?.role?.roleModules?.map((rm) => rm.module.route) || []
+  );
 
   const user = userRoles ? {
     name: userRoles.firstName || undefined,

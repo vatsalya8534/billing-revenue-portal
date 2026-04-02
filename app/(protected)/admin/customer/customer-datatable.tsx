@@ -1,32 +1,41 @@
 "use client"
 
-import Link from "next/link"
-import { DataTable } from "@/components/ui/data-table"
-import { columns, Customer } from "./column"
-import { Button } from "@/components/ui/button"
+import * as React from "react"
 
-interface CustomerDatatableProps {
-  data: Customer[]
-}
+import { toast } from "sonner"
+import { getUsersColumns } from "./column";
+import { DataTable } from "@/components/datatable/DataTable";
+import { deleteCustomer } from "@/lib/actions/customer";
 
-export default function CustomerDatatable({ data }: CustomerDatatableProps) {
-  return (
-    <div className="space-y-4">
+export default function CustomerDataTable({
+  data,
+  canEdit,
+  canDelete,
+  title,
+  actions
+}: any) {
+  const [tableData, setTableData] = React.useState(data);
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">
-          Customers
-        </h2>
+  const deleteHandler = async (id: string) => {
+    const res = await deleteCustomer(id);
 
-        <Link href="/admin/customer/create">
-          <Button>
-            Create Customer
-          </Button>
-        </Link>
-      </div>
+    if (!res?.success) {
+      toast.error("Error", { description: res?.message });
+      return;
+    }
 
-      <DataTable columns={columns} data={data} />
+    toast.success("Success", { description: res?.message });
 
-    </div>
-  )
+    setTableData((prev: any[]) =>
+      prev.filter((r) => r.id !== id)
+    );
+  };
+
+  const columns = getUsersColumns({
+    canEdit,
+    canDelete,
+    onDelete: deleteHandler,
+  });
+
+  return <DataTable data={tableData} columns={columns} title={title} actions={actions} />;
 }

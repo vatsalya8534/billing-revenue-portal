@@ -10,6 +10,9 @@ export async function getRoles() {
     orderBy: {
       createdAt: 'desc'
     },
+    include: {
+      roleModules: true
+    }
   })
 }
 

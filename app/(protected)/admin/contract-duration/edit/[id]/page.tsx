@@ -2,8 +2,9 @@ import ContractDurationForm from "@/components/contract-duration/contract-durati
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getContractDurationById } from "@/lib/actions/contract-duration"
+import { canAccess } from "@/lib/rbac"
 import Link from "next/link"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 
 const ContractDurationEditPage = async ({
     params,
@@ -18,6 +19,14 @@ const ContractDurationEditPage = async ({
     const contractDuration = await getContractDurationById(id)
 
     if (!contractDuration) return notFound()
+
+    const route = "/admin/contract-duration";
+
+    const canEdit = await canAccess(route, "edit")
+    if (!canEdit) {
+        redirect("/404");
+    }
+
 
     return (
         <Card>

@@ -3,9 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import RoleForm from "@/components/role/role-form"
 import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import { Role } from "@/types"
 import { getModules } from "@/lib/actions/module-action"
+import { canAccess } from "@/lib/rbac"
 
 const RoleEditPage = async ({
     params,
@@ -22,6 +23,14 @@ const RoleEditPage = async ({
     if (!role) return notFound()
 
     const modules = await getModules();
+
+    const route = "/admin/roles";
+
+    const canEdit = await canAccess(route, "edit")
+
+    if (!canEdit) {
+        redirect("/404");
+    }    
 
     return (
         <Card>

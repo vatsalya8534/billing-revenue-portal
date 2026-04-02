@@ -1,27 +1,38 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Role } from "@prisma/client"
-import { getRoles } from "@/lib/actions/role"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getServiceTypes } from "@/lib/actions/service-type"
 import { ServiceType } from "@/types"
-import { ServiceTypeDataTable } from "./service-type-datatable"
+import { canAccess, getUserPermissions } from "@/lib/rbac"
+import { redirect } from "next/navigation"
+import ServiceTypeDataTable from "./service-type-datatable"
 
 const RolesPage = async () => {
   const serviceTypes: ServiceType[] = await getServiceTypes()
 
+  const route = "/admin/service-type";
+
+  let canView = await canAccess(route, "view");
+
+  if (!canView) {
+    redirect("/404");
+  }
+
+  const canCreate = await canAccess(route, "create");
+  const canEdit = await canAccess(route, "edit");
+  const canDelete = await canAccess(route, "delete");
+
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Service Types</CardTitle>
-        <Link href="/admin/service-type/create">
-          <Button className="bg-blue-500 hover:bg-blue-600">Create Service Type</Button>
-        </Link>
-      </CardHeader>
-      <CardContent>
-        <ServiceTypeDataTable data={serviceTypes as ServiceType[]} />
-      </CardContent>
-    </Card>
+    <ServiceTypeDataTable data={serviceTypes}
+      canEdit={canEdit}
+      canDelete={canDelete}
+      title="Service Type"
+      actions={
+        canCreate && (
+          <Button className="bg-blue-500 hover:bg-blue-600">
+            <Link href="/admin/service-type/create">Add Service Type</Link>
+          </Button>
+        )
+      } />
   )
 }
 

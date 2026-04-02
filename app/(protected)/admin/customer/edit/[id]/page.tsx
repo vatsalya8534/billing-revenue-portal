@@ -6,6 +6,7 @@ import { Customer } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { canAccess } from "@/lib/rbac"
 
 export default async function EditCustomerPage({
   params,
@@ -23,6 +24,13 @@ export default async function EditCustomerPage({
 
   if (!customer) {
     notFound()
+  }
+
+
+  const route = "/admin/customer";
+  const canEdit = await canAccess(route, "edit")
+  if (!canEdit) {
+    redirect("/404");
   }
 
   return (

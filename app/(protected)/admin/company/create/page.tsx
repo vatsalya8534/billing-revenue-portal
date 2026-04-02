@@ -5,8 +5,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import CompanyForm from "@/components/company/company-form";
+import { canAccess } from "@/lib/rbac";
 
-export default function CreateCustomerPage() {
+export default async function CreateCustomerPage() {
+  const route = "/admin/company";
+
+  const canCreate = await canAccess(route, "create")
+  if (!canCreate) {
+    redirect("/404");
+  }
 
   return (
     <Card>

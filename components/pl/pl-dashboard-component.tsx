@@ -21,7 +21,7 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { filterProjectData, getBillingDetailsByMonth, getCostDetailsByMonth } from "@/lib/actions/project";
 import { TotalBilledChart } from "./total-billed-revenue-month";
 import { TotalCostChart } from "./total-cost-revenue-month";
@@ -388,9 +388,12 @@ export function PLDashboardComponent({ companies, projects }: any) {
                 <Card className="mt-4">
                     <CardHeader>
                         <h2 className="text-xl font-bold">Profit and Lost</h2>
+                        <p className="text-sm text-muted-foreground">
+                            All values are as of the latest update
+                        </p>
                     </CardHeader>
                     <CardContent>
-                        <Table>
+                        <Table className="w-full">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>
@@ -406,16 +409,16 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                         PO Value
                                     </TableHead>
                                     <TableHead>
-                                        Total Billed Revenue upto last update
+                                        Total Billed Revenue
                                     </TableHead>
                                     <TableHead>
-                                        Total FMS  upto last update
+                                        Total FMS
                                     </TableHead>
                                     <TableHead>
-                                        Total Spare  upto last update
+                                        Total Spare
                                     </TableHead>
                                     <TableHead>
-                                        Total Other Cost  upto last update
+                                        Total Other Cost
                                     </TableHead>
                                     <TableHead>
                                         Total Cost  (FMS + SPARE + OTHER)

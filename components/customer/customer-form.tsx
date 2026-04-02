@@ -58,6 +58,9 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
         res = await createCustomer(payload);
       }
 
+      console.log(res);
+      
+
       if (!res?.success) {
         toast.error("Error", {
           description: res?.message,

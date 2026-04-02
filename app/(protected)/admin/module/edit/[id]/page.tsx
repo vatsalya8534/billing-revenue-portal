@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ModuleForm from "@/components/user/module-form";
 import { getModuleById } from "@/lib/actions/module-action";
+import { canAccess } from "@/lib/rbac";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -12,6 +13,12 @@ const ModuleEditPage = async ({ params }: { params: Promise<{ id: string }> }) =
   const res = await getModuleById(id);
 
   if (!res?.success || !res.data) {
+    redirect("/404");
+  }
+
+  const route = "/admin/module";
+  const canEdit = await canAccess(route, "edit")
+  if (!canEdit) {
     redirect("/404");
   }
 

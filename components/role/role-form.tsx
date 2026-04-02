@@ -32,7 +32,7 @@ const RoleForm = ({ data, update = false, modules }: { data?: any; update: boole
 
   const [isPending, startTransition] = React.useTransition();
 
-  const [selectedModules, setSelectedModules] = React.useState<any[]>(data.roleModules ?? []);
+  const [selectedModules, setSelectedModules] = React.useState<any[]>(update ? data.roleModules : []);
 
   const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values: any) => {
     startTransition(async () => {
