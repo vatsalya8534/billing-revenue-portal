@@ -33,7 +33,7 @@ const POCreatePage = async () => {
         <POForm
           update={false}
           companies={companies as Company[]}
-          billingPlan={billingPlan.data as BillingPlan[]}
+          billingPlan={billingPlan as BillingPlan[]}
           contractType={contractType}
           serviceType={serviceType}
           customers={customers as Customer[]}
