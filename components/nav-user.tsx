@@ -66,9 +66,6 @@ export function NavUser({
             >
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{currentUser.firstName}</span>
-                <span className="text-muted-foreground truncate text-xs">
-                  {currentUser.email}
-                </span>
               </div>
               <IconDotsVertical className="ml-auto size-4" />
             </SidebarMenuButton>

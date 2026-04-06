@@ -19,6 +19,7 @@ async function main() {
         { name: "Roles", route: "/admin/roles" },
         { name: "Module", route: "/admin/module" },
         { name: "MonthPLs", route: "/admin/monthly-pl" },
+        { name: "Revenue", route: "/admin/revenue" },
     ];
 
     const createdModules = [];

@@ -44,7 +44,7 @@ const data = {
     },
     {
       title: "Revenue",
-      url: "/admin/purchase-orders",
+      url: "/admin/revenue",
       icon: IconTrendingUp,
     },
     {
@@ -138,7 +138,6 @@ function filterNav(navMain: any[], allowedRoutes: string[]) {
 export function AppSidebar({ user, ...props }: AppSidebarProps) {
 
   const allowedRoutes = user?.allowedRoutes || [];
-  console.log(allowedRoutes);
 
   const filteredNav = filterNav(data.navMain, allowedRoutes);
 

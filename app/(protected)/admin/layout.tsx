@@ -21,7 +21,7 @@ export default async function ({ children }: { children: React.ReactNode }) {
     (userRoles?.role?.roleModules || []).map(async (rm) => {
       return await getAllowedRoute(rm.module.route);
     })
-  );
+  );  
 
   const user = userRoles ? {
     name: userRoles.firstName || undefined,

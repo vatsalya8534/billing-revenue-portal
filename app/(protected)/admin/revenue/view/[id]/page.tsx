@@ -86,7 +86,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
         </h1>
 
         <Button asChild variant="outline">
-          <Link href="/admin/purchase-orders">Back</Link>
+          <Link href="/admin/revenue">Back</Link>
         </Button>
       </div>
 

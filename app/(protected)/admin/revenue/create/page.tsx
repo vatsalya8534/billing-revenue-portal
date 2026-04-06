@@ -24,7 +24,7 @@ const POCreatePage = async () => {
         <div className="flex justify-between items-center">
           <CardTitle>Add Revenue</CardTitle>
           <Button className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/purchase-orders">Back</Link>
+            <Link href="/admin/revenue">Back</Link>
           </Button>
         </div>
       </CardHeader>

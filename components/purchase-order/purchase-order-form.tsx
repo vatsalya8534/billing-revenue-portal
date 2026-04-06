@@ -173,7 +173,7 @@ const POForm = ({
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
       } else {
-        router.push("/admin/purchase-orders");
+        router.push("/admin/revenue");
       }
     });
   };
