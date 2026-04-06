@@ -22,7 +22,7 @@ const PurchaseOrdersPage = async () => {
   if (!canView) {
     redirect("/404");
   }
-
+  
   const canCreate = await canAccess(route, "create");
   const canEdit = await canAccess(route, "edit");
   const canDelete = await canAccess(route, "delete");

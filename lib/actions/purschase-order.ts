@@ -4,15 +4,15 @@ import { prisma } from "../prisma";
 import { purchaseOrderSchema } from "../validators";
 import { formatError } from "../utils";
 import { PurchaseOrder } from "@/types";
-import { PaymentReceived } from "@prisma/client";
+import { PaymentReceived, Prisma } from "@prisma/client";
 
-// ---------------- DATE HELPER ----------------
-const toLocalDate = (date?: string | Date | null) => {
+// ================= DATE HELPER =================
+const toLocalDate = (date?: string | Date | null): Date | undefined => {
   if (!date) return undefined;
-  return new Date(typeof date === "string" ? date + "T00:00:00" : date);
+  return new Date(typeof date === "string" ? `${date}T00:00:00` : date);
 };
 
-// ---------------- BILLING CYCLE GENERATOR ----------------
+// ================= BILLING CYCLE GENERATOR =================
 function generateBillingCycles({
   startDate,
   totalCycles,
@@ -22,36 +22,26 @@ function generateBillingCycles({
   totalCycles: number;
   type: "START" | "MID" | "END";
 }) {
-  const cycles = [];
-
-  for (let i = 0; i < totalCycles; i++) {
-    // ✅ ALWAYS create fresh base date
+  return Array.from({ length: totalCycles }, (_, i) => {
     const base = new Date(startDate);
-    base.setDate(1); // prevent overflow issues
+    base.setDate(1);
 
-    // ✅ add months safely
     const date = new Date(base);
     date.setMonth(base.getMonth() + i);
 
     let finalDate = new Date(date);
 
-    if (type === "START") {
-      finalDate.setDate(1);
-    }
-
-    if (type === "MID") {
-      finalDate.setDate(15);
-    }
+    if (type === "START") finalDate.setDate(1);
+    if (type === "MID") finalDate.setDate(15);
 
     if (type === "END") {
-      // go to next month then step back 1 day
       const temp = new Date(date);
       temp.setMonth(temp.getMonth() + 1);
       temp.setDate(0);
       finalDate = temp;
     }
 
-    cycles.push({
+    return {
       invoiceNumber: "",
       invoiceAmount: 0,
       collectedAmount: 0,
@@ -61,17 +51,15 @@ function generateBillingCycles({
       paymentDueDate: null,
       paymentReceived: PaymentReceived.NO,
       billingRemark: "",
-      tds: "",
-    });
-  }
-
-  return cycles;
+      tds: new Prisma.Decimal(0),
+    };
+  });
 }
 
-// ---------------- GET ALL ----------------
+// ================= GET ALL =================
 export async function getPurchaseOrders() {
   try {
-    const purchaseOrders = await prisma.purchaseOrder.findMany({
+    const data = await prisma.purchaseOrder.findMany({
       orderBy: { createdAt: "desc" },
       include: {
         billingPlan: true,
@@ -80,79 +68,67 @@ export async function getPurchaseOrders() {
         contract: true,
         customer: true,
         billingCycles: true,
+        company: true,
       },
     });
 
-    return { success: true, data: purchaseOrders ?? [] };
+    return { success: true, data };
   } catch (error) {
     return { success: false, data: [], message: formatError(error) };
   }
 }
 
-// ---------------- CREATE ----------------
+// ================= CREATE =================
 export async function createPurchaseOrder(data: PurchaseOrder) {
   try {
-    const validatedData = purchaseOrderSchema.parse(data);
+    const validated = purchaseOrderSchema.parse(data);
 
-    // 🔥 GET BILLING PLAN
     const billingPlan = await prisma.billingPlan.findUnique({
-      where: { id: validatedData.billingPlanId },
+      where: { id: validated.billingPlanId },
     });
 
-    if (!billingPlan) {
-      throw new Error("Billing Plan not found");
-    }
+    if (!billingPlan) throw new Error("Billing Plan not found");
 
-    // 🔥 AUTO GENERATE IF EMPTY
-    const autoCycles =
-      !validatedData.billingCycles || validatedData.billingCycles.length === 0
+    const billingCycles =
+      !validated.billingCycles?.length
         ? generateBillingCycles({
-            startDate: new Date(validatedData.startFrom!),
-            totalCycles: billingPlan.totalBillingCycles,
-            type: billingPlan.billingCycleType as "START" | "MID" | "END",
-          })
-        : validatedData.billingCycles.map((bc) => ({
-            invoiceNumber: bc.invoiceNumber ?? "",
-            invoiceAmount: bc.invoiceAmount ?? 0,
-            collectedAmount: bc.collectedAmount ?? 0,
-            invoiceDate: toLocalDate(bc.invoiceDate),
-            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
-            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
-            paymentDueDate: toLocalDate(bc.paymentDueDate),
-            paymentReceived: bc.paymentReceived,
-            billingRemark: bc.billingRemark ?? "",
-            tds: bc.tds ?? "",
-          }));
+          startDate: new Date(validated.startFrom!),
+          totalCycles: billingPlan.totalBillingCycles,
+          type: billingPlan.billingCycleType as "START" | "MID" | "END",
+        })
+        : validated.billingCycles.map((bc) => ({
+          invoiceNumber: bc.invoiceNumber ?? "",
+          invoiceAmount: bc.invoiceAmount ?? 0,
+          collectedAmount: bc.collectedAmount ?? 0,
+          invoiceDate: toLocalDate(bc.invoiceDate),
+          billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
+          paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
+          paymentDueDate: toLocalDate(bc.paymentDueDate),
+          paymentReceived: bc.paymentReceived,
+          billingRemark: bc.billingRemark ?? "",
+          tds: new Prisma.Decimal(bc.tds ?? 0),
+        }));
 
     await prisma.purchaseOrder.create({
       data: {
-        customerPONumber: validatedData.customerPONumber,
-        poAmount: validatedData.poAmount,
-        serviceTypeId: validatedData.serviceTypeId,
-        contractDurationId: validatedData.contractDurationId,
-        contractId: validatedData.contractId,
-
-        startFrom: toLocalDate(validatedData.startFrom),
-        endDate: toLocalDate(validatedData.endDate),
-
-
-        paymentTerms: validatedData.paymentTerms,
-        customerId: validatedData.customerId,
-        billingPlanId: validatedData.billingPlanId,
-        poOwner: validatedData.poOwner,
-        status: validatedData.status,
-
-        ageingDays:
-          validatedData.ageingDays !== undefined
-            ? String(validatedData.ageingDays)
-            : null,
-
-        remark: validatedData.remark ?? "",
-        scope: validatedData.scope ?? "",
-
-
+        customerPONumber: validated.customerPONumber,
+        poAmount: validated.poAmount,
+        serviceTypeId: validated.serviceTypeId,
+        contractDurationId: validated.contractDurationId,
+        contractId: validated.contractId,
+        startFrom: toLocalDate(validated.startFrom),
+        endDate: toLocalDate(validated.endDate),
+        companyId: validated.companyId ?? null,
+        paymentTerms: validated.paymentTerms,
+        customerId: validated.customerId,
+        billingPlanId: validated.billingPlanId,
+        poOwner: validated.poOwner,
+        status: validated.status,
+        ageingDays: validated.ageingDays?.toString() ?? null,
+        remark: validated.remark ?? "",
+        scope: validated.scope ?? "",
         billingCycles: {
-          create: autoCycles,
+          create: billingCycles,
         },
       },
     });
@@ -163,10 +139,10 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
   }
 }
 
-// ---------------- GET BY ID ----------------
+// ================= GET BY ID =================
 export async function getPurchaseOrderById(id: string) {
   try {
-    const po = await prisma.purchaseOrder.findUnique({
+    const data = await prisma.purchaseOrder.findUnique({
       where: { id },
       include: {
         ServiceType: true,
@@ -175,63 +151,61 @@ export async function getPurchaseOrderById(id: string) {
         contract: true,
         customer: true,
         billingCycles: true,
+        company: true,
       },
     });
 
-    if (!po) return { success: false };
+    if (!data) return { success: false };
 
-    return { success: true, data: po };
-  } catch (err) {
-    console.error(err);
-    return { success: false };
+    return { success: true, data };
+  } catch (error) {
+    return { success: false, message: formatError(error) };
   }
 }
 
-// ---------------- UPDATE ----------------
+// ================= UPDATE =================
 export async function updatePurchaseOrder(
   data: PurchaseOrder,
   id: string
 ) {
   try {
-    const validatedData = purchaseOrderSchema.parse(data);    
+    const validated = purchaseOrderSchema.parse(data);
 
     await prisma.purchaseOrder.update({
       where: { id },
       data: {
-        customerPONumber: validatedData.customerPONumber,
-        poAmount: validatedData.poAmount,
-        serviceTypeId: validatedData.serviceTypeId,
-        contractDurationId: validatedData.contractDurationId,
-        contractId: validatedData.contractId,
-        startFrom: toLocalDate(validatedData.startFrom),
-        endDate: toLocalDate(validatedData.endDate),
-        paymentTerms: validatedData.paymentTerms,
-        customerId: validatedData.customerId,
-        billingPlanId: validatedData.billingPlanId,
-        poOwner: validatedData.poOwner,
-        status: validatedData.status,
-        ageingDays:
-          validatedData.ageingDays !== undefined
-            ? String(validatedData.ageingDays)
-            : null,
-
-        remark: validatedData.remark ?? "",
-        scope: validatedData.scope ?? "",
+        customerPONumber: validated.customerPONumber,
+        poAmount: validated.poAmount,
+        serviceTypeId: validated.serviceTypeId,
+        contractDurationId: validated.contractDurationId,
+        contractId: validated.contractId,
+        startFrom: toLocalDate(validated.startFrom),
+        endDate: toLocalDate(validated.endDate),
+        companyId: validated.companyId ?? null,
+        paymentTerms: validated.paymentTerms,
+        customerId: validated.customerId,
+        billingPlanId: validated.billingPlanId,
+        poOwner: validated.poOwner,
+        status: validated.status,
+        ageingDays: validated.ageingDays?.toString() ?? null,
+        remark: validated.remark ?? "",
+        scope: validated.scope ?? "",
 
         billingCycles: {
           deleteMany: {},
-          create: validatedData.billingCycles?.map((bc) => ({
-            invoiceNumber: bc.invoiceNumber ?? "",
-            invoiceAmount: bc.invoiceAmount ?? 0,
-            collectedAmount: bc.collectedAmount ?? 0,
-            invoiceDate: toLocalDate(bc.invoiceDate),
-            billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
-            paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
-            paymentDueDate: toLocalDate(bc.paymentDueDate),
-            paymentReceived: bc.paymentReceived,
-            billingRemark: bc.billingRemark ?? "",
-            tds: String(bc.tds) ?? "",
-          })),
+          create:
+            validated.billingCycles?.map((bc) => ({
+              invoiceNumber: bc.invoiceNumber ?? "",
+              invoiceAmount: bc.invoiceAmount ?? 0,
+              collectedAmount: bc.collectedAmount ?? 0,
+              invoiceDate: toLocalDate(bc.invoiceDate),
+              billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
+              paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
+              paymentDueDate: toLocalDate(bc.paymentDueDate),
+              paymentReceived: bc.paymentReceived,
+              billingRemark: bc.billingRemark ?? "",
+              tds: new Prisma.Decimal(bc.tds ?? 0),
+            })) ?? [],
         },
       },
     });
@@ -242,14 +216,17 @@ export async function updatePurchaseOrder(
   }
 }
 
-// ---------------- DELETE ----------------
+// ================= DELETE =================
 export async function deletePurchaseOrder(id: string) {
   try {
-    await prisma.billingCycle.deleteMany({
-      where: { purchaseOrderId: id },
-    });
-
-    await prisma.purchaseOrder.delete({ where: { id } });
+    await prisma.$transaction([
+      prisma.billingCycle.deleteMany({
+        where: { purchaseOrderId: id },
+      }),
+      prisma.purchaseOrder.delete({
+        where: { id },
+      }),
+    ]);
 
     return {
       success: true,
@@ -260,16 +237,17 @@ export async function deletePurchaseOrder(id: string) {
   }
 }
 
-// ---------------- GET BILLING CYCLES ----------------
+// ================= GET BILLING CYCLES =================
 export async function getBillingCyclesByPOID(id: string) {
   try {
-    const billingCycles = await prisma.billingCycle.findMany({
+    const data = await prisma.billingCycle.findMany({
       where: { purchaseOrderId: id },
+      orderBy: { billingSubmittedDate: "asc" },
     });
 
     return {
       success: true,
-      data: billingCycles,
+      data,
       message: "Billing Cycles fetched successfully",
     };
   } catch (error) {

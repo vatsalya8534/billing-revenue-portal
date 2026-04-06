@@ -9,6 +9,8 @@ import { getCustomers } from "@/lib/actions/customer";
 import { BillingCycle, BillingPlan, Company, Customer } from "@/types";
 import { getContractDurations } from "@/lib/actions/contract-duration";
 import { getCompanys } from "@/lib/actions/company";
+import { canAccess } from "@/lib/rbac";
+import { redirect } from "next/navigation";
 
 const POCreatePage = async () => {
   const billingPlan = await getBillingPlans()
@@ -17,6 +19,12 @@ const POCreatePage = async () => {
   const customers = await getCustomers()
   const contractDurations = await getContractDurations()
   const companies = await getCompanys()
+
+  const route = "/admin/module";
+  const canView = await canAccess(route, "create")
+  if (!canView) {
+    redirect("/404");
+  }
 
   return (
     <Card>

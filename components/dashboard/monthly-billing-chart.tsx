@@ -1,214 +1,245 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis, ResponsiveContainer } from "recharts";
-
-
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+} from "recharts";
 
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 import { getMonthlyBillingData } from "@/lib/actions/dashboard";
 import { getPLData } from "@/lib/actions/project";
 
+// ================= TYPES =================
 type ChartData = {
   month: string;
   value1: number;
   value2: number;
 };
-type MonthlyBillingChartCardProps = {
-  plData?: any;
 
+type Filters = {
+  company?: string;
+  startDate?: Date;
+  endDate?: Date;
+  month?: string;
+  year?: string;
 };
 
+type Props = {
+  plData?: any;
+  filters?: Filters;
+};
 
-export function MonthlyBillingChartCard({ plData }: MonthlyBillingChartCardProps) {
+// ================= COMPONENT =================
+export function MonthlyBillingChartCard({ plData, filters }: Props) {
   const startYear = 2024;
   const currentYear = new Date().getFullYear();
 
-  const [year, setYear] = useState<string>(currentYear.toString());
+  const months = [
+    "Jan","Feb","Mar","Apr","May","Jun",
+    "Jul","Aug","Sep","Oct","Nov","Dec"
+  ];
+
+  const selectedYear = filters?.year || currentYear.toString();
+
   const [mode, setMode] = useState<"revenue" | "profit-loss">("revenue");
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
-  const chartConfig = {
-    revenue: { label: "Billing Generated", color1: "#2563eb", label2: "Payment Received", color2: "#f97316" },
-    "profit-loss": { label: "Revenue", color1: "#2563eb", label2: "Cost", color2: "#f97316" },
+  const chartConfig: Record<
+    string,
+    { label: string; color1: string; label2: string; color2: string }
+  > = {
+    revenue: {
+      label: "Billing Generated",
+      color1: "#f97316",
+      label2: "Payment Received",
+      color2: "#f97316",
+    },
+    "profit-loss": {
+      label: "Revenue",
+      color1: "#2563eb",
+      label2: "Cost",
+      color2: "#f97316",
+    },
   };
 
+  // ================= LOAD DATA =================
   useEffect(() => {
     async function loadData() {
-      const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-      let safeData: ChartData[] = [];
+      try {
+        let safeData: ChartData[] = [];
 
-      if (mode === "revenue") {
-        const data = await getMonthlyBillingData(Number(year));
+        if (mode === "revenue") {
+          const data = await getMonthlyBillingData(
+            Number(selectedYear),
+            filters
+          );
 
-        safeData = allMonths.map((month) => {
-          const monthData = data.find((d: any) => d.month === month);
-          return {
-            month,
-            value1: Number(monthData?.billing ?? 0),
-            value2: Number(monthData?.payment ?? 0),
-          };
-        });
+          safeData = months.map((month) => {
+            const m = data.find((d: any) => d.month === month);
+            return {
+              month,
+              value1: Number(m?.billing ?? 0),
+              value2: Number(m?.payment ?? 0),
+            };
+          });
+        } else {
+          const data = plData ?? await getPLData(Number(selectedYear));
 
-      } else {
-        const data = plData ?? await getPLData(Number(year));
+          safeData = months.map((month) => {
+            const m = data?.monthly?.find((x: any) => x.month === month);
+            return {
+              month,
+              value1: Number(m?.revenue ?? 0),
+              value2: Number(m?.cost ?? 0),
+            };
+          });
+        }
 
-        safeData = allMonths.map((month) => {
-          const monthData = data.monthly?.find((m: any) => m.month === month);
-
-          return {
-            month,
-            value1: Number(monthData?.revenue ?? 0),
-            value2: Number(monthData?.cost ?? 0),
-          };
-        });
+        setChartData(safeData);
+      } catch (err) {
+        console.error("Chart load error:", err);
+        setChartData([]);
       }
-
-      setChartData(safeData);
     }
 
     loadData();
-  }, [year, mode, plData]);
+  }, [mode, selectedYear, filters, plData]);
 
+  // ================= CHART RENDER =================
+  const renderBarChart = (
+    dataKey: "value1" | "value2",
+    label: string,
+    color: string
+  ) => (
+    <Card className="flex-1 min-w-0" key={dataKey}>
+      <CardHeader>
+        <CardTitle className="text-center">{label}</CardTitle>
+      </CardHeader>
+
+      <CardContent className="w-full h-[420px]">
+        <ChartContainer
+          className="h-full w-full"
+          config={{ label: { color: "var(--foreground)" } } as ChartConfig}
+        >
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={chartData}
+              layout="vertical"
+              margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+              barCategoryGap="10%"
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+
+              <XAxis
+                type="number"
+                domain={[0, "auto"]}
+                tickFormatter={(val) => val.toLocaleString()}
+              />
+
+              <YAxis type="category" dataKey="month" />
+
+              <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+
+              <Bar
+                dataKey={dataKey}
+                fill={color}
+                radius={[6, 6, 0, 0]}
+                barSize={24}
+              >
+                <LabelList
+                  dataKey={dataKey}
+                  position="insideRight"
+                  fontSize={13}
+                  fill="#fff"
+                  formatter={(val: number) =>
+                    val === 0 ? "" : `₹${val.toLocaleString()}`
+                  }
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartContainer>
+      </CardContent>
+    </Card>
+  );
+
+  // ================= UI =================
   return (
     <>
-      {/* Year & Mode Selector */}
-      <div className="flex justify-between mb-4">
-        <div className="flex gap-2">
-          <Select value={year} onValueChange={setYear}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="Select Year" />
-            </SelectTrigger>
-            <SelectContent>
-              {Array.from({ length: currentYear - startYear + 1 }, (_, i) => {
-                const y = (startYear + i).toString();
-                return <SelectItem key={y} value={y}>{y}</SelectItem>;
-              })}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="flex justify-between mb-4 gap-2">
+        {/* Year (synced with filters) */}
+        <Select
+          value={selectedYear}
+          onValueChange={(val) =>
+            console.warn("⚠️ Use parent filter to change year:", val)
+          }
+        >
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+
+          <SelectContent>
+            {Array.from({ length: currentYear - startYear + 1 }, (_, i) => {
+              const y = (startYear + i).toString();
+              return (
+                <SelectItem key={y} value={y}>
+                  {y}
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* Mode */}
+        <Select
+          value={mode}
+          onValueChange={(val) =>
+            setMode(val as "revenue" | "profit-loss")
+          }
+        >
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Mode" />
+          </SelectTrigger>
+
+          <SelectContent>
+            <SelectItem value="revenue">Revenue</SelectItem>
+            <SelectItem value="profit-loss">Profit & Loss</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Charts side by side */}
       <div className="flex flex-col lg:flex-row gap-4 w-full">
-
-        {/* Value 1 Chart */}
-        <Card className="flex-1 min-w-0">
-          <CardHeader>
-            <CardTitle className="text-center">{chartConfig[mode].label}</CardTitle>
-          </CardHeader>
-          <CardContent className="w-full h-[420px]">
-            <ChartContainer
-              className="h-full w-full"
-              config={{ label: { color: "var(--foreground)" } } as ChartConfig}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-                  barCategoryGap="10%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} />
-                  <XAxis
-                    type="number"
-                    scale="log"
-                    domain={[1, 'auto']} // Start at 1 (or 0.1) instead of 0
-                    allowDataOverflow
-                    tickFormatter={(val) => val.toLocaleString()}
-                  />
-                  <YAxis type="category" dataKey="month" />
-                  <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-
-                  <Bar
-                    dataKey="value1"
-                    fill={chartConfig[mode].color1}
-                    radius={[6, 6, 0, 0]}
-                    barSize={24}
-                  >
-                    <LabelList
-                      dataKey="value1"
-                      position="insideRight"
-                      fontSize={15}
-                      fill="#fff"
-                      formatter={(val: number) =>
-                        val === 0 ? "" : " ₹" + val.toFixed(2)
-                      }
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
-        {/* Value 2 Chart */}
-        <Card className="flex-1 min-w-0">
-          <CardHeader>
-            <CardTitle className="text-center">{chartConfig[mode].label2}</CardTitle>
-          </CardHeader>
-          <CardContent className="w-full h-[420px]">
-            <ChartContainer
-              className="h-full w-full"
-              config={{ label: { color: "var(--foreground)" } } as ChartConfig}
-            >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  layout="vertical"
-                  margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
-                  barCategoryGap="10%"
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} horizontal={false} />
-                  <XAxis
-                    type="number"
-                    scale="log"
-                    domain={[1, 'auto']} // Start at 1 (or 0.1) instead of 0
-                    allowDataOverflow
-                    tickFormatter={(val) => val.toLocaleString()}
-                  />
-                  <YAxis type="category" dataKey="month" />
-                  <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
-
-                  <Bar
-                    dataKey="value2"
-                    fill={chartConfig[mode].color2}
-                    radius={[6, 6, 0, 0]}
-                    barSize={24}
-                  >
-                    <LabelList
-                      dataKey="value2"
-                      position="insideRight"
-                      fontSize={15}
-                      fill="#fff"
-                      formatter={(val: number) =>
-                        val === 0 ? "" : " ₹" + val.toFixed(2)
-                      }
-                    />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </CardContent>
-        </Card>
-
+        {renderBarChart(
+          "value1",
+          chartConfig[mode].label,
+          chartConfig[mode].color1
+        )}
+        {renderBarChart(
+          "value2",
+          chartConfig[mode].label2,
+          chartConfig[mode].color2
+        )}
       </div>
     </>
   );
 }
-
-

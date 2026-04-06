@@ -100,7 +100,7 @@ const PLForm = ({
   };
 
   useEffect(() => {
-    if (!update) {
+    
       const start = moment(startDate);
       const end = moment(endDate);
 
@@ -133,7 +133,6 @@ const PLForm = ({
 
         count += monthGap;
       }
-    }
 
   }, [billingPlanId])
 

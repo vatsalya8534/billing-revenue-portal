@@ -9,18 +9,22 @@ export const getUsersColumns = ({
     onDelete,
 }: any): ColumnDef<any>[] => {
     const columns: ColumnDef<any>[] = [
+
         {
-            header: "Customer Name",
+            header: "Company Name",
             cell: ({ row }) =>
-                row.original.customer
-                    ? `${row.original.customer.firstName} ${row.original.customer.lastName}`
-                    : "-",
+                row.original.company?.name || "-",
+        },
+
+        {
+            header: "PO Number",
+            accessorKey: "customerPONumber",
         },
 
         {
             header: "PO Amount",
             cell: ({ row }) =>
-                `₹ ${Number(row.original.poAmount || 0).toLocaleString("en-IN")}`,
+                `₹ ${Math.round(row.original.poAmount || 0).toLocaleString("en-IN")}`,
         },
 
         {
@@ -31,6 +35,11 @@ export const getUsersColumns = ({
         {
             header: "Service Type",
             cell: ({ row }) => row.original.ServiceType?.name || "-",
+        },
+
+        {
+            header: "Status",
+            cell: ({ row }) => row.original.status || "-",
         },
     ];
 

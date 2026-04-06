@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import moment from "moment";
+import { canAccess } from "@/lib/rbac";
+import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -76,7 +78,13 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
 
   const pending = po.poAmount - totalCollected;
 
-  return (
+  const route = "/admin/module";
+  const canView = await canAccess(route, "view")
+  if (!canView) {
+    redirect("/404");
+  }
+
+ return (
     <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
 
       {/* HEADER */}
@@ -86,7 +94,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
         </h1>
 
         <Button asChild variant="outline">
-          <Link href="/admin/revenue">Back</Link>
+          <Link href="/admin/purchase-orders">Back</Link>
         </Button>
       </div>
 
@@ -156,7 +164,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
       </div>
 
       {/* CUSTOMER */}
-      <Card title="Customer">
+      <Card title="Company">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
           <Detail label="Company" value={po.customer?.companyName} />
 
