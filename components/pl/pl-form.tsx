@@ -100,7 +100,8 @@ const PLForm = ({
   };
 
   useEffect(() => {
-    
+    if (!update) {
+
       const start = moment(startDate);
       const end = moment(endDate);
 
@@ -116,7 +117,7 @@ const PLForm = ({
 
       let totalAmountPerCycle = Number((poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(0));
 
-      if(isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
+      if (isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
 
       let count = 0;
 
@@ -134,6 +135,7 @@ const PLForm = ({
         count += monthGap;
       }
 
+    }
   }, [billingPlanId])
 
   return (
