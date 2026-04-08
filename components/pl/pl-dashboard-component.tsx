@@ -464,7 +464,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
 
-                                        if (!(profit)) profit = "0"
+                                        if (!(profit) || isNaN(Number(profit))) profit = "0"
 
                                         return <TableRow key={index}>
                                             <TableCell>
