@@ -669,7 +669,7 @@ export async function filterProjectData(filters: any) {
     totalFMSValue: totalFMSValue,
     totalSpareValue: totalSpareValue,
     totalResourceCount: totalResourceCount,
-    totalProfit: totalProfitPercentage / (projects.length ?? 1),
+    totalProfit: (totalProfitPercentage / (projects.length ?? 1)).toFixed(2),
     data: JSON.parse(JSON.stringify(projects))
   }
 }
