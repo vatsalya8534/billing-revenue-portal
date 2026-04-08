@@ -649,13 +649,16 @@ export async function filterProjectData(filters: any) {
   if (projects.length > 0) {
     for (const project of projects) {
       let res = getDetailsByProject(project)
+
+      let profit = Number(res.profit) 
+
       totalPOValue += Number(project.poValue);
       totalBilledValue += res.totalBilledValue
       totalCostValue += res.totalCostValue
       totalFMSValue += res.totalFmsValue
       totalSpareValue += res.totalSpareValue
       totalResourceCount += project.resourceCount
-      totalProfitPercentage += Number(res.profit)
+      totalProfitPercentage += profit || 0
     }
   }
 
