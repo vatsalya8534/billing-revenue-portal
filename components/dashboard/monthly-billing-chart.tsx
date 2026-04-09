@@ -27,30 +27,32 @@ import {
 } from "@/components/ui/select";
 
 import { getMonthlyBillingData } from "@/lib/actions/dashboard";
-import { getPLData } from "@/lib/actions/project";
 
 // ================= TYPES =================
 type ChartData = {
   month: string;
-  value1: number;
-  value2: number;
+  value1: number; 
+  value2: number; 
 };
 
 type Filters = {
-  company?: string;
+  company: string;
   startDate?: Date;
   endDate?: Date;
-  month?: string;
-  year?: string;
+  month: string;
+  year: string;
 };
 
 type Props = {
-  plData?: any;
-  filters?: Filters;
+  filters: Filters;
+  setFilters: React.Dispatch<React.SetStateAction<Filters>>;
 };
 
 // ================= COMPONENT =================
-export function MonthlyBillingChartCard({ plData, filters }: Props) {
+export function MonthlyBillingChartCard({
+  filters,
+  setFilters,
+}: Props) {
   const startYear = 2024;
   const currentYear = new Date().getFullYear();
 
@@ -59,26 +61,18 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
     "Jul","Aug","Sep","Oct","Nov","Dec"
   ];
 
-  const selectedYear = filters?.year || currentYear.toString();
-
-  const [mode, setMode] = useState<"revenue" | "profit-loss">("revenue");
+  const selectedYear = filters.year || currentYear.toString();
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
-  const chartConfig: Record<
-    string,
-    { label: string; color1: string; label2: string; color2: string }
-  > = {
-    revenue: {
+  // ================= CONFIG =================
+  const chartConfig = {
+    billing: {
       label: "Billing Generated",
-      color1: "#f97316",
-      label2: "Payment Received",
-      color2: "#f97316",
+      color: "#f97316",
     },
-    "profit-loss": {
-      label: "Revenue",
-      color1: "#2563eb",
-      label2: "Cost",
-      color2: "#f97316",
+    payment: {
+      label: "Payment Received",
+      color: "#f97316",
     },
   };
 
@@ -86,34 +80,19 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
   useEffect(() => {
     async function loadData() {
       try {
-        let safeData: ChartData[] = [];
+        const data = await getMonthlyBillingData(
+          Number(selectedYear),
+          filters
+        );
 
-        if (mode === "revenue") {
-          const data = await getMonthlyBillingData(
-            Number(selectedYear),
-            filters
-          );
-
-          safeData = months.map((month) => {
-            const m = data.find((d: any) => d.month === month);
-            return {
-              month,
-              value1: Number(m?.billing ?? 0),
-              value2: Number(m?.payment ?? 0),
-            };
-          });
-        } else {
-          const data = plData ?? await getPLData(Number(selectedYear));
-
-          safeData = months.map((month) => {
-            const m = data?.monthly?.find((x: any) => x.month === month);
-            return {
-              month,
-              value1: Number(m?.revenue ?? 0),
-              value2: Number(m?.cost ?? 0),
-            };
-          });
-        }
+        const safeData: ChartData[] = months.map((month) => {
+          const m = data.find((d: any) => d.month === month);
+          return {
+            month,
+            value1: Number(m?.billing ?? 0),
+            value2: Number(m?.payment ?? 0),
+          };
+        });
 
         setChartData(safeData);
       } catch (err) {
@@ -123,7 +102,7 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
     }
 
     loadData();
-  }, [mode, selectedYear, filters, plData]);
+  }, [selectedYear, filters]);
 
   // ================= CHART RENDER =================
   const renderBarChart = (
@@ -175,7 +154,7 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
                     val === 0 ? "" : `₹${val.toLocaleString()}`
                   }
                 />
-              </Bar>
+              </Bar>c
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -186,12 +165,12 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
   // ================= UI =================
   return (
     <>
-      <div className="flex justify-between mb-4 gap-2">
-        {/* Year (synced with filters) */}
+      {/* Year Filter */}
+      <div className="flex justify-end mb-4">
         <Select
           value={selectedYear}
           onValueChange={(val) =>
-            console.warn("⚠️ Use parent filter to change year:", val)
+            setFilters((prev) => ({ ...prev, year: val }))
           }
         >
           <SelectTrigger className="w-[120px]">
@@ -209,35 +188,19 @@ export function MonthlyBillingChartCard({ plData, filters }: Props) {
             })}
           </SelectContent>
         </Select>
-
-        {/* Mode */}
-        <Select
-          value={mode}
-          onValueChange={(val) =>
-            setMode(val as "revenue" | "profit-loss")
-          }
-        >
-          <SelectTrigger className="w-[150px]">
-            <SelectValue placeholder="Mode" />
-          </SelectTrigger>
-
-          <SelectContent>
-            <SelectItem value="revenue">Revenue</SelectItem>
-            <SelectItem value="profit-loss">Profit & Loss</SelectItem>
-          </SelectContent>
-        </Select>
       </div>
 
+      {/* Charts */}
       <div className="flex flex-col lg:flex-row gap-4 w-full">
         {renderBarChart(
           "value1",
-          chartConfig[mode].label,
-          chartConfig[mode].color1
+          chartConfig.billing.label,
+          chartConfig.billing.color
         )}
         {renderBarChart(
           "value2",
-          chartConfig[mode].label2,
-          chartConfig[mode].color2
+          chartConfig.payment.label,
+          chartConfig.payment.color
         )}
       </div>
     </>
