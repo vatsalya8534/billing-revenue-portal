@@ -5,7 +5,8 @@ import {
   contractDurationSchema,
   projectSchema,
   companySchema,
-  moduleSchema
+  moduleSchema,
+  configurationSchema
 } from "@/lib/validators"
 
 export type Role = z.infer<typeof roleSchema>
@@ -20,6 +21,7 @@ export type BillingCycle = z.infer<typeof billingCycleSchema>
 export type ContractDuration = z.infer<typeof contractDurationSchema>
 export type Project = z.infer<typeof projectSchema>
 export type Company = z.infer<typeof companySchema>
+export type Configuration = z.infer<typeof configurationSchema>
 
 
 

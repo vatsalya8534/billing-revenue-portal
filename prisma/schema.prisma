@@ -279,3 +279,12 @@ model ProjectMonthlyPL {
 
   @@unique([projectId, month, year])
 }
+
+model Configuration {
+  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name     String?
+  logo     String?
+  favicon  String?
+  email    String?
+  password String?
+}

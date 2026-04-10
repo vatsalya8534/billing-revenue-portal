@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   IconBriefcase,
   IconBuilding,
@@ -13,12 +13,12 @@ import {
   IconUser,
   IconUserCircle,
   IconUserCog,
+  IconHome,
+} from "@tabler/icons-react";
 
-} from "@tabler/icons-react"
-
-import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
+import { NavMain } from "@/components/nav-main";
+import { NavSecondary } from "@/components/nav-secondary";
+import { NavUser } from "@/components/nav-user";
 import {
   Sidebar,
   SidebarContent,
@@ -27,8 +27,11 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar"
-import Link from "next/link"
+} from "@/components/ui/sidebar";
+
+import Link from "next/link";
+import { SettingsIcon } from "lucide-react";
+import Image from "next/image";
 
 const data = {
   user: {
@@ -36,74 +39,30 @@ const data = {
     email: "m@example.com",
     avatar: "/avatars/shadcn.jpg",
   },
+
   navMain: [
-    {
-      title: "Dashboard",
-      url: "/admin/dashboard",
-      icon: IconDashboard,
-    },
-    {
-      title: "Revenue",
-      url: "/admin/revenue",
-      icon: IconTrendingUp,
-    },
-    {
-      title: "P&L",
-      url: "/admin/pl",
-      icon: IconBriefcase,
-    },
+    { title: "Home", url: "/admin/home", icon: IconHome },
+    { title: "Dashboard", url: "/admin/dashboard", icon: IconDashboard },
 
-    {
-      title: "Contract Type",
-      url: "/admin/contract-type",
-      icon: IconContract,
-    },
-    {
-      title: "Service Type",
-      url: "/admin/service-type",
-      icon: IconTypeface,
-    },
-    {
-      title: "Billing Plan",
-      url: "/admin/billing-plan",
-      icon: IconReceipt,
-    },
-    {
-      title: "Contract Duration",
-      url: "/admin/contract-duration",
-      icon: IconContract,
-    },
-    {
-      title: "Customer",
-      url: "/admin/customer",
-      icon: IconUserCircle,
-    },
-    {
-      title: "Company",
-      url: "/admin/company",
-      icon: IconBuilding,
-    },
+    // ✅ FIXED: Tab-based routing
+    { title: "Revenue", url: "/admin/revenue", icon: IconTrendingUp },
+    { title: "P&L", url: "/admin/pl", icon: IconBriefcase },
 
-    {
-      title: "Users",
-      url: "/admin/users",
-      icon: IconUser,
-    },
-    {
-      title: "Roles",
-      url: "/admin/roles",
-      icon: IconUserCog,
-    },
-    {
-      title: "Module",
-      url: "/admin/module",
-      icon: IconPackage,
-    },
+    { title: "Contract Type", url: "/admin/contract-type", icon: IconContract },
+    { title: "Service Type", url: "/admin/service-type", icon: IconTypeface },
+    { title: "Billing Plan", url: "/admin/billing-plan", icon: IconReceipt },
+    { title: "Contract Duration", url: "/admin/contract-duration", icon: IconContract },
+    { title: "Customer", url: "/admin/customer", icon: IconUserCircle },
+    { title: "Company", url: "/admin/company", icon: IconBuilding },
+
+    { title: "Users", url: "/admin/users", icon: IconUser },
+    { title: "Roles", url: "/admin/roles", icon: IconUserCog },
+    { title: "Module", url: "/admin/module", icon: IconPackage },
+    { title: "Configuration", url: "/admin/configuration", icon: SettingsIcon },
   ],
-  navSecondary: [
 
-  ],
-}
+  navSecondary: [],
+};
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
   user?: {
@@ -112,66 +71,74 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
     image?: string;
     allowedRoutes?: string[];
   };
+  configuration?: {
+    name?: string | null;
+    logo?: string | null;
+  };
 };
 
+// ✅ FIXED FILTER LOGIC
 function filterNav(navMain: any[], allowedRoutes: string[]) {
-  return navMain
-    .map((section) => {
-      if (!section.items) {
-        return allowedRoutes.includes(section.url) ? section : null;
-      }
+  return navMain.filter((item) => {
+    // Always show Home
+    if (item.url === "/admin/home") return true;
 
-      const filteredItems = section.items.filter((item: any) =>
-        allowedRoutes.includes(item.url),
-      );
+    // If no restrictions → show all
+    if (!allowedRoutes.length) return true;
 
-      if (filteredItems.length === 0) return null;
-
-      return {
-        ...section,
-        items: filteredItems,
-      };
-    })
-    .filter(Boolean);
+    // Otherwise filter
+    return allowedRoutes.includes(item.url);
+  });
 }
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
-
+export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
   const allowedRoutes = user?.allowedRoutes || [];
-
   const filteredNav = filterNav(data.navMain, allowedRoutes);
 
   return (
     <Sidebar
       collapsible="icon"
       {...props}
-      className="fixed top-0 left-0 h-screen border-r"
+      className="fixed top-0 left-0 h-screen border-r bg-white"
     >
+      {/* 🔹 HEADER */}
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <Link href="/admin/dashboard">
-                <span className="text-base font-semibold">
-                  Billing Tracking
-                </span>
+            <SidebarMenuButton asChild className="p-2">
+              <Link href="/admin/home">
+                <div className="flex items-center gap-2">
+                  
+                  {/* LOGO */}
+                  <Image
+                    src={configuration?.logo || "/sy.png"}
+                    alt="logo"
+                    width={28}
+                    height={28}
+                    className="rounded-md"
+                  />
+
+                  {/* TEXT (hidden when collapsed) */}
+                  <span className="text-sm font-semibold whitespace-nowrap group-data-[collapsible=icon]:hidden">
+                    {configuration?.name?.toUpperCase() || "SY ASSOCIATES"}
+                  </span>
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
+      {/* 🔹 MAIN NAV */}
       <SidebarContent className="overflow-y-auto">
         <NavMain items={filteredNav} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
 
+      {/* 🔹 FOOTER */}
       <SidebarFooter>
         <NavUser user={data.user} />
       </SidebarFooter>
     </Sidebar>
-  )
+  );
 }

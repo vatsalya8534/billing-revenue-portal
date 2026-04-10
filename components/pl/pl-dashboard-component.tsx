@@ -360,7 +360,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span className="font-bold">Total FMS Value</span>
+                                <span className="font-bold">Total FMS Cost</span>
                                 <span className="text-blue-500 font-bold">{totalValues.totalFMSValue}</span>
                             </div>
                         </CardContent>
@@ -369,7 +369,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
-                                <span className="font-bold">Total Spare Value</span>
+                                <span className="font-bold">Total Spare Cost</span>
                                 <span className="text-blue-500 font-bold">{totalValues.totalSpareValue}</span>
                             </div>
                         </CardContent>
@@ -412,10 +412,10 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                         Total Billed Revenue
                                     </TableHead>
                                     <TableHead>
-                                        Total FMS
+                                        Total FMS Cost 
                                     </TableHead>
                                     <TableHead>
-                                        Total Spare
+                                        Total Spare Cost 
                                     </TableHead>
                                     <TableHead>
                                         Total Other Cost

@@ -248,3 +248,12 @@ export const projectSchema = z.object({
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
 })
+
+export const configurationSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().optional(),
+  logo: z.union([z.instanceof(File), z.string()]).optional(),
+  favicon: z.union([z.instanceof(File), z.string()]).optional(),
+  email: z.string().optional(),
+  password: z.string().optional(),
+})

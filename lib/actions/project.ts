@@ -571,6 +571,7 @@ export async function fetchPLPageData(projectId: string) {
     const profitAmount = billedAmount - totalCost;
     const profitPercent = billedAmount === 0 ? 0 : (profitAmount / billedAmount) * 100;
 
+
     return {
       id: b.id,
       month: b.month,
@@ -593,6 +594,7 @@ export async function fetchPLPageData(projectId: string) {
   const totalResourceCount = safeNumber(project.resourceCount);
   const totalPOValue = safeNumber(project.poValue);
   const totalProfit = totalBilledValue === 0 ? 0 : ((totalBilledValue - totalCostValue) / totalBilledValue) * 100;
+  
 
   return {
     success: true,
