@@ -129,30 +129,37 @@ export async function deleteUser(id: any) {
 }
 
 export async function loginFormUser(prevState: unknown, formData: FormData) {
-
-  const user = loginFormSchema.parse({
+  const result = loginFormSchema.safeParse({
     username: formData.get("username"),
-    password: formData.get("password")
-  })
+    password: formData.get("password"),
+  });
+
+  // Validation failed
+  if (!result.success) {
+    return {
+      success: false,
+      message: result.error.issues[0].message,
+    };
+  }
+
+  const user = result.data;
 
   try {
-    await signIn("credentials", user)
+    await signIn("credentials", user);
 
     return {
       success: true,
-      message: "Login successfully"
-    }
-
+      message: "Login successfully",
+    };
   } catch (error) {
-
     if (isRedirectError(error)) {
-      throw error
+      throw error;
     }
 
     return {
       success: false,
-      message: "Invalid username and password"
-    }
+      message: "Invalid username or password",
+    };
   }
 }
 
