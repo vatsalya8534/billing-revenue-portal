@@ -856,37 +856,31 @@ function getDetailsByProject(project: any) {
   let totalOtherCost = 0;
   let totalMiscellaneousCost = 0;
 
-  for (const cycle of project.monthlyPLs) {
-    if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
-      totalBilledValue += Number(cycle.billedAmount);
-      totalFmsValue += Number(cycle.fms);
-      totalSpareValue += Number(cycle.spare);
-      totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
-    
+  for (const cycle of project.monthlyPLs || []) {
+    const billed = Number(cycle.billedAmount || 0);
+    const fms = Number(cycle.fms || 0);
+    const spare = Number(cycle.spare || 0);
 
-      if (typeof cycle.otherCost === "string") {
-        let otherBilling = JSON.parse(cycle.otherCost);
+    totalBilledValue += billed;
+    totalFmsValue += fms;
+    totalSpareValue += spare;
+    totalCostValue += fms + spare;
 
-        if (Array.isArray(otherBilling)) {
-          for (const bill of otherBilling) {
-            if (bill && typeof bill === "object" && !Array.isArray(bill)) {
-              if ("value" in bill) {
-                totalOtherCost += Number(bill.value);
-                totalCostValue += Number(bill.value);
-                totalMiscellaneousCost += Number(bill.value);
-                
-              }
-            }
-          }
-        }
-      }
+    const otherCosts = parseOtherCost(cycle.otherCost);
+
+    for (const bill of otherCosts) {
+      const value = Number(bill.value || 0);
+
+      totalOtherCost += value;
+      totalMiscellaneousCost += value;
+      totalCostValue += value;
     }
-
   }
 
-  let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
-
-  if (!profit) profit = "0";
+  let profit =
+    totalBilledValue > 0
+      ? (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
+      : "0";
 
   return {
     totalBilledValue,
@@ -895,8 +889,8 @@ function getDetailsByProject(project: any) {
     totalSpareValue,
     totalOtherCost,
     totalMiscellaneousCost,
-    profit
-  }
+    profit,
+  };
 }
 
 
