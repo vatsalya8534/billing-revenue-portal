@@ -11,12 +11,12 @@ type HomePageProps = {
     name?: string | null;
     logo?: string | null;
   };
-};
+}; 
 
 export default function HomePage({ configuration }: HomePageProps) {
   const router = useRouter();
-  const companyName = configuration?.name || "SY ASSOCIATES";
-  const logo = configuration?.logo || "/sy.png";
+  const companyName = configuration?.name || "";
+  const logo = configuration?.logo || "";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] p-6">

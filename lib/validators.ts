@@ -256,4 +256,4 @@ export const configurationSchema = z.object({
   favicon: z.union([z.instanceof(File), z.string()]).optional(),
   email: z.string().optional(),
   password: z.string().optional(),
-})
+}) 
