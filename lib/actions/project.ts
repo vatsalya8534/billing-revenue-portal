@@ -641,6 +641,7 @@ export async function filterProjectData(filters: any) {
   let totalCostValue = 0;
   let totalFMSValue = 0;
   let totalSpareValue = 0;
+  let totalOtherCostValue = 0;
   let totalMiscCostValue = 0;
   let totalResourceCount = 0;
   let totalProfitPercentage = 0;
@@ -651,8 +652,7 @@ export async function filterProjectData(filters: any) {
       company: true,
       monthlyPLs: {
         where: monthlyPLWhere,
-      }
-
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -661,32 +661,34 @@ export async function filterProjectData(filters: any) {
 
   if (projects.length > 0) {
     for (const project of projects) {
-      let res = getDetailsByProject(project)
+      const res = getDetailsByProject(project);
 
-      let profit = Number(res.profit) 
-
-      totalPOValue += Number(project.poValue);
-      totalBilledValue += res.totalBilledValue
-      totalCostValue += res.totalCostValue
-      totalFMSValue += res.totalFmsValue
-      totalSpareValue += res.totalSpareValue
-      totalMiscCostValue += res.totalOtherCost
-      totalResourceCount += project.resourceCount
-      totalProfitPercentage += profit || 0
+      totalPOValue += Number(project.poValue || 0);
+      totalBilledValue += res.totalBilledValue;
+      totalCostValue += res.totalCostValue;
+      totalFMSValue += res.totalFmsValue;
+      totalSpareValue += res.totalSpareValue;
+      totalOtherCostValue += res.totalOtherCost;
+      totalMiscCostValue += res.totalMiscellaneousCost;
+      totalResourceCount += Number(project.resourceCount || 0);
+      totalProfitPercentage += Number(res.profit || 0);
     }
   }
 
   return {
-    totalPOValue: totalPOValue,
-    totalBilledValue: totalBilledValue,
-    totalCostValue: totalCostValue,
-    totalFMSValue: totalFMSValue,
-    totalSpareValue: totalSpareValue,
-    totalMiscCostValue: totalMiscCostValue,
-    totalResourceCount: totalResourceCount,
-    totalProfit: (totalProfitPercentage / (projects.length ?? 1)).toFixed(2),
-    data: JSON.parse(JSON.stringify(projects))
-  }
+    totalPOValue,
+    totalBilledValue,
+    totalCostValue,
+    totalFMSValue,
+    totalSpareValue,
+    totalOtherCostValue,
+    totalMiscCostValue,
+    totalResourceCount,
+    totalProfit: (
+      totalProfitPercentage / (projects.length || 1)
+    ).toFixed(2),
+    data: JSON.parse(JSON.stringify(projects)),
+  };
 }
 
 export async function getMonthlyRevenueCost(year: number, filters: any) {
@@ -842,7 +844,7 @@ export async function getCostDetailsByMonth(
     billedAmount: Number(item.billedAmount || 0),
     fms: Number(item.fms || 0),
     spare: Number(item.spare || 0),
-    other: parseOtherCost(item.otherCost), // ✅ safe parsing
+    other: parseOtherCost(item.otherCost),
   }));
 }
 
@@ -852,6 +854,7 @@ function getDetailsByProject(project: any) {
   let totalFmsValue = 0;
   let totalSpareValue = 0;
   let totalOtherCost = 0;
+  let totalMiscellaneousCost = 0;
 
   for (const cycle of project.monthlyPLs) {
     if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
@@ -859,6 +862,7 @@ function getDetailsByProject(project: any) {
       totalFmsValue += Number(cycle.fms);
       totalSpareValue += Number(cycle.spare);
       totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
+    
 
       if (typeof cycle.otherCost === "string") {
         let otherBilling = JSON.parse(cycle.otherCost);
@@ -869,6 +873,8 @@ function getDetailsByProject(project: any) {
               if ("value" in bill) {
                 totalOtherCost += Number(bill.value);
                 totalCostValue += Number(bill.value);
+                totalMiscellaneousCost += Number(bill.value);
+                
               }
             }
           }
@@ -888,6 +894,9 @@ function getDetailsByProject(project: any) {
     totalFmsValue,
     totalSpareValue,
     totalOtherCost,
+    totalMiscellaneousCost,
     profit
   }
 }
+
+
