@@ -31,7 +31,7 @@ const chartConfig = {
 export function BillingPaymentChart() {
   const [year, setYear] = useState("2025")
 
-  const chartData : any[]= []
+  const chartData: any[] = []
 
   return (
     <div className="space-y-4">
@@ -44,8 +44,8 @@ export function BillingPaymentChart() {
           </SelectTrigger>
 
           <SelectContent>
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
+            <SelectItem value="2024">FY 2024-25</SelectItem>
+            <SelectItem value="2025">FY 2025-26</SelectItem>
           </SelectContent>
         </Select>
       </div>

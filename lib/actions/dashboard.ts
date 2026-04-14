@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { format } from "date-fns";
+import { getFinancialYearRange } from "@/lib/date-utils";
 
 // ================= TYPES =================
 export interface DashboardStats {
@@ -12,6 +13,13 @@ export interface DashboardStats {
   totalOverdueAmount: number;
   collectionEfficiency: number;
   currentMonth: string;
+}
+
+interface BillingStatusFilters {
+  company?: string;
+  startDate?: Date;
+  endDate?: Date;
+  month?: string;
 }
 
 // ================= HELPERS =================
@@ -34,7 +42,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   today.setHours(0, 0, 0, 0);
 
   const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const currentYear = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
   const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
   const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
 
@@ -56,6 +64,9 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   let collectedThisMonth = 0;
   let billedLastMonth = 0;
 
+  // Current month
+  const { start, end } = getFinancialYearRange(currentYear);
+
   for (const c of cycles) {
     const billed = Number(c.invoiceAmount || 0);
     const rawCollected = Number(c.collectedAmount || 0);
@@ -69,10 +80,17 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
 
-    // Current month
-    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
-      billedThisMonth += billed;
-      collectedThisMonth += collected;
+
+
+    // Only count data inside FY
+    if (d >= start && d <= end) {
+      const currentFYMonth = (currentMonth + 9) % 12;
+      const dataFYMonth = (d.getMonth() + 9) % 12;
+
+      if (dataFYMonth === currentFYMonth) {
+        billedThisMonth += billed;
+        collectedThisMonth += collected;
+      }
     }
 
     // Last month
@@ -116,20 +134,58 @@ export async function getMonthlyBillingData(
     month?: string;
   }
 ) {
-  const now = new Date();
-  const currentMonth = now.getMonth();
+  const { start, end } = getFinancialYearRange(year);
 
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // ================= FETCH (WITH FILTERS) =================
   const cycles = await prisma.billingCycle.findMany({
+    where: {
+      // ✅ FY filter
+      OR: [
+        {
+          invoiceDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          billingSubmittedDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          paymentDueDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      ],
+
+      // ✅ Company filter
+      ...(filters?.company &&
+        filters.company !== "all" && {
+          purchaseOrder: {
+            companyId: filters.company,
+          },
+        }),
+    },
     include: {
       purchaseOrder: {
         include: {
-          company: true, // ✅ needed for company filter
+          company: true,
         },
       },
     },
   });
 
-  const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  // ================= MONTH SETUP =================
+  const months = [
+    "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+    "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
+  ];
 
   const data = months.map((m, i) => ({
     month: m,
@@ -139,57 +195,59 @@ export async function getMonthlyBillingData(
     index: i,
   }));
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  // ================= PROCESS =================
   for (const c of cycles) {
-    const date = c.invoiceDate ?? c.billingSubmittedDate ?? c.paymentDueDate;
+    const date =
+      c.invoiceDate ??
+      c.billingSubmittedDate ??
+      c.paymentDueDate;
+
     if (!date) continue;
 
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
 
-    // ✅ Year filter
-    if (d.getFullYear() !== year) continue;
-
-    // ✅ Company filter
-    if (filters?.company && filters.company !== "all") {
-      const companyId = c.purchaseOrder?.company?.id;
-      if (String(companyId) !== String(filters.company)) continue;
-    }
-
-    // ✅ Month filter
-    if (filters?.month && filters.month !== "all") {
-      if (d.getMonth() !== Number(filters.month)) continue;
-    }
-
-    // ✅ Date range filter
+    // ✅ Extra date range filter (optional UI filter)
     if (filters?.startDate && d < filters.startDate) continue;
     if (filters?.endDate && d > filters.endDate) continue;
 
-    const i = d.getMonth();
+    const fyMonth = (d.getMonth() + 9) % 12;
+
+    // ✅ Month filter
+    if (
+      filters?.month &&
+      filters.month !== "all" &&
+      fyMonth !== Number(filters.month)
+    ) {
+      continue;
+    }
 
     const billed = Number(c.invoiceAmount || 0);
     const paid = Number(c.collectedAmount || 0);
 
-    data[i].billing += billed;
-    data[i].payment += paid;
+    data[fyMonth].billing += billed;
+    data[fyMonth].payment += paid;
 
-    // ✅ Overdue logic
+    // ✅ Overdue
     if (c.paymentDueDate && paid < billed) {
       const due = new Date(c.paymentDueDate);
       due.setHours(0, 0, 0, 0);
 
       if (due < today) {
-        data[i].overdue += billed - paid;
+        data[fyMonth].overdue += billed - paid;
       }
     }
   }
 
-  // ✅ Future months zero (same as your logic)
-  if (year === now.getFullYear()) {
+  // ================= FUTURE MONTH BLOCK =================
+  const now = new Date();
+  const currentFYMonth = (now.getMonth() + 9) % 12;
+  const currentFYYear =
+    now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
+
+  if (year === currentFYYear) {
     data.forEach((d) => {
-      if (d.index > currentMonth) {
+      if (d.index > currentFYMonth) {
         d.billing = 0;
         d.payment = 0;
         d.overdue = 0;
@@ -201,7 +259,10 @@ export async function getMonthlyBillingData(
 }
 
 // ================= TABLE DETAILS =================
-export async function getBillingStatusDetails(year: number, month?: number) {
+export async function getBillingStatusDetails(
+  year: number,
+  filters?: BillingStatusFilters
+) {
   // Fetch billing cycles along with purchase order details
   const cycles = await prisma.billingCycle.findMany({
     include: {
@@ -218,6 +279,7 @@ export async function getBillingStatusDetails(year: number, month?: number) {
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+  const { start, end } = getFinancialYearRange(year);
 
   return cycles
     .filter((cycle) => {
@@ -225,8 +287,33 @@ export async function getBillingStatusDetails(year: number, month?: number) {
       if (!date) return false;
 
       const d = new Date(date);
-      if (d.getFullYear() !== year) return false;
-      if (month !== undefined && month !== null && d.getMonth() !== month) return false;
+      d.setHours(0, 0, 0, 0);
+
+      if (d < start || d > end) return false;
+      if (
+        filters?.company &&
+        filters.company !== "all" &&
+        String(cycle.purchaseOrder?.company?.id) !== filters.company
+      ) {
+        return false;
+      }
+
+      if (filters?.startDate) {
+        const filterStart = new Date(filters.startDate);
+        filterStart.setHours(0, 0, 0, 0);
+        if (d < filterStart) return false;
+      }
+
+      if (filters?.endDate) {
+        const filterEnd = new Date(filters.endDate);
+        filterEnd.setHours(23, 59, 59, 999);
+        if (d > filterEnd) return false;
+      }
+
+      if (filters?.month && filters.month !== "all") {
+        const fyMonth = (d.getMonth() + 9) % 12;
+        if (fyMonth !== Number(filters.month)) return false;
+      }
 
       return true;
     })

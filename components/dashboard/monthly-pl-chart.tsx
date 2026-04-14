@@ -46,13 +46,26 @@ type MonthlyPLChartProps = {
   plData?: any;
 };
 
+// ================= HELPERS =================
+function getFinancialYearRange(year: number) {
+  return {
+    startDate: new Date(year, 3, 1),      // Apr 1
+    endDate: new Date(year + 1, 2, 31),   // Mar 31
+  };
+}
+
 // ================= COMPONENT =================
 export function MonthlyPLChart({ plData }: MonthlyPLChartProps) {
 
   const startYear = 2024;
-  const currentYear = new Date().getFullYear();
 
-  const [year, setYear] = useState<string>(currentYear.toString());
+  const now = new Date();
+  const currentFY =
+    now.getMonth() < 3
+      ? now.getFullYear() - 1
+      : now.getFullYear();
+
+  const [year, setYear] = useState(currentFY.toString());
   const [chartData, setChartData] = useState<ChartData[]>([]);
   const [summary, setSummary] = useState({
     revenue: 0,
@@ -65,46 +78,67 @@ export function MonthlyPLChart({ plData }: MonthlyPLChartProps) {
     cost: { label: "Cost", color: "#f97316" },
   };
 
+  // ================= LOAD DATA =================
   useEffect(() => {
     async function loadData() {
-      const allMonths = [
-        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
-      ];
+      try {
+        const yearNum = Number(year);
 
-      const data = plData ?? (await getPLData(Number(year)));
+        // ✅ FY RANGE
+        const { startDate, endDate } =
+          getFinancialYearRange(yearNum);
 
-      let totalRevenue = 0;
-      let totalCost = 0;
+        const allMonths = [
+          "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+          "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"
+        ];
 
-      const safeData: ChartData[] = allMonths.map((month) => {
-        const monthData = data.monthly?.find((m: any) => m.month === month);
 
-        const revenue = Number(monthData?.revenue ?? 0);
-        const cost = Number(monthData?.cost ?? 0);
+        const data =
+          plData ??
+          (await getPLData(yearNum, {
+            startDate,
+            endDate,
+          }));
 
-        totalRevenue += revenue;
-        totalCost += cost;
+        let totalRevenue = 0;
+        let totalCost = 0;
 
-        return {
-          month,
-          revenue,
-          cost,
-        };
-      });
+        const safeData: ChartData[] = allMonths.map((month) => {
+          const monthData = data?.monthly?.find(
+            (m: any) => m.month === month
+          );
 
-      setChartData(safeData);
+          const revenue = Number(monthData?.revenue ?? 0);
+          const cost = Number(monthData?.cost ?? 0);
 
-      setSummary({
-        revenue: totalRevenue,
-        cost: totalCost,
-        profit: totalRevenue - totalCost,
-      });
+          totalRevenue += revenue;
+          totalCost += cost;
+
+          return {
+            month,
+            revenue,
+            cost,
+          };
+        });
+
+        setChartData(safeData);
+
+        setSummary({
+          revenue: totalRevenue,
+          cost: totalCost,
+          profit: totalRevenue - totalCost,
+        });
+
+      } catch (err) {
+        console.error("PL Chart load error:", err);
+        setChartData([]);
+        setSummary({ revenue: 0, cost: 0, profit: 0 });
+      }
     }
 
     loadData();
   }, [year, plData]);
-
   return (
     <Card className="w-full">
       <CardContent className="space-y-4 w-full min-w-0">
@@ -119,12 +153,12 @@ export function MonthlyPLChart({ plData }: MonthlyPLChartProps) {
             </SelectTrigger>
             <SelectContent>
               {Array.from(
-                { length: currentYear - startYear + 1 },
+                { length: currentFY - startYear + 1 },
                 (_, i) => {
                   const y = (startYear + i).toString();
                   return (
                     <SelectItem key={y} value={y}>
-                      {y}
+                      {`FY ${y}-${String(Number(y) + 1).slice(-2)}`}
                     </SelectItem>
                   );
                 }

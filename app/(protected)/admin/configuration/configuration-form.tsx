@@ -11,7 +11,7 @@ import { Configuration } from "@/types";
 import { configurationSchema } from "@/lib/validators";
 import { toast } from "sonner";
 import React from "react";
-import { createOrUpdateConfiguration } from "@/lib/actions/configuration";
+import { saveConfigurationFromForm } from "@/lib/actions/configuration";
 import { useRouter } from "next/navigation"
 import Image from "next/image";
 
@@ -34,43 +34,26 @@ const ConfigurationForm = ({ data }: {
 
     const [isPending, startTransition] = React.useTransition()
 
-    const uploadImage = async (file: File) => {
-
-        try {
-            const formData = new FormData();
-            formData.append("image", file);
-
-            const fileUploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-            });
-
-            const data = await fileUploadRes.json();
-
-            return data;
-        } catch (error: any) {
-            return {
-                success: false,
-                message: error.message
-            }
-        }
-
-    }
-
 
     function onSubmit(values: Configuration) {
         startTransition(async () => {
-            let res;
+            const formData = new FormData();
+            formData.append("id", data?.id || "");
+            formData.append("name", values.name || "");
+            formData.append("email", values.email || "");
+            formData.append("password", values.password || "");
+            formData.append("existingLogo", typeof data?.logo === "string" ? data.logo : "");
+            formData.append("existingFavicon", typeof data?.favicon === "string" ? data.favicon : "");
 
-            let imageRes = await uploadImage(values.logo as File)
+            if (values.logo instanceof File) {
+                formData.append("logo", values.logo);
+            }
 
-            if (imageRes?.success) values.logo = imageRes.url
+            if (values.favicon instanceof File) {
+                formData.append("favicon", values.favicon);
+            }
 
-            imageRes = values.logo as File && await uploadImage(values.favicon as File)
-
-            if (imageRes?.success) values.favicon = imageRes.url
-
-            res = values.favicon as File && await createOrUpdateConfiguration(values, data?.id as string)
+            const res = await saveConfigurationFromForm(formData)
 
             if (!res?.success) {
                 toast.error("Error", {
@@ -125,7 +108,7 @@ const ConfigurationForm = ({ data }: {
                                             <FormItem>
                                                 <FormLabel>Logo</FormLabel>
                                                 <FormControl>
-                                                    <Input type="file" onChange={(e) => {
+                                                    <Input type="file" accept="image/*" onChange={(e) => {
                                                         field.onChange(e.target.files?.[0]);
                                                     }} />
                                                 </FormControl>
@@ -147,7 +130,7 @@ const ConfigurationForm = ({ data }: {
                                             <FormItem>
                                                 <FormLabel>Favicon</FormLabel>
                                                 <FormControl>
-                                                    <Input type="file" onChange={(e) => {
+                                                    <Input type="file" accept="image/*" onChange={(e) => {
                                                         field.onChange(e.target.files?.[0]);
                                                     }} />
                                                 </FormControl>
@@ -196,7 +179,9 @@ const ConfigurationForm = ({ data }: {
                             </AccordionItem>
                         </Accordion>
 
-                        <Button type="submit">Submit</Button>
+                        <Button type="submit" disabled={isPending}>
+                            {isPending ? "Submitting..." : "Submit"}
+                        </Button>
 
                     </form>
                 </Form>

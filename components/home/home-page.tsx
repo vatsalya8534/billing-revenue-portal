@@ -6,8 +6,17 @@ import { BarChart3, DollarSign, FileText, TrendingUp } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
-export default function HomePage() {
+type HomePageProps = {
+  configuration?: {
+    name?: string | null;
+    logo?: string | null;
+  };
+};
+
+export default function HomePage({ configuration }: HomePageProps) {
   const router = useRouter();
+  const companyName = configuration?.name || "SY ASSOCIATES";
+  const logo = configuration?.logo || "/sy.png";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] p-6">
@@ -16,14 +25,14 @@ export default function HomePage() {
       <header className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-3">
           <Image
-            src="/sy.png"
+            src={logo}
             alt="Company Logo"
             width={50}
             height={50}
             className="rounded-md"
           />
           <h1 className="text-2xl font-bold uppercase tracking-wide text-[#1E3A8A]">
-            SY ASSOCIATES
+            {companyName}
           </h1>
         </div>
       </header>
@@ -138,7 +147,7 @@ export default function HomePage() {
 
       {/* FOOTER */}
       <footer className="text-center text-sm text-gray-500">
-        © {new Date().getFullYear()} SY ASSOCIATES. All rights reserved.
+        &copy; {new Date().getFullYear()} {companyName}. All rights reserved.
       </footer>
     </div>
   );

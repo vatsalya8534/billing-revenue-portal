@@ -31,8 +31,8 @@ import { getMonthlyBillingData } from "@/lib/actions/dashboard";
 // ================= TYPES =================
 type ChartData = {
   month: string;
-  value1: number; 
-  value2: number; 
+  value1: number;
+  value2: number;
 };
 
 type Filters = {
@@ -48,20 +48,34 @@ type Props = {
   setFilters: React.Dispatch<React.SetStateAction<Filters>>;
 };
 
+// ================= HELPERS =================
+function getFinancialYearRange(year: number) {
+  return {
+    startDate: new Date(year, 3, 1), // Apr 1
+    endDate: new Date(year + 1, 2, 31), // Mar 31
+  };
+}
+
 // ================= COMPONENT =================
 export function MonthlyBillingChartCard({
   filters,
   setFilters,
 }: Props) {
   const startYear = 2024;
-  const currentYear = new Date().getFullYear();
+
+  const now = new Date();
+  const currentFY =
+    now.getMonth() < 3
+      ? now.getFullYear() - 1
+      : now.getFullYear();
+
+  const selectedYear = filters.year || currentFY.toString();
 
   const months = [
-    "Jan","Feb","Mar","Apr","May","Jun",
-    "Jul","Aug","Sep","Oct","Nov","Dec"
+    "Apr", "May", "Jun", "Jul", "Aug", "Sep",
+    "Oct", "Nov", "Dec", "Jan", "Feb", "Mar",
   ];
 
-  const selectedYear = filters.year || currentYear.toString();
   const [chartData, setChartData] = useState<ChartData[]>([]);
 
   // ================= CONFIG =================
@@ -72,7 +86,7 @@ export function MonthlyBillingChartCard({
     },
     payment: {
       label: "Payment Received",
-      color: "#f97316",
+      color: "#10b981",
     },
   };
 
@@ -80,13 +94,24 @@ export function MonthlyBillingChartCard({
   useEffect(() => {
     async function loadData() {
       try {
-        const data = await getMonthlyBillingData(
-          Number(selectedYear),
-          filters
-        );
+        const yearNum = Number(selectedYear);
 
+        // ✅ FY range
+        const { startDate, endDate } =
+          getFinancialYearRange(yearNum);
+
+        // ✅ PASS FILTERS CORRECTLY
+        const data = await getMonthlyBillingData(yearNum, {
+          company: filters.company,
+          month: filters.month,
+          startDate,
+          endDate,
+        });
+
+        // ✅ Normalize Apr → Mar
         const safeData: ChartData[] = months.map((month) => {
           const m = data.find((d: any) => d.month === month);
+
           return {
             month,
             value1: Number(m?.billing ?? 0),
@@ -102,7 +127,11 @@ export function MonthlyBillingChartCard({
     }
 
     loadData();
-  }, [selectedYear, filters]);
+  }, [
+    selectedYear,
+    filters.company,
+    filters.month,
+  ]);
 
   // ================= CHART RENDER =================
   const renderBarChart = (
@@ -154,7 +183,7 @@ export function MonthlyBillingChartCard({
                     val === 0 ? "" : `₹${val.toLocaleString()}`
                   }
                 />
-              </Bar>c
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
         </ChartContainer>
@@ -178,11 +207,11 @@ export function MonthlyBillingChartCard({
           </SelectTrigger>
 
           <SelectContent>
-            {Array.from({ length: currentYear - startYear + 1 }, (_, i) => {
+            {Array.from({ length: currentFY - startYear + 1 }, (_, i) => {
               const y = (startYear + i).toString();
               return (
                 <SelectItem key={y} value={y}>
-                  {y}
+                  {`FY ${y}-${String(Number(y) + 1).slice(-2)}`}
                 </SelectItem>
               );
             })}

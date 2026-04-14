@@ -24,7 +24,7 @@ import {
 } from "../ui/table";
 import { MonthlyBillingChartCard } from "../dashboard/monthly-billing-chart";
 import { getBillingStatusDetails } from "@/lib/actions/dashboard";
-import { format, parse } from "date-fns";
+import { format } from "date-fns";
 
 type Filters = {
   company: string;
@@ -35,9 +35,6 @@ type Filters = {
 };
 
 const allMonths = [
-  "Jan",
-  "Feb",
-  "Mar",
   "Apr",
   "May",
   "Jun",
@@ -47,12 +44,39 @@ const allMonths = [
   "Oct",
   "Nov",
   "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
 ];
-const currentYear = new Date().getFullYear();
+const now = new Date();
+const currentFY = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
 const years = Array.from(
-  { length: currentYear - 2009 },
-  (_, i) => currentYear - i,
+  { length: currentFY - 2009 },
+  (_, i) => currentFY - i,
 );
+
+function formatFinancialYearLabel(year: string) {
+  if (!year || year === "all") return "All Financial Years";
+
+  const numericYear = Number(year);
+  if (Number.isNaN(numericYear)) return year;
+
+  return `FY ${numericYear}-${String(numericYear + 1).slice(-2)}`;
+}
+
+function getActiveFilterSummary(filters: Filters) {
+  const parts = [formatFinancialYearLabel(filters.year)];
+
+  if (filters.month !== "all") {
+    parts.push(`Month: ${allMonths[Number(filters.month)]}`);
+  }
+
+  if (filters.company !== "all") {
+    parts.push("Filtered by Company");
+  }
+
+  return parts.join(" | ");
+}
 
 const PurchaseOrderDashboard = ({ companies, stats, plData }: any) => {
   const [mounted, setMounted] = useState(false);
@@ -61,7 +85,7 @@ const PurchaseOrderDashboard = ({ companies, stats, plData }: any) => {
     startDate: undefined,
     endDate: undefined,
     month: "all",
-    year: currentYear.toString(),
+    year: currentFY.toString(),
   });
   const [revenueDetails, setRevenueDetails] = useState<any[]>([]);
 
@@ -73,38 +97,11 @@ const PurchaseOrderDashboard = ({ companies, stats, plData }: any) => {
       startDate: undefined,
       endDate: undefined,
       month: "all",
-      year: currentYear.toString(),
+      year: currentFY.toString(),
     });
 
   const fetchRevenueDetails = async () => {
-    let data = await getBillingStatusDetails(Number(filters.year));
-
-    // Filter by company
-    if (filters.company !== "all") {
-      const companyName = companies.find(
-        (c: any) => String(c.id) === filters.company,
-      )?.name;
-      data = data.filter((d) => d.companyName === companyName);
-    }
-
-    // Filter by date range (startDate / endDate)
-    if (filters.startDate || filters.endDate || filters.month !== "all") {
-      data = data.filter((d) => {
-        if (!d.startDate || d.startDate === "-") return false;
-        const start = parse(d.startDate, "dd/MM/yyyy", new Date());
-
-        if (filters.startDate && start < filters.startDate) return false;
-        if (filters.endDate && start > filters.endDate) return false;
-
-        if (filters.month !== "all") {
-          const monthIndex = Number(filters.month); // 0 = Jan
-          if (start.getMonth() !== monthIndex) return false;
-        }
-
-        return true;
-      });
-    }
-
+    const data = await getBillingStatusDetails(Number(filters.year), filters);
     setRevenueDetails(data);
   };
 
@@ -134,6 +131,23 @@ const PurchaseOrderDashboard = ({ companies, stats, plData }: any) => {
 
   return (
     <>
+      <div className="space-y-2 rounded-2xl border bg-white p-6 shadow-sm">
+        <p className="text-sm font-medium uppercase tracking-[0.25em] text-blue-600">
+          Dashboard Overview
+        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          Revenue Dashboard
+        </h1>
+        <p className="max-w-3xl text-sm leading-6 text-slate-500">
+          Track billed revenue, collections, overdue amounts, billing
+          efficiency, and month-wise revenue movement with financial year
+          filters.
+        </p>
+        <div className="inline-flex w-fit rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+          Currently showing: {getActiveFilterSummary(filters)}
+        </div>
+      </div>
+
       {/* FILTERS */}
       <div className="border rounded-2xl shadow-sm p-5 space-y-5 mb-4">
         <div className="flex items-center justify-between">
@@ -246,7 +260,7 @@ const PurchaseOrderDashboard = ({ companies, stats, plData }: any) => {
               <SelectContent>
                 {years.map((y) => (
                   <SelectItem key={y} value={y.toString()}>
-                    {y}
+                    {`FY ${y}-${String(y + 1).slice(-2)}`}
                   </SelectItem>
                 ))}
               </SelectContent>

@@ -1,66 +1,103 @@
 import { Prisma } from "@prisma/client";
 
 type Filters = {
-    company?: string;
-    project?: string;
-    search?: string;
-    startDate?: Date;
-    endDate?: Date;
-    month?: string;
-    year?: string;
+  company?: string;
+  project?: string;
+  search?: string;
+  startDate?: Date;
+  endDate?: Date;
+  month?: string;
+  year?: string;
 };
 
-export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
-    const where: Prisma.ProjectWhereInput = {};
+export function buildMonthlyPLFilters(
+  filters: Pick<Filters, "month" | "year">
+): Prisma.ProjectMonthlyPLWhereInput {
+  const where: Prisma.ProjectMonthlyPLWhereInput = {};
 
-    if (filters.company && filters.company !== "all") {
-        where.companyId = filters.company;
-    }
-
-    if (filters.project && filters.project !== "all") {
-        where.id = filters.project;
-    }
-
-    if (filters.startDate) {
-        const start = filters.startDate
-            ? new Date(new Date(filters.startDate).setHours(0, 0, 0, 0))
-            : undefined;
-
-        const end = filters.endDate
-            ? new Date(new Date(filters.endDate).setHours(23, 59, 59, 999))
-            : undefined;
-
-        where.startDate = {
-            ...(start && { gte: start }),
-            ...(end && { lte: end }),
-        };
-    }
-
-    if (filters.endDate) {
-        const start = new Date(new Date(filters.endDate).setHours(0, 0, 0, 0));
-        const end = new Date(new Date(filters.endDate).setHours(23, 59, 59, 999));
-
-        where.endDate = {
-            gte: start,
-            lte: end,
-        };
-    }
-
-    where.monthlyPLs = {
-        some: {
-            ...(filters.month &&
-                filters.month !== "all" && {
-                month: Number(filters.month),
-            }),
-
-            ...(filters.year &&
-                filters.year !== "all" && {
-                year: Number(filters.year),
-            }),
-        },
-    };
-
+  if (
+    (!filters.year || filters.year === "all") &&
+    (!filters.month || filters.month === "all")
+  ) {
     return where;
+  }
+
+  const andConditions: Prisma.ProjectMonthlyPLWhereInput[] = [];
+
+  if (filters.year && filters.year !== "all") {
+    const year = Number(filters.year);
+
+    andConditions.push({
+      OR: [
+        {
+          year,
+          month: { gte: 3, lte: 11 },
+        },
+        {
+          year: year + 1,
+          month: { gte: 0, lte: 2 },
+        },
+      ],
+    });
+  }
+
+  if (filters.month && filters.month !== "all") {
+    andConditions.push({
+      month: Number(filters.month),
+    });
+  }
+
+  if (andConditions.length === 1) {
+    return andConditions[0];
+  }
+
+  return {
+    AND: andConditions,
+  };
 }
 
+export function buildFilters(filters: Filters): Prisma.ProjectWhereInput {
+  const where: Prisma.ProjectWhereInput = {};
 
+  // ✅ Company filter
+  if (filters.company && filters.company !== "all") {
+    where.companyId = filters.company;
+  }
+
+  // ✅ Project filter
+  if (filters.project && filters.project !== "all") {
+    where.id = filters.project;
+  }
+
+  // ✅ Start Date filter
+  if (filters.startDate) {
+    const start = new Date(filters.startDate);
+    start.setHours(0, 0, 0, 0);
+
+    where.startDate = {
+      gte: start,
+    };
+  }
+
+  // ✅ End Date filter
+  if (filters.endDate) {
+    const end = new Date(filters.endDate);
+    end.setHours(23, 59, 59, 999);
+
+    where.endDate = {
+      lte: end,
+    };
+  }
+
+  // 🔥 FINANCIAL YEAR LOGIC (Apr–Mar)
+  if (
+    (filters.year && filters.year !== "all") ||
+    (filters.month && filters.month !== "all")
+  ) {
+    where.monthlyPLs = {
+      some: buildMonthlyPLFilters(filters),
+    };
+  }
+
+  return where;
+}

@@ -31,11 +31,43 @@ const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep"
 
 const years: number[] = [];
 
-let date = new Date()
-const currentYear = date.getFullYear()
+const now = new Date();
+const currentFY = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
 
-for (let num = 2010; num <= currentYear; num++) {
+for (let num = 2010; num <= currentFY; num++) {
     years.push(num);
+}
+
+function formatFinancialYearLabel(year: string) {
+    if (!year || year === "all") return "All Years";
+
+    const numericYear = Number(year);
+    if (Number.isNaN(numericYear)) return year;
+
+    return `FY ${numericYear}-${String(numericYear + 1).slice(-2)}`;
+}
+
+function getActiveFilterSummary(filters: {
+    company: string;
+    project: string;
+    month: string;
+    year: string;
+}) {
+    const parts = [formatFinancialYearLabel(filters.year)];
+
+    if (filters.month !== "all") {
+        parts.push(`Month: ${allMonths[Number(filters.month)]}`);
+    }
+
+    if (filters.company !== "all") {
+        parts.push("Filtered by Company");
+    }
+
+    if (filters.project !== "all") {
+        parts.push("Filtered by Project");
+    }
+
+    return parts.join(" | ");
 }
 
 export function PLDashboardComponent({ companies, projects }: any) {
@@ -47,6 +79,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
         totalCostValue: 0,
         totalFMSValue: 0,
         totalSpareValue: 0,
+        totalMiscCostValue: 0,
         totalResourceCount: 0,
         totalProfit: 0,
     })
@@ -57,7 +90,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
         startDate: undefined as Date | undefined,
         endDate: undefined as Date | undefined,
         month: "all",
-        year: "all",
+        year: currentFY.toString(),
     });
 
     const [selectedMonth, setSelectedMonth] = useState<{
@@ -82,7 +115,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
             startDate: undefined,
             endDate: undefined,
             month: 'all',
-            year: 'all',
+            year: currentFY.toString(),
         };
         setFilters(reset)
     };
@@ -97,6 +130,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
             totalCostValue: res.totalCostValue,
             totalFMSValue: res.totalFMSValue,
             totalSpareValue: res.totalSpareValue,
+            totalMiscCostValue: res.totalMiscCostValue,
             totalResourceCount: res.totalResourceCount,
             totalProfit: res.totalProfit,
         })
@@ -162,6 +196,23 @@ export function PLDashboardComponent({ companies, projects }: any) {
     if (mounted) {
         return (
             <div className="space-y-4">
+                <div className="space-y-2 rounded-2xl border bg-white p-6 shadow-sm">
+                    <p className="text-sm font-medium uppercase tracking-[0.25em] text-blue-600">
+                        Dashboard Overview
+                    </p>
+                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+                        Profit &amp; Loss Dashboard
+                    </h1>
+                    <p className="max-w-3xl text-sm leading-6 text-slate-500">
+                        Review billed revenue, operating cost, gross margin, and
+                        project-wise profitability with financial year based
+                        filters.
+                    </p>
+                    <div className="inline-flex w-fit rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+                        Currently showing: {getActiveFilterSummary(filters)}
+                    </div>
+                </div>
+
                 <div className="border rounded-2xl shadow-sm p-5 space-y-5">
 
                     {/* Header */}
@@ -300,7 +351,9 @@ export function PLDashboardComponent({ companies, projects }: any) {
                                     <SelectGroup>
                                         {
                                             years.map((year, index) => (
-                                                <SelectItem value={year.toString()} key={index}>{year}</SelectItem>
+                                                <SelectItem value={year.toString()} key={index}>
+                                                    {`FY ${year}-${String(year + 1).slice(-2)}`}
+                                                </SelectItem>
                                             ))
                                         }
                                     </SelectGroup>
@@ -322,7 +375,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-5 gap-4">
+                <div className="grid grid-cols-2 gap-4 md:grid-cols-4 xl:grid-cols-8">
                     <Card>
                         <CardContent>
                             <div className="flex justify-between">
@@ -371,6 +424,15 @@ export function PLDashboardComponent({ companies, projects }: any) {
                             <div className="flex justify-between">
                                 <span className="font-bold">Total Spare Cost</span>
                                 <span className="text-blue-500 font-bold">{totalValues.totalSpareValue}</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardContent>
+                            <div className="flex justify-between">
+                                <span className="font-bold">Miscellaneous Cost</span>
+                                <span className="text-blue-500 font-bold">{totalValues.totalMiscCostValue}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -468,7 +530,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
 
                                         return <TableRow key={index}>
                                             <TableCell>
-                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")} /  {filters.year}
+                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")} / {formatFinancialYearLabel(filters.year)}
                                             </TableCell>
                                             <TableCell>
                                                 {project.company.name}
