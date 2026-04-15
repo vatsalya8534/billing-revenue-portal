@@ -14,14 +14,12 @@ const safeNumber = (value: any) => {
   return isNaN(num) ? 0 : num;
 };
 
-// ================= Status Badge =================
 const StatusBadge = ({ value }: { value?: string }) => (
   <span className="text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
     {value || "-"}
   </span>
 );
 
-// ================= Detail Row =================
 const Detail = ({ label, value }: { label: string; value?: any }) => (
   <div className="flex justify-between items-center py-2 text-sm md:text-base border-b border-gray-100 last:border-none">
     <span className="font-medium text-gray-600">{label}</span>
@@ -29,7 +27,6 @@ const Detail = ({ label, value }: { label: string; value?: any }) => (
   </div>
 );
 
-// ================= Card Component =================
 const Card = ({ title, children }: { title?: string; children: React.ReactNode }) => (
   <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
     {title && <h2 className="text-lg font-semibold mb-4 text-gray-800">{title}</h2>}
@@ -37,7 +34,6 @@ const Card = ({ title, children }: { title?: string; children: React.ReactNode }
   </div>
 );
 
-// ================= PL View Page =================
 interface Props {
   params: Promise<{ id: string }>;
 }
@@ -45,35 +41,38 @@ interface Props {
 export default async function PLViewPage({ params }: Props) {
   const { id } = await params;
 
+  const route = "/admin/pl";
+  const canView = await canAccess(route, "view");
+  if (!canView) redirect("/404");
+
   const data = await fetchPLPageData(id);
 
   if (!data.success || !data.project) {
     return <p className="p-6 text-red-600 font-semibold">Project not found.</p>;
   }
 
-  const { project, billingCycles } = data;
+  const { project } = data;
+  const billingCycles: any[] = data.billingCycles ?? [];
 
-  // Calculate totals for the new summary cards
   const totalValues = {
-    totalPOValue: project.poValue,
-    totalBilledValue: project.totalRevenue,
-    totalCostValue: project.totalCost,
-    totalResourceCount: project.resourceCount,
-    totalFMSValue: billingCycles.reduce((sum, b) => sum + b.fms, 0),
-    totalSpareValue: billingCycles.reduce((sum, b) => sum + b.spare, 0),
-    totalProfit: Math.round((Number(project.totalRevenue) - Number(project.totalCost)) / Number(project.totalRevenue) * 100)
+    totalPOValue: safeNumber(project.poValue),
+    totalBilledValue: safeNumber(project.totalRevenue),
+    totalCostValue: safeNumber(project.totalCost),
+    totalResourceCount: safeNumber(project.resourceCount),
+    totalFMSValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.fms), 0),
+    totalSpareValue: billingCycles.reduce((sum, b) => sum + safeNumber(b.spare), 0),
+    totalProfit:
+      safeNumber(project.totalRevenue) === 0
+        ? 0
+        : Math.round(
+            ((safeNumber(project.totalRevenue) - safeNumber(project.totalCost)) /
+              safeNumber(project.totalRevenue)) *
+              100
+          ),
   };
-
-  const route = "/admin/pl";
-  const canView = await canAccess(route, "view")
-  if (!canView) {
-    redirect("/404");
-  }
-
 
   return (
     <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
-      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">Project Profit & Loss Details</h1>
         <Button asChild variant="outline">
@@ -81,72 +80,37 @@ export default async function PLViewPage({ params }: Props) {
         </Button>
       </div>
 
-      {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total PO Value</span>
-              <span className="text-blue-500 font-bold">₹{totalValues.totalPOValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total Billed Value</span>
-              <span className="text-blue-500 font-bold">₹{totalValues.totalBilledValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total Cost Value</span>
-              <span className="text-blue-500 font-bold">₹{totalValues.totalCostValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total Resource Count</span>
-              <span className="text-blue-500 font-bold">{totalValues.totalResourceCount}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total FMS Value</span>
-              <span className="text-blue-500 font-bold">₹{totalValues.totalFMSValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent>
-            <div className="flex justify-between">
-              <span className="font-bold">Total Spare Value</span>
-              <span className="text-blue-500 font-bold">₹{totalValues.totalSpareValue.toLocaleString()}</span>
-            </div>
-          </CardContent>
-        </Card>
+        {[
+          ["Total PO Value", totalValues.totalPOValue, true],
+          ["Total Billed Value", totalValues.totalBilledValue, true],
+          ["Total Cost Value", totalValues.totalCostValue, true],
+          ["Total Resource Count", totalValues.totalResourceCount, false],
+          ["Total FMS Value", totalValues.totalFMSValue, true],
+          ["Total Spare Value", totalValues.totalSpareValue, true],
+        ].map(([label, value, money]) => (
+          <Card key={String(label)}>
+            <CardContent>
+              <div className="flex justify-between">
+                <span className="font-bold">{label}</span>
+                <span className="text-blue-500 font-bold">
+                  {money ? `₹${Number(value).toLocaleString()}` : value}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
 
         <Card>
           <CardContent>
             <div className="flex justify-between">
               <span className="font-bold">Total GM %</span>
-              <span className="text-blue-500 font-bold">{Math.round(totalValues.totalProfit)}%</span>
+              <span className="text-blue-500 font-bold">{totalValues.totalProfit}%</span>
             </div>
           </CardContent>
         </Card>
       </div>
-      {/* BASIC DETAILS */}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card title="Project Details">
           <Detail label="Project Name" value={project.projectName} />
@@ -159,16 +123,14 @@ export default async function PLViewPage({ params }: Props) {
         </Card>
 
         <Card title="Company Details">
-          <Detail label="Company Name" value={project?.company?.name} />
-          <Detail label="Email" value={project?.company?.email} />
-          <Detail label="Phone" value={project?.company?.phone} />
-          {/* <Detail label="Address" value={project.company?.address} /> */}
+          <Detail label="Company Name" value={project.company?.name} />
+          <Detail label="Email" value={project.company?.email} />
+          <Detail label="Phone" value={project.company?.phone} />
         </Card>
       </div>
 
-      {/* BILLING CYCLES */}
       <Card title="Billing Cycles">
-        {billingCycles.length ? (
+        {billingCycles.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm md:text-base">
               <thead>
@@ -185,15 +147,13 @@ export default async function PLViewPage({ params }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {billingCycles.map((bc: any, i: number) => {
-                  const totalCost = safeNumber(bc.fms + bc.spare + bc.otherCost);
-                  const profitAmount = safeNumber(bc.billedAmount - totalCost);
-                  let profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : ((profitAmount / bc.billedAmount) * 100).toFixed(2);
-
-                  if (bc.billedAmount === profitAmount) profitPercent = 0
+                {billingCycles.map((bc, i) => {
+                  const totalCost = safeNumber(bc.fms) + safeNumber(bc.spare) + safeNumber(bc.otherCost);
+                  const profitAmount = safeNumber(bc.billedAmount) - totalCost;
+                  const profitPercent = safeNumber(bc.billedAmount) === 0 ? 0 : ((profitAmount / safeNumber(bc.billedAmount)) * 100).toFixed(2);
 
                   return (
-                    <tr key={bc.id} className="border-b last:border-none hover:bg-gray-50 transition">
+                    <tr key={bc.id ?? i} className="border-b last:border-none hover:bg-gray-50 transition">
                       <td className="p-4">{i + 1}</td>
                       <td className="p-4">{moment().month(Number(bc.month)).format("MMMM")} {bc.year}</td>
                       <td className="p-4 text-right">₹{safeNumber(bc.billedAmount).toLocaleString()}</td>
@@ -204,7 +164,7 @@ export default async function PLViewPage({ params }: Props) {
                       <td className="p-4 text-right">₹{profitAmount.toLocaleString()}</td>
                       <td className="p-4 text-right">{profitPercent}%</td>
                     </tr>
-                  )
+                  );
                 })}
               </tbody>
             </table>

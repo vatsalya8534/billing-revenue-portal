@@ -143,13 +143,17 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
-            disabled
             name={`billingCycle.${index}.billableAmount`}
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Billable Amount</FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} />
+                  <Input
+                    type="number"
+                    value={field.value ?? ""}
+                    onChange={field.onChange}
+                    disabled
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
