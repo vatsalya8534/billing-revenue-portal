@@ -39,26 +39,36 @@ interface MonthlyDetailsParams {
   endDate?: any;
 }
 
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
+const monthNames = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 export async function getProjects() {
-
   return await prisma.project.findMany({
     orderBy: {
-      createdAt: 'desc'
+      createdAt: "desc",
     },
     include: {
       company: true,
-      billingPlan: true
-    }
-  })
+      billingPlan: true,
+    },
+  });
 }
 
 export async function createProject(data: Project) {
-
   try {
-    const project = projectSchema.parse(data)
+    const project = projectSchema.parse(data);
 
     let amount = getTotalAmount(data.billingCycle);
 
@@ -74,60 +84,60 @@ export async function createProject(data: Project) {
         orderType: project.orderType,
         totalRevenue: amount.totalRevenue,
         totalCost: amount.totalCost,
+        projectedProfit: project.projectedProfit,
         status: project.status,
-      }
-    })
+      },
+    });
 
-    createBillingCycle(data.billingCycle, result.id)
+    createBillingCycle(data.billingCycle, result.id);
 
     return {
       success: true,
-      message: "Project created successfully"
-    }
-
+      message: "Project created successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
 export async function getprojectById(id: string) {
   try {
-
     let project = await prisma.project.findFirst({
       where: { id },
       include: {
-        company: true
-      }
-    })
+        company: true,
+      },
+    });
+
+    // console.log(project );
+    
 
     if (project) {
       return {
         success: true,
         data: project,
-        message: "Project fetched successfully"
-      }
+        message: "Project fetched successfully",
+      };
     }
 
     return {
       success: false,
-      message: "Project not found"
-    }
-
+      message: "Project not found",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
 export async function updateProject(data: Project, id: string) {
   try {
-
-    const project = projectSchema.parse(data)
+    const project = projectSchema.parse(data);
 
     let amount = getTotalAmount(data.billingCycle);
 
@@ -144,84 +154,78 @@ export async function updateProject(data: Project, id: string) {
         orderType: project.orderType,
         totalRevenue: amount.totalRevenue,
         totalCost: amount.totalCost,
+        projectedProfit: project.projectedProfit,
         status: project.status,
-      }
-    })
+      },
+    });
 
-    createBillingCycle(data.billingCycle, id)
+    createBillingCycle(data.billingCycle, id);
 
     return {
       success: true,
-      message: "Project updated successfully"
-    }
-
+      message: "Project updated successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
 export async function deleteProject(id: any) {
   try {
     await prisma.project.delete({
-      where: { id }
-    })
+      where: { id },
+    });
 
     return {
       success: true,
-      message: "Project deleted successfully"
-    }
-
+      message: "Project deleted successfully",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
-
 export async function getBillingCyclesByPOID(id: string) {
   try {
-
     let billingCycles = await prisma.projectMonthlyPL.findMany({
       where: {
-        projectId: id
-      }
-    })
+        projectId: id,
+      },
+    });
 
     if (billingCycles) {
       return {
         success: true,
         data: billingCycles,
-        message: "ProjectMonthlyPL fetched successfully"
-      }
+        message: "ProjectMonthlyPL fetched successfully",
+      };
     }
 
     return {
       success: false,
-      message: "ProjectMonthlyPL not found"
-    }
-
+      message: "ProjectMonthlyPL not found",
+    };
   } catch (error) {
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
-
 async function createBillingCycle(data: any, id: string) {
-
   try {
     await prisma.projectMonthlyPL.deleteMany({
       where: {
-        projectId: id
-      }
-    })
+        projectId: id,
+      },
+    });
 
     for (const projectMonthlyPL of data) {
       await prisma.projectMonthlyPL.create({
@@ -233,21 +237,21 @@ async function createBillingCycle(data: any, id: string) {
           fms: projectMonthlyPL.fms,
           spare: projectMonthlyPL.spare,
           otherCost: JSON.stringify(projectMonthlyPL.otherCost),
-        }
-      })
+          billableAmount: projectMonthlyPL.billableAmount,
+          resourceUsed: projectMonthlyPL.resourceUsed,
+        },
+      });
     }
 
     return {
       success: true,
-      message: "Billing Cycle created successfully"
-    }
-
+      message: "Billing Cycle created successfully",
+    };
   } catch (error) {
-
     return {
       success: false,
-      message: formatError(error)
-    }
+      message: formatError(error),
+    };
   }
 }
 
@@ -328,18 +332,13 @@ function calculateCost(rec: any): number {
 
   const otherCostTotal = parsed.reduce(
     (sum, c: any) => sum + Number(c?.value || 0),
-    0
+    0,
   );
 
-  return (
-    otherCostTotal +
-    Number(rec.fms || 0) +
-    Number(rec.spare || 0)
-  );
+  return otherCostTotal + Number(rec.fms || 0) + Number(rec.spare || 0);
 }
 
 // ================= MAIN =================
-
 
 export async function getPLData(year: number, filters?: any): Promise<PLData> {
   const { start, end } = getFinancialYearRange(year);
@@ -394,30 +393,39 @@ export async function getPLData(year: number, filters?: any): Promise<PLData> {
 
   // ================= MONTHLY =================
   const monthlyData: PLMonthlyData[] = [
-  "Apr", "May", "Jun", "Jul", "Aug", "Sep",
-  "Oct", "Nov", "Dec", "Jan", "Feb", "Mar"
-].map((month, index) => {
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+  ].map((month, index) => {
+    const monthRecords = records.filter((r) => {
+      const monthValue = Array.isArray(r.month)
+        ? Number(r.month[0])
+        : Number(r.month);
 
-  const monthRecords = records.filter((r) => {
-    const monthValue = Array.isArray(r.month)
-      ? Number(r.month[0])
-      : Number(r.month);
+      const fyMonth = (monthValue + 9) % 12;
 
-    const fyMonth = (monthValue + 9) % 12;
+      return fyMonth === index;
+    });
 
-    return fyMonth === index;
+    let revenue = 0;
+    let cost = 0;
+
+    for (const rec of monthRecords) {
+      revenue += Number(rec.billedAmount || 0);
+      cost += calculateCost(rec);
+    }
+
+    return { month, revenue, cost };
   });
-
-  let revenue = 0;
-  let cost = 0;
-
-  for (const rec of monthRecords) {
-    revenue += Number(rec.billedAmount || 0);
-    cost += calculateCost(rec);
-  }
-
-  return { month, revenue, cost };
-});
 
   // ================= PROJECT =================
   const projectMap: Record<string, PLProjectData> = {};
@@ -457,9 +465,22 @@ export async function getPLStatusData(year: number, month: number) {
   const data = await getPLData(year);
 
   // const monthName = monthNames[month - 1];
-  const fyMonths = ["Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec","Jan","Feb","Mar"];
+  const fyMonths = [
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+    "Jan",
+    "Feb",
+    "Mar",
+  ];
 
-const monthName = fyMonths[month];
+  const monthName = fyMonths[month];
 
   const monthData = data.monthly.find((m) => m.month === monthName);
 
@@ -499,7 +520,7 @@ export async function getPLSummary(year: number) {
 export async function getPLStatusDetails(
   status: string,
   year: number,
-  month: number // FY index (0 = Apr, 11 = Mar)
+  month: number, // FY index (0 = Apr, 11 = Mar)
 ) {
   // ✅ Convert FY → DB (calendar)
   const dbMonth = month <= 8 ? month + 3 : month - 9;
@@ -559,14 +580,17 @@ export async function fetchPLPageData(projectId: string) {
     return { success: false, message: "Project not found" };
   }
 
-  const project = projectRes.data;
-  const billingCycles = billingRes.success && billingRes.data ? billingRes.data : [];
+  const project : any = projectRes.data;
+  const billingCycles =
+    billingRes.success && billingRes.data ? billingRes.data : [];
 
   // Map billing cycles with safe numbers and calculate profit
   const billingCyclesSafe = billingCycles.map((b: any) => {
     const billedAmount = safeNumber(b.billedAmount);
     const fms = safeNumber(b.fms);
     const spare = safeNumber(b.spare);
+    const billableAmount = safeNumber(b.billableAmount);
+    const resourceUsed = safeNumber(b.resourceUsed);
 
     // Parse otherCost safely
     let otherCost = 0;
@@ -580,7 +604,10 @@ export async function fetchPLPageData(projectId: string) {
 
         if (!Array.isArray(parsed)) parsed = [];
 
-        otherCost = parsed.reduce((sum: number, c: any) => sum + safeNumber(c.value), 0);
+        otherCost = parsed.reduce(
+          (sum: number, c: any) => sum + safeNumber(c.value),
+          0,
+        );
       } catch (err) {
         otherCost = 0;
       }
@@ -588,32 +615,54 @@ export async function fetchPLPageData(projectId: string) {
 
     const totalCost = fms + spare + otherCost;
     const profitAmount = billedAmount - totalCost;
-    const profitPercent = billedAmount === 0 ? 0 : (profitAmount / billedAmount) * 100;
-
+    const profitPercent =
+      billedAmount === 0 ? 0 : (profitAmount / billedAmount) * 100;
 
     return {
       id: b.id,
       month: b.month,
       year: b.year,
       billedAmount,
+      billableAmount,
+      resourceUsed,
       fms,
       spare,
       otherCost,
       totalCost,
       profitAmount,
-      profitPercent
+      profitPercent,
     };
   });
 
   // ================== TOTALS ==================
-  const totalBilledValue = billingCyclesSafe.reduce((sum, b) => sum + b.billedAmount, 0);
-  const totalCostValue = billingCyclesSafe.reduce((sum, b) => sum + b.totalCost, 0);
+  const totalBilledValue = billingCyclesSafe.reduce(
+    (sum, b) => sum + b.billedAmount,
+    0,
+  );
+  const totalCostValue = billingCyclesSafe.reduce(
+    (sum, b) => sum + b.totalCost,
+    0,
+  );
   const totalFMSValue = billingCyclesSafe.reduce((sum, b) => sum + b.fms, 0);
-  const totalSpareValue = billingCyclesSafe.reduce((sum, b) => sum + b.spare, 0);
+  const totalSpareValue = billingCyclesSafe.reduce(
+    (sum, b) => sum + b.spare,
+    0,
+  );
   const totalResourceCount = safeNumber(project.resourceCount);
   const totalPOValue = safeNumber(project.poValue);
-  const totalProfit = totalBilledValue === 0 ? 0 : ((totalBilledValue - totalCostValue) / totalBilledValue) * 100;
-  
+  const totalProfit =
+    totalBilledValue === 0
+      ? 0
+      : ((totalBilledValue - totalCostValue) / totalBilledValue) * 100;
+  const totalBillableAmount = billingCyclesSafe.reduce(
+    (sum, b) => sum + b.billableAmount,
+    0,
+  );
+  const totalResourceUsed = billingCyclesSafe.reduce(
+    (sum, b) => sum + b.resourceUsed,
+    0,
+  );
+  const totalProjectedProfit = safeNumber(project.projectedProfit);
 
   return {
     success: true,
@@ -622,15 +671,17 @@ export async function fetchPLPageData(projectId: string) {
     totals: {
       totalPOValue,
       totalBilledValue,
+      totalBillableAmount,
+      totalResourceUsed,
       totalCostValue,
       totalResourceCount,
       totalFMSValue,
       totalSpareValue,
-      totalProfit
-    }
+      totalProfit,
+      totalProjectedProfit,
+    },
   };
 }
-
 
 export async function filterProjectData(filters: any) {
   const where = buildFilters(filters);
@@ -684,9 +735,7 @@ export async function filterProjectData(filters: any) {
     totalOtherCostValue,
     totalMiscCostValue,
     totalResourceCount,
-    totalProfit: (
-      totalProfitPercentage / (projects.length || 1)
-    ).toFixed(2),
+    totalProfit: (totalProfitPercentage / (projects.length || 1)).toFixed(2),
     data: JSON.parse(JSON.stringify(projects)),
   };
 }
@@ -708,7 +757,7 @@ export async function getMonthlyRevenueCost(year: number, filters: any) {
 
 export async function getBillingDetailsByMonth(
   params: MonthlyDetailsParams,
-  filters: any
+  filters: any,
 ) {
   const { month, year, company, project } = params;
 
@@ -721,25 +770,28 @@ export async function getBillingDetailsByMonth(
       month: dbMonth,
       year: dbYear,
 
-      ...(project && project !== "all" && {
-        projectId: project,
-      }),
+      ...(project &&
+        project !== "all" && {
+          projectId: project,
+        }),
 
-      ...(company && company !== "all" && {
-        project: {
-          is: {
-            companyId: company,
+      ...(company &&
+        company !== "all" && {
+          project: {
+            is: {
+              companyId: company,
+            },
           },
-        },
-      }),
+        }),
 
       ...(filters?.startDate || filters?.endDate
         ? {
             project: {
               is: {
-                ...(filters.company && filters.company !== "all" && {
-                  companyId: filters.company,
-                }),
+                ...(filters.company &&
+                  filters.company !== "all" && {
+                    companyId: filters.company,
+                  }),
 
                 ...(filters.startDate && {
                   startDate: {
@@ -778,7 +830,7 @@ export async function getBillingDetailsByMonth(
 // ✅ Cost Details
 export async function getCostDetailsByMonth(
   params: MonthlyDetailsParams,
-  filters: any
+  filters: any,
 ) {
   const { month, year, company, project } = params;
 
@@ -791,25 +843,28 @@ export async function getCostDetailsByMonth(
       month: dbMonth,
       year: dbYear,
 
-      ...(project && project !== "all" && {
-        projectId: project,
-      }),
+      ...(project &&
+        project !== "all" && {
+          projectId: project,
+        }),
 
-      ...(company && company !== "all" && {
-        project: {
-          is: {
-            companyId: company,
+      ...(company &&
+        company !== "all" && {
+          project: {
+            is: {
+              companyId: company,
+            },
           },
-        },
-      }),
+        }),
 
       ...(filters?.startDate || filters?.endDate
         ? {
             project: {
               is: {
-                ...(filters.company && filters.company !== "all" && {
-                  companyId: filters.company,
-                }),
+                ...(filters.company &&
+                  filters.company !== "all" && {
+                    companyId: filters.company,
+                  }),
 
                 ...(filters.startDate && {
                   startDate: {
@@ -879,7 +934,10 @@ function getDetailsByProject(project: any) {
 
   let profit =
     totalBilledValue > 0
-      ? (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
+      ? (
+          ((totalBilledValue - totalCostValue) / totalBilledValue) *
+          100
+        ).toFixed(2)
       : "0";
 
   return {
@@ -892,5 +950,3 @@ function getDetailsByProject(project: any) {
     profit,
   };
 }
-
-

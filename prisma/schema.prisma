@@ -238,20 +238,21 @@ model Company {
 }
 
 model Project {
-  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  companyId     String    @db.Uuid
-  projectName   String
-  startDate     DateTime
-  endDate       DateTime?
-  poValue       Decimal   @db.Decimal(12, 2)
-  orderType     OrderType
-  resourceCount Int
-  billingPlanId String    @db.Uuid
-  totalRevenue  Decimal   @default(0) @db.Decimal(12, 2)
-  totalCost     Decimal   @default(0) @db.Decimal(12, 2)
-  status        Status    @default(ACTIVE)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId       String    @db.Uuid
+  projectName     String
+  startDate       DateTime
+  endDate         DateTime?
+  poValue         Decimal   @db.Decimal(12, 2)
+  orderType       OrderType
+  resourceCount   Int
+  billingPlanId   String    @db.Uuid
+  totalRevenue    Decimal   @default(0) @db.Decimal(12, 2)
+  totalCost       Decimal   @default(0) @db.Decimal(12, 2)
+  status          Status    @default(ACTIVE)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  projectedProfit Decimal   @default(0) @db.Decimal(12, 2)
 
   company     Company     @relation(fields: [companyId], references: [id])
   billingPlan BillingPlan @relation(fields: [billingPlanId], references: [id])
@@ -267,10 +268,12 @@ model ProjectMonthlyPL {
   month Int
   year  Int
 
-  billedAmount Decimal @db.Decimal(12, 2)
-  fms          Decimal @default(0) @db.Decimal(12, 2)
-  spare        Decimal @default(0) @db.Decimal(12, 2)
-  otherCost    Json
+  billedAmount   Decimal @db.Decimal(12, 2)
+  fms            Decimal @default(0) @db.Decimal(12, 2)
+  spare          Decimal @default(0) @db.Decimal(12, 2)
+  otherCost      Json
+  billableAmount Decimal @default(0) @db.Decimal(12, 2)
+  resourceUsed   Decimal @default(0) @db.Decimal(12, 2)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -281,7 +284,7 @@ model ProjectMonthlyPL {
 }
 
 model Configuration {
-  id       String @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id       String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   name     String?
   logo     String?
   favicon  String?

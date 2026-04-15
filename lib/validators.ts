@@ -1,5 +1,11 @@
 import { z } from "zod";
-import { Status, PaymentReceived, POStatus, OrderType, CompanyStatus } from "@prisma/client";
+import {
+  Status,
+  PaymentReceived,
+  POStatus,
+  OrderType,
+  CompanyStatus,
+} from "@prisma/client";
 
 /* ---------------- ENUMS ---------------- */
 export const statusEnum = z.nativeEnum(Status);
@@ -63,11 +69,11 @@ export const billingCycleSchema = z.object({
   billingRemark: z.string().optional(),
   collectedAmount: z.preprocess(
     (val) => (val !== undefined ? Number(val) : undefined),
-    z.number().optional()
+    z.number().optional(),
   ),
   invoiceAmount: z.preprocess(
     (val) => (val !== undefined ? Number(val) : undefined),
-    z.number().optional()
+    z.number().optional(),
   ),
 
   invoiceDate: z.union([z.date(), z.string()]).nullable().optional(),
@@ -86,13 +92,13 @@ export const purchaseOrderSchema = z.object({
 
   poAmount: z.preprocess(
     (val) => Number(val),
-    z.number().min(0, "PO Amount must be positive")
+    z.number().min(0, "PO Amount must be positive"),
   ),
 
   serviceTypeId: z.string().min(1, "Service Type is required"),
   contractDurationId: z.string().min(1, "Contract Duration is required"),
   contractId: z.string().min(1, "Contract Type is required"),
-  companyId: z.string().optional(), 
+  companyId: z.string().optional(),
 
   startFrom: z.union([z.date(), z.string()]).nullable().optional(),
   endDate: z.union([z.date(), z.string()]).nullable().optional(),
@@ -198,7 +204,6 @@ export const customerSchema = z.object({
   updatedAt: z.date().optional(),
 });
 
-
 export const companySchema = z.object({
   id: z.string().optional(),
   name: z.string().min(1, "Company Name is required"),
@@ -218,7 +223,7 @@ export const companySchema = z.object({
   status: z.enum(Object.values(CompanyStatus)),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
-})
+});
 
 export const projectMonthlyPLSchema = z.object({
   id: z.string().optional(),
@@ -228,10 +233,12 @@ export const projectMonthlyPLSchema = z.object({
   billedAmount: z.coerce.number(),
   fms: z.coerce.number(),
   spare: z.coerce.number(),
+  billableAmount: z.coerce.number().default(0),
+  resourceUsed: z.coerce.number().default(0),
   otherCost: z.any(),
   createdAt: z.date().nullable().optional(),
-  updatedAt: z.date().optional()
-})
+  updatedAt: z.date().optional(),
+});
 
 export const projectSchema = z.object({
   id: z.string().optional(),
@@ -243,11 +250,12 @@ export const projectSchema = z.object({
   resourceCount: z.coerce.number().min(1, "total resource count"),
   billingPlanId: z.string().min(1, "Billing Plan is required"),
   orderType: z.enum(Object.values(OrderType)),
+  projectedProfit: z.coerce.number().default(0),
   status: z.enum(Object.values(Status)),
   billingCycle: z.array(projectMonthlyPLSchema).default([]),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().optional(),
-})
+});
 
 export const configurationSchema = z.object({
   id: z.string().optional(),
@@ -256,4 +264,4 @@ export const configurationSchema = z.object({
   favicon: z.union([z.instanceof(File), z.string()]).optional(),
   email: z.string().optional(),
   password: z.string().optional(),
-}) 
+});

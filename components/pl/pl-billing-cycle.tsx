@@ -2,8 +2,18 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import moment from "moment";
-import { AccordionItem, AccordionContent, AccordionTrigger } from "../ui/accordion";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "../ui/form";
+import {
+  AccordionItem,
+  AccordionContent,
+  AccordionTrigger,
+} from "../ui/accordion";
+import {
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "../ui/form";
 import { Input } from "../ui/input";
 import { useFieldArray } from "react-hook-form";
 import { Button } from "../ui/button";
@@ -18,6 +28,8 @@ interface BillingCycleField {
   month?: number;
   year?: number;
   billedAmount: number;
+  billableAmount: number;
+  resourceUsed: number;
   otherCost: OtherCost[] | string;
 }
 
@@ -51,16 +63,24 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
   const initialized = useRef(false);
 
-  const { fields: otherFields, append, replace, remove } = useFieldArray({
+  const {
+    fields: otherFields,
+    append,
+    replace,
+    remove,
+  } = useFieldArray({
     control: form.control,
     name: `billingCycle.${index}.otherCost`,
   });
 
-  const billedAmount = Number(form.watch(`billingCycle.${index}.billedAmount`) || 0);
+  const billedAmount = Number(
+    form.watch(`billingCycle.${index}.billedAmount`) || 0,
+  );
   const fmsAmount = Number(form.watch(`billingCycle.${index}.fms`) || 0);
   const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
 
-  let otherBills: OtherCost[] = form.watch(`billingCycle.${index}.otherCost`) || [];
+  let otherBills: OtherCost[] =
+    form.watch(`billingCycle.${index}.otherCost`) || [];
 
   if (typeof otherBills === "string") {
     try {
@@ -97,7 +117,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
     const otherTotal = otherBills.reduce(
       (sum, bill) => sum + Number(bill?.value || 0),
-      0
+      0,
     );
 
     const total = otherTotal + fmsAmount + spareAmount;
@@ -121,13 +141,41 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
       <AccordionContent>
         <div className="grid grid-cols-2 gap-4">
+          <FormField
+            control={form.control}
+            disabled
+            name={`billingCycle.${index}.billableAmount`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Billable Amount</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
+          <FormField
+            control={form.control}
+            name={`billingCycle.${index}.resourceUsed`}
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Resource Used</FormLabel>
+                <FormControl>
+                  <Input type="number" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          
           <FormField
             control={form.control}
             name={`billingCycle.${index}.billedAmount`}
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Billing Amount</FormLabel>
+                <FormLabel>Billed Amount</FormLabel>
                 <FormControl>
                   <Input type="number" {...field} />
                 </FormControl>
@@ -163,6 +211,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
               </FormItem>
             )}
           />
+          
 
           <div className="col-span-2 space-y-2">
             <div className="flex justify-between items-center">
@@ -174,53 +223,53 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
               </Button>
             </div>
 
-            {otherFields.map((item, ind) => "key" in item && <Card key={item.id}>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
+            {otherFields.map(
+              (item, ind) =>
+                "key" in item && (
+                  <Card key={item.id}>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-4">
+                        <FormField
+                          control={form.control}
+                          name={`billingCycle.${index}.otherCost.${ind}.key`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Key</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name={`billingCycle.${index}.otherCost.${ind}.key`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Key</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                        <FormField
+                          control={form.control}
+                          name={`billingCycle.${index}.otherCost.${ind}.value`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Value</FormLabel>
+                              <FormControl>
+                                <Input type="number" {...field} />
+                              </FormControl>
+                            </FormItem>
+                          )}
+                        />
 
-                    <FormField
-                      control={form.control}
-                      name={`billingCycle.${index}.otherCost.${ind}.value`}
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Value</FormLabel>
-                          <FormControl>
-                            <Input type="number" {...field} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="mt-2 flex justify-end">
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        onClick={() => remove(ind)}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-
-                  </div>
-
-                </CardContent>
-              </Card>
+                        <div className="mt-2 flex justify-end">
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            onClick={() => remove(ind)}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ),
             )}
           </div>
-
         </div>
       </AccordionContent>
     </AccordionItem>

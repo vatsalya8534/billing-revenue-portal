@@ -7,7 +7,14 @@ import { toast } from "sonner";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
 import { Loader2, ArrowRight, CalendarIcon } from "lucide-react";
 
 import { z } from "zod";
@@ -16,16 +23,28 @@ import { projectSchema } from "@/lib/validators";
 import { plDefaultValues } from "@/lib/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from 'date-fns';
+import { format } from "date-fns";
 import { Calendar } from "../ui/calendar";
 import { BillingPlan, Company } from "@/types";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 import { createProject, updateProject } from "@/lib/actions/project";
 import { Project as ProjectType } from "@/types";
 import { useEffect, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import moment from "moment";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "../ui/accordion";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "../ui/accordion";
 import PLBillingCycle from "./pl-billing-cycle";
 
 const PLForm = ({
@@ -33,13 +52,13 @@ const PLForm = ({
   companies,
   data,
   update = false,
-  billingCycles
+  billingCycles,
 }: {
-  billingPlans: BillingPlan[],
-  companies: Company[],
-  data?: ProjectType,
-  update: boolean,
-  billingCycles: any
+  billingPlans: BillingPlan[];
+  companies: Company[];
+  data?: ProjectType;
+  update: boolean;
+  billingCycles: any;
 }) => {
   const router = useRouter();
   const id = data?.id;
@@ -51,8 +70,8 @@ const PLForm = ({
     data.billingCycle = billingCycles.map((value: any) => {
       delete value.createdAt;
       delete value.updatedAt;
-      return value
-    })
+      return value;
+    });
   }
 
   const form = useForm<z.infer<typeof projectSchema>>({
@@ -68,16 +87,18 @@ const PLForm = ({
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "billingCycle"
+    name: "billingCycle",
   });
 
   const addMonthCycle = (amount: number, month: number, year: number) => {
     append({
       month,
       year,
-      billedAmount: Math.floor(amount) ?? 0,
+      billedAmount: 0,
       fms: 0,
       spare: 0,
+      billableAmount: Math.floor(amount) ?? 0,
+      resourceUsed: 0,
       otherCost: [],
     });
   };
@@ -101,28 +122,30 @@ const PLForm = ({
 
   useEffect(() => {
     if (!update) {
-
       const start = moment(startDate);
       const end = moment(endDate);
 
-      form.setValue("billingCycle", [])
+      form.setValue("billingCycle", []);
 
       const months = Math.ceil(end.diff(start, "months", true));
 
       if (!billingPlanId) return;
 
-      const billingPlanData = billingPlans.find((value) => value.id === billingPlanId);
+      const billingPlanData = billingPlans.find(
+        (value) => value.id === billingPlanId,
+      );
 
-      const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1)
+      const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1);
 
-      let totalAmountPerCycle = Number((poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(0));
+      let totalAmountPerCycle = Number(
+        (poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(0),
+      );
 
       if (isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
 
       let count = 0;
 
       while (count < months) {
-
         const date = moment(start);
 
         const newDate = date.clone().add(count, "month");
@@ -130,18 +153,19 @@ const PLForm = ({
         const monthIndex = newDate.month();
         const year = newDate.year();
 
-        addMonthCycle(totalAmountPerCycle, monthIndex, year)
+        addMonthCycle(totalAmountPerCycle, monthIndex, year);
 
         count += monthGap;
       }
-
     }
-  }, [billingPlanId])
+  }, [billingPlanId]);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))} className="space-y-6">
-
+      <form
+        onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))}
+        className="space-y-6"
+      >
         <Tabs defaultValue="general" className="w-full">
           <TabsList>
             <TabsTrigger value="general">General</TabsTrigger>
@@ -165,11 +189,15 @@ const PLForm = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {
-                              companies?.length > 0 && companies.map((company, index) => (
-                                <SelectItem value={company.id ?? ""} key={index}>{company.name}</SelectItem>
-                              ))
-                            }
+                            {companies?.length > 0 &&
+                              companies.map((company, index) => (
+                                <SelectItem
+                                  value={company.id ?? ""}
+                                  key={index}
+                                >
+                                  {company.name}
+                                </SelectItem>
+                              ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -195,10 +223,8 @@ const PLForm = ({
 
               <FormField
                 control={form.control}
-                name='startDate'
-                render={({
-                  field
-                }) => (
+                name="startDate"
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>Start Date</FormLabel>
                     <FormControl>
@@ -208,11 +234,15 @@ const PLForm = ({
                             variant={"outline"}
                             className={cn(
                               "justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -232,10 +262,8 @@ const PLForm = ({
 
               <FormField
                 control={form.control}
-                name='endDate'
-                render={({
-                  field
-                }) => (
+                name="endDate"
+                render={({ field }) => (
                   <FormItem>
                     <FormLabel>End Date</FormLabel>
                     <FormControl>
@@ -245,11 +273,15 @@ const PLForm = ({
                             variant={"outline"}
                             className={cn(
                               "justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
+                              !field.value && "text-muted-foreground",
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            {field.value ? (
+                              format(field.value, "PPP")
+                            ) : (
+                              <span>Pick a date</span>
+                            )}
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0">
@@ -274,7 +306,11 @@ const PLForm = ({
                   <FormItem>
                     <FormLabel>PO Value</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Enter PO Value" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="Enter PO Value"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -298,13 +334,15 @@ const PLForm = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {
-
-                              billingPlans?.length > 0 && billingPlans.map((billing, index) => (
-                                <SelectItem value={billing.id ?? ""} key={index}>{billing.name}</SelectItem>
-                              ))
-                            }
-
+                            {billingPlans?.length > 0 &&
+                              billingPlans.map((billing, index) => (
+                                <SelectItem
+                                  value={billing.id ?? ""}
+                                  key={index}
+                                >
+                                  {billing.name}
+                                </SelectItem>
+                              ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -321,7 +359,29 @@ const PLForm = ({
                   <FormItem>
                     <FormLabel>Resource Count</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Enter Resource Count" {...field} />
+                      <Input
+                        type="number"
+                        placeholder="Enter Resource Count"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="projectedProfit"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Projected Profit Percentage</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Enter Projected Profit"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -344,11 +404,11 @@ const PLForm = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {
-                              Object.values(OrderType).map((status, index) => (
-                                <SelectItem value={status} key={index}>{status}</SelectItem>
-                              ))
-                            }
+                            {Object.values(OrderType).map((status, index) => (
+                              <SelectItem value={status} key={index}>
+                                {status}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -374,11 +434,11 @@ const PLForm = ({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectGroup>
-                            {
-                              Object.values(Status).map((status, index) => (
-                                <SelectItem value={status} key={index}>{status}</SelectItem>
-                              ))
-                            }
+                            {Object.values(Status).map((status, index) => (
+                              <SelectItem value={status} key={index}>
+                                {status}
+                              </SelectItem>
+                            ))}
                           </SelectGroup>
                         </SelectContent>
                       </Select>
@@ -391,23 +451,31 @@ const PLForm = ({
           </TabsContent>
           <TabsContent value="billing-cycle">
             <Accordion type="single" collapsible defaultValue="billing-cycle-0">
-              {fields.map((field, index) =>
-                <PLBillingCycle field={field} index={index} key={index} form={form} />
-              )}
+              {fields.map((field, index) => (
+                <PLBillingCycle
+                  field={field}
+                  index={index}
+                  key={index}
+                  form={form}
+                />
+              ))}
             </Accordion>
           </TabsContent>
         </Tabs>
 
-
         {/* Submit */}
         <div className="flex gap-3">
           <Button type="submit" disabled={isPending}>
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <ArrowRight className="w-4 h-4" />
+            )}
             Save Project
           </Button>
         </div>
       </form>
-    </Form >
+    </Form>
   );
 };
 

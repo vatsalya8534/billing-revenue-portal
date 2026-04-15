@@ -1,4 +1,11 @@
-import { OrderType, PaymentReceived, POStatus, Status } from "@prisma/client";
+import {
+  OrderType,
+  PaymentReceived,
+  POStatus,
+  Status,
+  CompanyStatus,
+  BillingCycleType,
+} from "@prisma/client";
 
 export const APP_NAME =
   process.env.NEXT_APP_APP_NAME ?? "Billing & Revenue Portal";
@@ -10,15 +17,18 @@ export const APP_DESCRIPTION =
 export const SERVER_URL =
   process.env.NEXT_APP_SERVER_URL ?? "http://localhost:3000";
 
+/* ---------------- COMMON ---------------- */
+export const formatDate = (date?: Date | null) =>
+  date ? date.toISOString().split("T")[0] : "";
+
+/* ---------------- ROLE ---------------- */
 export const roleDefaultValues = {
   name: "",
   remark: "",
   status: Status.ACTIVE,
 };
 
-export const formatDate = (date?: Date | null) =>
-  date ? date.toISOString().split("T")[0] : "";
-
+/* ---------------- USER ---------------- */
 export const userDefaultValues = {
   username: "",
   password: "",
@@ -30,22 +40,15 @@ export const userDefaultValues = {
   roleId: "",
 };
 
-export const clientDefaultValues = {
-  name: "",
-  email: "",
-  phone: "",
-  address: "",
-  gstNumber: "",
-  status: Status.ACTIVE,
-};
-
+/* ---------------- MODULE ---------------- */
 export const moduleDefaultValues = {
   name: "",
   description: "",
-  role: "",
+  route: "",
   status: Status.ACTIVE,
 };
 
+/* ---------------- PURCHASE ORDER ---------------- */
 export const purchaseOrderDefaultValues = {
   customerPONumber: "",
   poAmount: 0,
@@ -53,6 +56,7 @@ export const purchaseOrderDefaultValues = {
   serviceTypeId: "",
   contractDurationId: "",
   contractId: "",
+  companyId: "",
 
   startFrom: null as Date | null,
   endDate: null as Date | null,
@@ -79,25 +83,28 @@ export const purchaseOrderDefaultValues = {
       paymentReceivedDate: null as Date | null,
       paymentDueDate: null as Date | null,
       billingRemark: "",
-      tds: "",       // added
+      tds: 0,
     },
   ],
 };
 
+/* ---------------- SERVICE TYPE ---------------- */
 export const serviceTypeDefaultValues = {
   name: "",
   remark: "",
   status: Status.ACTIVE,
 };
 
+/* ---------------- BILLING PLAN ---------------- */
 export const billingPlanDefaultValues = {
   name: "",
   totalBillingCycles: 0,
+  billingCycleType: BillingCycleType.START,
   remark: "",
   status: Status.ACTIVE,
-  billingCycleType: "START" as "START",
 };
 
+/* ---------------- CONTRACT DURATION ---------------- */
 export const contractDurationDefaultValues = {
   name: "",
   totalNumberOfMonths: 0,
@@ -105,20 +112,22 @@ export const contractDurationDefaultValues = {
   status: Status.ACTIVE,
 };
 
+/* ---------------- CONTRACT TYPE ---------------- */
 export const contractTypeDefaultValues = {
   name: "",
   remark: "",
   status: Status.ACTIVE,
 };
 
+/* ---------------- CUSTOMER ---------------- */
 export const customerDefaultValues = {
   customerCode: "",
-  phone: "",
   firstName: "",
   lastName: "",
   companyName: "",
-  alternatePhone: "",
   email: "",
+  phone: "",
+  alternatePhone: "",
   addressLine1: "",
   addressLine2: "",
   city: "",
@@ -132,18 +141,36 @@ export const customerDefaultValues = {
   status: Status.ACTIVE,
 };
 
+/* ---------------- PROJECT MONTHLY PL ---------------- */
+export const projectMonthlyPLDefaultValues = {
+  month: new Date().getMonth() + 1,
+  year: new Date().getFullYear(),
+  billedAmount: 0,
+  fms: 0,
+  spare: 0,
+  otherCost: {},
+  billableAmount: 0,
+  resourceUsed: 0,
+};
+
+/* ---------------- PROJECT ---------------- */
 export const plDefaultValues = {
   companyId: "",
   projectName: "",
   startDate: new Date(),
-  endDate: new Date(),
+  endDate: null as Date | null,
   poValue: 0,
+  orderType: OrderType.OTHER,
   resourceCount: 0,
   billingPlanId: "",
-  orderType: OrderType.OTHER,
-  status: Status.INACTIVE,
-}
+  totalRevenue: 0,
+  totalCost: 0,
+  projectedProfit: 0,
+  status: Status.ACTIVE,
+  monthlyPLs: [projectMonthlyPLDefaultValues],
+};
 
+/* ---------------- COMPANY ---------------- */
 export const companyDefaultValues = {
   name: "",
   companyCode: "",
@@ -159,5 +186,5 @@ export const companyDefaultValues = {
   gstNumber: "",
   panNumber: "",
   cinNumber: "",
-  status: Status.INACTIVE,
-}
+  status: CompanyStatus.ACTIVE,
+};
