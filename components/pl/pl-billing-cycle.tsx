@@ -169,7 +169,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name={`billingCycle.${index}.billedAmount`}
@@ -211,7 +211,6 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
               </FormItem>
             )}
           />
-          
 
           <div className="col-span-2 space-y-2">
             <div className="flex justify-between items-center">

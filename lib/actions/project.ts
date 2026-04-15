@@ -690,12 +690,14 @@ export async function filterProjectData(filters: any) {
   let totalPOValue = 0;
   let totalBilledValue = 0;
   let totalCostValue = 0;
+  let totalBillableAmount = 0;  
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalOtherCostValue = 0;
   let totalMiscCostValue = 0;
   let totalResourceCount = 0;
   let totalProfitPercentage = 0;
+  
 
   const projects = await prisma.project.findMany({
     where,
@@ -711,26 +713,31 @@ export async function filterProjectData(filters: any) {
   });
 
   if (projects.length > 0) {
-    for (const project of projects) {
-      const res = getDetailsByProject(project);
+  for (const project of projects) {
+    const res = getDetailsByProject(project);
 
-      totalPOValue += Number(project.poValue || 0);
-      totalBilledValue += res.totalBilledValue;
-      totalCostValue += res.totalCostValue;
-      totalFMSValue += res.totalFmsValue;
-      totalSpareValue += res.totalSpareValue;
-      totalOtherCostValue += res.totalOtherCost;
-      totalMiscCostValue += res.totalMiscellaneousCost;
-      totalResourceCount += Number(project.resourceCount || 0);
-      totalProfitPercentage += Number(res.profit || 0);
+    totalPOValue += Number(project.poValue || 0);
+    totalBilledValue += res.totalBilledValue;
+    totalCostValue += res.totalCostValue;
+    totalFMSValue += res.totalFmsValue;
+    totalSpareValue += res.totalSpareValue;
+    totalOtherCostValue += res.totalOtherCost;
+    totalMiscCostValue += res.totalMiscellaneousCost;
+    totalResourceCount += Number(project.resourceCount || 0);
+    totalProfitPercentage += Number(res.profit || 0);
+
+    for (const cycle of project.monthlyPLs || []) {
+      totalBillableAmount += Number(cycle.billableAmount || 0);
     }
   }
+}
 
   return {
     totalPOValue,
     totalBilledValue,
     totalCostValue,
     totalFMSValue,
+    totalBillableAmount,
     totalSpareValue,
     totalOtherCostValue,
     totalMiscCostValue,

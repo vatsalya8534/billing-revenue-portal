@@ -6,658 +6,705 @@ import { CalendarIcon, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { filterProjectData, getBillingDetailsByMonth, getCostDetailsByMonth } from "@/lib/actions/project";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  filterProjectData,
+  getBillingDetailsByMonth,
+  getCostDetailsByMonth,
+} from "@/lib/actions/project";
 import { TotalBilledChart } from "./total-billed-revenue-month";
 import { TotalCostChart } from "./total-cost-revenue-month";
 import moment from "moment";
 
-const allMonths = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+const allMonths = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 const years: number[] = [];
 
 const now = new Date();
-const currentFY = now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
+const currentFY =
+  now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
 
 for (let num = 2010; num <= currentFY; num++) {
-    years.push(num);
+  years.push(num);
 }
 
 function formatFinancialYearLabel(year: string) {
-    if (!year || year === "all") return "All Years";
+  if (!year || year === "all") return "All Years";
 
-    const numericYear = Number(year);
-    if (Number.isNaN(numericYear)) return year;
+  const numericYear = Number(year);
+  if (Number.isNaN(numericYear)) return year;
 
-    return `FY ${numericYear}-${String(numericYear + 1).slice(-2)}`;
+  return `FY ${numericYear}-${String(numericYear + 1).slice(-2)}`;
 }
 
 function getActiveFilterSummary(filters: {
-    company: string;
-    project: string;
-    month: string;
-    year: string;
+  company: string;
+  project: string;
+  month: string;
+  year: string;
 }) {
-    const parts = [formatFinancialYearLabel(filters.year)];
+  const parts = [formatFinancialYearLabel(filters.year)];
 
-    if (filters.month !== "all") {
-        parts.push(`Month: ${allMonths[Number(filters.month)]}`);
-    }
+  if (filters.month !== "all") {
+    parts.push(`Month: ${allMonths[Number(filters.month)]}`);
+  }
 
-    if (filters.company !== "all") {
-        parts.push("Filtered by Company");
-    }
+  if (filters.company !== "all") {
+    parts.push("Filtered by Company");
+  }
 
-    if (filters.project !== "all") {
-        parts.push("Filtered by Project");
-    }
+  if (filters.project !== "all") {
+    parts.push("Filtered by Project");
+  }
 
-    return parts.join(" | ");
+  return parts.join(" | ");
 }
 
 export function PLDashboardComponent({ companies, projects }: any) {
-    const [mounted, setMounted] = useState(false)
-    const [filteredValues, setFilteredValues] = useState<any>([])
-    const [totalValues, setTotalValues] = useState<any>({
-        totalPOValue: 0,
-        totalBilledValue: 0,
-        totalCostValue: 0,
-        totalFMSValue: 0,
-        totalSpareValue: 0,
-        totalMiscCostValue: 0,
-        totalResourceCount: 0,
-        totalProfit: 0,
-    })
+  const [mounted, setMounted] = useState(false);
+  const [filteredValues, setFilteredValues] = useState<any>([]);
+  const [totalValues, setTotalValues] = useState<any>({
+    totalPOValue: 0,
+    totalBilledValue: 0,
+    totalBillableAmount: 0,
+    totalCostValue: 0,
+    totalFMSValue: 0,
+    totalSpareValue: 0,
+    totalMiscCostValue: 0,
+    totalResourceCount: 0,
+    totalProfit: 0,
+  });
 
-    const [filters, setFilters] = useState({
-        company: "all",
-        project: "all",
-        startDate: undefined as Date | undefined,
-        endDate: undefined as Date | undefined,
-        month: "all",
-        year: currentFY.toString(),
+  const [filters, setFilters] = useState({
+    company: "all",
+    project: "all",
+    startDate: undefined as Date | undefined,
+    endDate: undefined as Date | undefined,
+    month: "all",
+    year: currentFY.toString(),
+  });
+
+  const [selectedMonth, setSelectedMonth] = useState<{
+    month: number;
+    year: number;
+  } | null>(null);
+
+  const [billingDetails, setBillingDetails] = useState<any[]>([]);
+  const [costDetails, setCostDetails] = useState<any[]>([]);
+  const [activeTable, setActiveTable] = useState<"billing" | "cost" | null>(
+    null,
+  );
+
+  const updateFilter = (key: string, value: any) => {
+    const updated = { ...filters, [key]: value };
+    setFilters(updated);
+  };
+
+  const resetFilters = () => {
+    const reset = {
+      company: "all",
+      project: "all",
+      startDate: undefined,
+      endDate: undefined,
+      month: "all",
+      year: currentFY.toString(),
+    };
+    setFilters(reset);
+  };
+
+  const filterData = async () => {
+    let res = await filterProjectData(filters);
+
+    setFilteredValues(res.data);
+    setTotalValues({
+      totalPOValue: res.totalPOValue,
+      totalBilledValue: res.totalBilledValue,
+      totalBillableAmount: res.totalBillableAmount,
+      totalCostValue: res.totalCostValue,
+      totalFMSValue: res.totalFMSValue,
+      totalSpareValue: res.totalSpareValue,
+      totalMiscCostValue: res.totalMiscCostValue,
+      totalResourceCount: res.totalResourceCount,
+      totalProfit: res.totalProfit,
     });
+  };
 
-    const [selectedMonth, setSelectedMonth] = useState<{
-        month: number;
-        year: number;
-    } | null>(null);
+  useEffect(() => {
+    filterData();
+    setMounted(true);
 
-    const [billingDetails, setBillingDetails] = useState<any[]>([]);
-    const [costDetails, setCostDetails] = useState<any[]>([]);
-    const [activeTable, setActiveTable] = useState<"billing" | "cost" | null>(null);
+    if (!selectedMonth) return;
 
+    const { month, year } = selectedMonth;
 
-    const updateFilter = (key: string, value: any) => {
-        const updated = { ...filters, [key]: value };
-        setFilters(updated);
-    };
+    async function loadDetails() {
+      const billing = await getBillingDetailsByMonth(
+        {
+          month,
+          year,
+          project: filters.project,
+          company: filters.company,
+        },
+        filters,
+      );
 
-    const resetFilters = () => {
-        const reset = {
-            company: "all",
-            project: "all",
-            startDate: undefined,
-            endDate: undefined,
-            month: 'all',
-            year: currentFY.toString(),
-        };
-        setFilters(reset)
-    };
+      const cost: any = await getCostDetailsByMonth(
+        {
+          month,
+          year,
+          project: filters.project,
+          company: filters.company,
+        },
+        filters,
+      );
 
-    const filterData = async () => {
-        let res = await filterProjectData(filters)
+      setBillingDetails(billing);
 
-        setFilteredValues(res.data)
-        setTotalValues({
-            totalPOValue: res.totalPOValue,
-            totalBilledValue: res.totalBilledValue,
-            totalCostValue: res.totalCostValue,
-            totalFMSValue: res.totalFMSValue,
-            totalSpareValue: res.totalSpareValue,
-            totalMiscCostValue: res.totalMiscCostValue,
-            totalResourceCount: res.totalResourceCount,
-            totalProfit: res.totalProfit,
-        })
-    }
+      for (const item of cost) {
+        let sum = 0;
 
-    useEffect(() => {
-        filterData()
-        setMounted(true);
+        if (typeof item.other === "string") {
+          let otherData = JSON.parse(item.other);
 
-        if (!selectedMonth) return;
-
-        const { month, year } = selectedMonth;
-
-        async function loadDetails() {
-            const billing = await getBillingDetailsByMonth({
-                month,
-                year,
-                project: filters.project,
-                company: filters.company
-            }, filters);
-
-            const cost: any = await getCostDetailsByMonth({
-                month,
-                year,
-                project: filters.project,
-                company: filters.company
-            }, filters);
-
-            setBillingDetails(billing);
-
-            for (const item of cost) {
-                let sum = 0;
-
-                if (typeof item.other === "string") {
-
-                    let otherData = JSON.parse(item.other);
-
-                    if (Array.isArray(otherData)) {
-                        for (const item of otherData) {
-                            sum += Number(item.value);
-                        }
-                    }
-                }
-
-                item.other = sum
-
-                if (isNaN(item.other)) {
-                    item.other = 0;
-                }
-
-                item.totalCost = Number(item.fms) + Number(item.spare) + Number(item.other);
-                item.profitPercentage = ((item.billedAmount - item.totalCost) / item.billedAmount) * 100
+          if (Array.isArray(otherData)) {
+            for (const item of otherData) {
+              sum += Number(item.value);
             }
-
-            setCostDetails(cost);
+          }
         }
 
-        loadDetails();
+        item.other = sum;
 
-    }, [JSON.stringify(filters), selectedMonth])
+        if (isNaN(item.other)) {
+          item.other = 0;
+        }
 
+        item.totalCost =
+          Number(item.fms) + Number(item.spare) + Number(item.other);
+        item.profitPercentage =
+          ((item.billedAmount - item.totalCost) / item.billedAmount) * 100;
+      }
 
-    if (mounted) {
-        return (
-            <div className="space-y-4">
-                <div className="space-y-2 rounded-2xl border bg-white p-6 shadow-sm">
-                    <p className="text-sm font-medium uppercase tracking-[0.25em] text-blue-600">
-                        Dashboard Overview
-                    </p>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-                        Profit &amp; Loss Dashboard
-                    </h1>
-                    <p className="max-w-3xl text-sm leading-6 text-slate-500">
-                        Review billed revenue, operating cost, gross margin, and
-                        project-wise profitability with financial year based
-                        filters.
-                    </p>
-                    <div className="inline-flex w-fit rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
-                        Currently showing: {getActiveFilterSummary(filters)}
-                    </div>
-                </div>
-
-                <div className="border rounded-2xl shadow-sm p-5 space-y-5">
-
-                    {/* Header */}
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold">Filters</h2>
-                    </div>
-
-                    {/* Filters Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-
-                        {/* Company */}
-                        <div className="space-y-2">
-                            <Label className="">Company</Label>
-                            <Select
-                                value={filters.company}
-                                onValueChange={(value) => updateFilter("company", value)}
-                            >
-                                <SelectTrigger className="w-full rounded-xl">
-                                    <SelectValue placeholder="Select company" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Companies</SelectItem>
-                                    {companies?.map((company: any) => (
-                                        <SelectItem value={company.id} key={company.id}>
-                                            {company.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Project */}
-                        <div className="space-y-2">
-                            <Label className="">Project</Label>
-                            <Select
-                                value={filters.project}
-                                onValueChange={(value) => updateFilter("project", value)}
-                            >
-                                <SelectTrigger className="w-full rounded-xl">
-                                    <SelectValue placeholder="Select project" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Projects</SelectItem>
-                                    {projects?.map((project: any) => (
-                                        <SelectItem value={project.id} key={project.id}>
-                                            {project.projectName}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* From Date */}
-                        <div className="space-y-2">
-                            <Label className="">From Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start rounded-xl text-left font-normal"
-                                    >
-                                        <CalendarIcon className="mr-2 " />
-                                        {filters.startDate
-                                            ? format(filters.startDate, "PPP")
-                                            : "Select date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-xl">
-                                    <Calendar
-                                        mode="single"
-                                        selected={filters.startDate}
-                                        onSelect={(date) => updateFilter("startDate", date)}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        {/* To Date */}
-                        <div className="space-y-2">
-                            <Label className="">To Date</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className="w-full justify-start rounded-xl text-left font-normal"
-                                    >
-                                        <CalendarIcon className="mr-2 " />
-                                        {filters.endDate
-                                            ? format(filters.endDate, "PPP")
-                                            : "Select date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0 rounded-xl">
-                                    <Calendar
-                                        mode="single"
-                                        selected={filters.endDate}
-                                        onSelect={(date) => updateFilter("endDate", date)}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="">Month</Label>
-                            <Select
-                                defaultValue={filters.month}
-                                onValueChange={(v) => updateFilter("month", v)}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Order type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Months</SelectItem>
-                                    <SelectGroup>
-                                        {
-                                            allMonths.map((month, index) => (
-                                                <SelectItem value={index.toString()} key={index}>{month}</SelectItem>
-                                            ))
-                                        }
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label className="">Year</Label>
-                            <Select
-                                defaultValue={filters.year}
-                                onValueChange={(v) => updateFilter("year", v)}
-                            >
-                                <SelectTrigger className="w-full">
-                                    <SelectValue placeholder="Order type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Year</SelectItem>
-                                    <SelectGroup>
-                                        {
-                                            years.map((year, index) => (
-                                                <SelectItem value={year.toString()} key={index}>
-                                                    {`FY ${year}-${String(year + 1).slice(-2)}`}
-                                                </SelectItem>
-                                            ))
-                                        }
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Reset Button (desktop inline) */}
-                        <div className="flex items-end">
-                            <Button
-                                variant="destructive"
-                                className="w-full rounded-xl shadow-sm"
-                                onClick={resetFilters}
-                            >
-                                <X className="w-4 h-4 mr-1" />
-                                Reset Filters
-                            </Button>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-6">
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total PO Value</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalPOValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total Billed Value</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalBilledValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total Cost Value</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalCostValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total Resouces Count</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalResourceCount}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total FMS Cost</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalFMSValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total Spare Cost</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalSpareValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Miscellaneous Cost</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalMiscCostValue}</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardContent>
-                            <div className="flex justify-between">
-                                <span className="font-bold">Total GM %</span>
-                                <span className="text-blue-500 font-bold">{totalValues.totalProfit} %</span>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="mt-4">
-                    <CardHeader>
-                        <h2 className="text-xl font-bold">Profit and Lost</h2>
-                        <p className="text-sm text-muted-foreground">
-                            All values are as of the latest update
-                        </p>
-                    </CardHeader>
-                    <CardContent>
-                        <Table className="w-full">
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>
-                                        Month/Year
-                                    </TableHead>
-                                    <TableHead>
-                                        Company Name
-                                    </TableHead>
-                                    <TableHead>
-                                        Project Name
-                                    </TableHead>
-                                    <TableHead>
-                                        PO Value
-                                    </TableHead>
-                                    <TableHead>
-                                        Total Billed Revenue
-                                    </TableHead>
-                                    <TableHead>
-                                        Total FMS Cost 
-                                    </TableHead>
-                                    <TableHead>
-                                        Total Spare Cost 
-                                    </TableHead>
-                                    <TableHead>
-                                        Total Other Cost
-                                    </TableHead>
-                                    <TableHead>
-                                        Total Cost  (FMS + SPARE + OTHER)
-                                    </TableHead>
-                                    <TableHead>
-                                        Current GM%
-                                    </TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {
-                                    filteredValues.length > 0 && filteredValues.map((project: any, index: number) => {
-                                        let totalBilledValue = 0;
-                                        let totalCostValue = 0;
-                                        let totalFmsValue = 0;
-                                        let totalSpareValue = 0;
-                                        let totalOtherCost = 0;
-
-                                        for (const cycle of project.monthlyPLs) {
-                                            if (cycle.billedAmount != 0 && (cycle.fms != 0 || cycle.spare != 0)) {
-                                                totalBilledValue += Number(cycle.billedAmount);
-                                                totalFmsValue += Number(cycle.fms);
-                                                totalSpareValue += Number(cycle.spare);
-                                                totalCostValue += (Number(cycle.spare) + Number(cycle.fms))
-
-                                                if (typeof cycle.otherCost === "string") {
-                                                    let otherBilling = JSON.parse(cycle.otherCost);
-
-                                                    if (Array.isArray(otherBilling)) {
-                                                        for (const bill of otherBilling) {
-                                                            if (bill && typeof bill === "object" && !Array.isArray(bill)) {
-                                                                if ("value" in bill) {
-                                                                    totalOtherCost += Number(bill.value);
-                                                                    totalCostValue += Number(bill.value);
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                        }
-
-                                        let profit = (((totalBilledValue - totalCostValue) / totalBilledValue) * 100).toFixed(2)
-
-                                        if (!(profit) || isNaN(Number(profit))) profit = "0"
-
-                                        return <TableRow key={index}>
-                                            <TableCell>
-                                                {filters.month === "all" ? "All" : moment().month(filters.month).format("MMMM")} / {formatFinancialYearLabel(filters.year)}
-                                            </TableCell>
-                                            <TableCell>
-                                                {project.company.name}
-                                            </TableCell>
-                                            <TableCell>
-                                                {project.projectName}
-                                            </TableCell>
-                                            <TableCell>
-                                                {project.poValue}
-                                            </TableCell>
-                                            <TableCell>
-                                                {totalBilledValue}
-                                            </TableCell>
-                                            <TableCell>
-                                                {totalFmsValue}
-                                            </TableCell>
-                                            <TableCell>
-                                                {totalSpareValue}
-                                            </TableCell>
-                                            <TableCell>
-                                                {totalOtherCost}
-                                            </TableCell>
-                                            <TableCell>
-                                                {totalCostValue}
-                                            </TableCell>
-                                            <TableCell>
-                                                {profit} %
-                                            </TableCell>
-                                        </TableRow>
-                                    })
-                                }
-
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <TotalBilledChart filters={filters}
-                        onMonthClick={(data: any) => {
-                            setSelectedMonth(data);
-                            setActiveTable("billing");
-                        }}
-                    />
-                    <TotalCostChart
-                        filters={filters}
-                        onMonthClick={(data: any) => {
-                            setSelectedMonth(data);
-                            setActiveTable("cost");
-                        }}
-                    />
-                </div>
-
-                {activeTable === "billing" && (
-                    <Card className="mt-4">
-                        <CardHeader>
-                            <h2 className="text-xl font-bold">Billing Amount In Detail</h2>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Month</TableHead>
-                                        <TableHead>Year</TableHead>
-                                        <TableHead>Company Name</TableHead>
-                                        <TableHead>Project Name</TableHead>
-                                        <TableHead>Billing Amount</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {billingDetails.map((item, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{moment().month(item.month - 1).format("MMMM")}</TableCell>
-                                            <TableCell>{item.year}</TableCell>
-                                            <TableCell>{item.companyName}</TableCell>
-                                            <TableCell>{item.projectName}</TableCell>
-                                            <TableCell>{item.billed}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )}
-
-                {activeTable === "cost" && (
-                    <Card className="mt-4">
-                        <CardHeader>
-                            <h2 className="text-xl font-bold">Total Cost In Detail</h2>
-                        </CardHeader>
-                        <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Month</TableHead>
-                                        <TableHead>Year</TableHead>
-                                        <TableHead>Company Name</TableHead>
-                                        <TableHead>Project Name</TableHead>
-                                        <TableHead>Billing Amount</TableHead>
-                                        <TableHead>FMS</TableHead>
-                                        <TableHead>Spare</TableHead>
-                                        <TableHead>Other</TableHead>
-                                        <TableHead>total Cost</TableHead>
-                                        <TableHead>GM %</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {costDetails.map((item, i) => (
-                                        <TableRow key={i}>
-                                            <TableCell>{moment().month(item.month - 1).format("MMMM")}</TableCell>
-                                            <TableCell>{item.year}</TableCell>
-                                            <TableCell>{item.companyName}</TableCell>
-                                            <TableCell>{item.projectName}</TableCell>
-                                            <TableCell>{item.billedAmount}</TableCell>
-                                            <TableCell>{item.fms}</TableCell>
-                                            <TableCell>{item.spare}</TableCell>
-                                            <TableCell>{item.other ?? 0}</TableCell>
-                                            <TableCell>{item.totalCost ?? 0}</TableCell>
-                                            <TableCell>{(Number(item.profitPercentage).toFixed(2)) ?? 0} %</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
-        );
+      setCostDetails(cost);
     }
+
+    loadDetails();
+  }, [JSON.stringify(filters), selectedMonth]);
+
+  if (mounted) {
+    return (
+      <div className="space-y-4">
+        <div className="space-y-2 rounded-2xl border bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium uppercase tracking-[0.25em] text-blue-600">
+            Dashboard Overview
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Profit &amp; Loss Dashboard
+          </h1>
+          <p className="max-w-3xl text-sm leading-6 text-slate-500">
+            Review billed revenue, operating cost, gross margin, and
+            project-wise profitability with financial year based filters.
+          </p>
+          <div className="inline-flex w-fit rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-medium text-blue-700">
+            Currently showing: {getActiveFilterSummary(filters)}
+          </div>
+        </div>
+
+        <div className="border rounded-2xl shadow-sm p-5 space-y-5">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Filters</h2>
+          </div>
+
+          {/* Filters Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            {/* Company */}
+            <div className="space-y-2">
+              <Label className="">Company</Label>
+              <Select
+                value={filters.company}
+                onValueChange={(value) => updateFilter("company", value)}
+              >
+                <SelectTrigger className="w-full rounded-xl">
+                  <SelectValue placeholder="Select company" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Companies</SelectItem>
+                  {companies?.map((company: any) => (
+                    <SelectItem value={company.id} key={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Project */}
+            <div className="space-y-2">
+              <Label className="">Project</Label>
+              <Select
+                value={filters.project}
+                onValueChange={(value) => updateFilter("project", value)}
+              >
+                <SelectTrigger className="w-full rounded-xl">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Projects</SelectItem>
+                  {projects?.map((project: any) => (
+                    <SelectItem value={project.id} key={project.id}>
+                      {project.projectName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* From Date */}
+            <div className="space-y-2">
+              <Label className="">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start rounded-xl text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 " />
+                    {filters.startDate
+                      ? format(filters.startDate, "PPP")
+                      : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-xl">
+                  <Calendar
+                    mode="single"
+                    selected={filters.startDate}
+                    onSelect={(date) => updateFilter("startDate", date)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* To Date */}
+            <div className="space-y-2">
+              <Label className="">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start rounded-xl text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 " />
+                    {filters.endDate
+                      ? format(filters.endDate, "PPP")
+                      : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 rounded-xl">
+                  <Calendar
+                    mode="single"
+                    selected={filters.endDate}
+                    onSelect={(date) => updateFilter("endDate", date)}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="">Month</Label>
+              <Select
+                defaultValue={filters.month}
+                onValueChange={(v) => updateFilter("month", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Order type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Months</SelectItem>
+                  <SelectGroup>
+                    {allMonths.map((month, index) => (
+                      <SelectItem value={index.toString()} key={index}>
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="">Year</Label>
+              <Select
+                defaultValue={filters.year}
+                onValueChange={(v) => updateFilter("year", v)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Order type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Year</SelectItem>
+                  <SelectGroup>
+                    {years.map((year, index) => (
+                      <SelectItem value={year.toString()} key={index}>
+                        {`FY ${year}-${String(year + 1).slice(-2)}`}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Reset Button (desktop inline) */}
+            <div className="flex items-end">
+              <Button
+                variant="destructive"
+                className="w-full rounded-xl shadow-sm"
+                onClick={resetFilters}
+              >
+                <X className="w-4 h-4 mr-1" />
+                Reset Filters
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total PO Value</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalPOValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total Billable Value</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalBillableAmount}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total Billed Value</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalBilledValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total Cost Value</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalCostValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total Resources Count</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalResourceCount}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total FMS Cost</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalFMSValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total Spare Cost</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalSpareValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Miscellaneous Cost</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalMiscCostValue}
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Total GM %</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalProfit} %
+                </span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        <Card className="mt-4">
+          <CardHeader>
+            <h2 className="text-xl font-bold">Profit and Lost</h2>
+            <p className="text-sm text-muted-foreground">
+              All values are as of the latest update
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Table className="w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Month/Year</TableHead>
+                  <TableHead>Company Name</TableHead>
+                  <TableHead>Project Name</TableHead>
+                  <TableHead>PO Value</TableHead>
+                  <TableHead>Total Billable Value</TableHead>
+                  <TableHead>Total Billed Revenue</TableHead>
+                  <TableHead>Total FMS Cost</TableHead>
+                  <TableHead>Total Spare Cost</TableHead>
+                  <TableHead>Total Other Cost</TableHead>
+                  <TableHead>Total Cost (FMS + SPARE + OTHER)</TableHead>
+                  <TableHead>Current GM%</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredValues.length > 0 &&
+                  filteredValues.map((project: any, index: number) => {
+                    let totalBilledValue = 0;
+                    let totalCostValue = 0;
+                    let totalFmsValue = 0;
+                    let totalSpareValue = 0;
+                    let totalOtherCost = 0;
+                    let totalBillableValue = 0;
+
+                    for (const cycle of project.monthlyPLs) {
+                      totalBillableValue += Number(cycle.billableAmount || 0);
+                      if (
+                        cycle.billedAmount != 0 &&
+                        (cycle.fms != 0 || cycle.spare != 0)
+                      ) {
+                        totalBilledValue += Number(cycle.billedAmount);
+                        totalFmsValue += Number(cycle.fms);
+                        totalSpareValue += Number(cycle.spare);
+                        totalCostValue +=
+                          Number(cycle.spare) + Number(cycle.fms);
+
+                        if (typeof cycle.otherCost === "string") {
+                          let otherBilling = JSON.parse(cycle.otherCost);
+
+                          if (Array.isArray(otherBilling)) {
+                            for (const bill of otherBilling) {
+                              if (
+                                bill &&
+                                typeof bill === "object" &&
+                                !Array.isArray(bill)
+                              ) {
+                                if ("value" in bill) {
+                                  totalOtherCost += Number(bill.value);
+                                  totalCostValue += Number(bill.value);
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+
+                    let profit = (
+                      ((totalBilledValue - totalCostValue) / totalBilledValue) *
+                      100
+                    ).toFixed(2);
+
+                    if (!profit || isNaN(Number(profit))) profit = "0";
+
+                    return (
+                      <TableRow key={index}>
+                        <TableCell>
+                          {filters.month === "all"
+                            ? "All"
+                            : moment().month(filters.month).format("MMMM")}{" "}
+                          / {formatFinancialYearLabel(filters.year)}
+                        </TableCell>
+                        <TableCell>{project.company.name}</TableCell>
+                        <TableCell>{project.projectName}</TableCell>
+                        <TableCell>{project.poValue}</TableCell>
+                        <TableCell>{totalBillableValue}</TableCell>
+                        <TableCell>{totalBilledValue}</TableCell>
+                        <TableCell>{totalFmsValue}</TableCell>
+                        <TableCell>{totalSpareValue}</TableCell>
+                        <TableCell>{totalOtherCost}</TableCell>
+                        <TableCell>{totalCostValue}</TableCell>
+                        <TableCell>{profit} %</TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-2 gap-4">
+          <TotalBilledChart
+            filters={filters}
+            onMonthClick={(data: any) => {
+              setSelectedMonth(data);
+              setActiveTable("billing");
+            }}
+          />
+          <TotalCostChart
+            filters={filters}
+            onMonthClick={(data: any) => {
+              setSelectedMonth(data);
+              setActiveTable("cost");
+            }}
+          />
+        </div>
+
+        {activeTable === "billing" && (
+          <Card className="mt-4">
+            <CardHeader>
+              <h2 className="text-xl font-bold">Billing Amount In Detail</h2>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Company Name</TableHead>
+                    <TableHead>Project Name</TableHead>
+                    <TableHead>Billing Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {billingDetails.map((item, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        {moment()
+                          .month(item.month - 1)
+                          .format("MMMM")}
+                      </TableCell>
+                      <TableCell>{item.year}</TableCell>
+                      <TableCell>{item.companyName}</TableCell>
+                      <TableCell>{item.projectName}</TableCell>
+                      <TableCell>{item.billed}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeTable === "cost" && (
+          <Card className="mt-4">
+            <CardHeader>
+              <h2 className="text-xl font-bold">Total Cost In Detail</h2>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Month</TableHead>
+                    <TableHead>Year</TableHead>
+                    <TableHead>Company Name</TableHead>
+                    <TableHead>Project Name</TableHead>
+                    <TableHead>Billing Amount</TableHead>
+                    <TableHead>FMS</TableHead>
+                    <TableHead>Spare</TableHead>
+                    <TableHead>Other</TableHead>
+                    <TableHead>total Cost</TableHead>
+                    <TableHead>GM %</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {costDetails.map((item, i) => (
+                    <TableRow key={i}>
+                      <TableCell>
+                        {moment()
+                          .month(item.month - 1)
+                          .format("MMMM")}
+                      </TableCell>
+                      <TableCell>{item.year}</TableCell>
+                      <TableCell>{item.companyName}</TableCell>
+                      <TableCell>{item.projectName}</TableCell>
+                      <TableCell>{item.billedAmount}</TableCell>
+                      <TableCell>{item.fms}</TableCell>
+                      <TableCell>{item.spare}</TableCell>
+                      <TableCell>{item.other ?? 0}</TableCell>
+                      <TableCell>{item.totalCost ?? 0}</TableCell>
+                      <TableCell>
+                        {Number(item.profitPercentage).toFixed(2) ?? 0} %
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
 }

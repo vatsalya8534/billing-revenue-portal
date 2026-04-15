@@ -67,12 +67,33 @@ const PLForm = ({
   delete data?.updatedAt;
 
   if (data) {
-    data.billingCycle = billingCycles.map((value: any) => {
-      delete value.createdAt;
-      delete value.updatedAt;
-      return value;
-    });
-  }
+  data.billingCycle = billingCycles.map((value: any) => ({
+    id: value.id,
+    month: Number(value.month ?? 0),
+    year: Number(value.year ?? new Date().getFullYear()),
+
+    billedAmount:
+      value.billedAmount === null ||
+      value.billedAmount === undefined
+        ? 0
+        : Number(value.billedAmount),
+
+    billableAmount:
+      value.billableAmount === null ||
+      value.billableAmount === undefined
+        ? 0
+        : Number(value.billableAmount),
+
+    fms: Number(value.fms ?? 0),
+    spare: Number(value.spare ?? 0),
+    resourceUsed: Number(value.resourceUsed ?? 0),
+
+    otherCost:
+      typeof value.otherCost === "string"
+        ? value.otherCost
+        : JSON.stringify(value.otherCost ?? []),
+  }));
+}
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema) as any,
