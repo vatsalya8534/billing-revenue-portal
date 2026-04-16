@@ -109,6 +109,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
     totalMiscCostValue: 0,
     totalResourceCount: 0,
     totalProfit: 0,
+    totalProjectedProfit: 0,
   });
 
   const [filters, setFilters] = useState({
@@ -162,6 +163,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
       totalMiscCostValue: res.totalMiscCostValue,
       totalResourceCount: res.totalResourceCount,
       totalProfit: res.totalProfit,
+      totalProjectedProfit: res.totalProjectedProfit,
     });
   };
 
@@ -503,6 +505,16 @@ export function PLDashboardComponent({ companies, projects }: any) {
               </div>
             </CardContent>
           </Card>
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex justify-between items-center">
+                <span className="font-bold">Projected Profit</span>
+                <span className="text-blue-500 font-bold">
+                  {totalValues.totalProjectedProfit} %
+                </span>
+              </div>
+            </CardContent>
+          </Card>
         </div>
         <Card className="mt-4">
           <CardHeader>
@@ -526,6 +538,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                   <TableHead>Total Other Cost</TableHead>
                   <TableHead>Total Cost (FMS + SPARE + OTHER)</TableHead>
                   <TableHead>Current GM%</TableHead>
+                  <TableHead>Projected Profit %</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -595,7 +608,19 @@ export function PLDashboardComponent({ companies, projects }: any) {
                         <TableCell>{totalSpareValue}</TableCell>
                         <TableCell>{totalOtherCost}</TableCell>
                         <TableCell>{totalCostValue}</TableCell>
-                        <TableCell>{profit} %</TableCell>
+                        <TableCell>
+                          <span
+                            className={`px-3 py-1 rounded-md text-xs font-semibold ${
+                              Number(profit) >=
+                              Number(project.projectedProfit || 0)
+                                ? "bg-green-100 text-green-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {profit} %
+                          </span>
+                        </TableCell>
+                        <TableCell>{project.projectedProfit ?? 0} %</TableCell>
                       </TableRow>
                     );
                   })}

@@ -697,6 +697,7 @@ export async function filterProjectData(filters: any) {
   let totalMiscCostValue = 0;
   let totalResourceCount = 0;
   let totalProfitPercentage = 0;
+  let totalProjectedProfit = 0;
   
 
   const projects = await prisma.project.findMany({
@@ -725,6 +726,7 @@ export async function filterProjectData(filters: any) {
     totalMiscCostValue += res.totalMiscellaneousCost;
     totalResourceCount += Number(project.resourceCount || 0);
     totalProfitPercentage += Number(res.profit || 0);
+    totalProjectedProfit += Number(project.projectedProfit || 0);
 
     for (const cycle of project.monthlyPLs || []) {
       totalBillableAmount += Number(cycle.billableAmount || 0);
@@ -743,6 +745,8 @@ export async function filterProjectData(filters: any) {
     totalMiscCostValue,
     totalResourceCount,
     totalProfit: (totalProfitPercentage / (projects.length || 1)).toFixed(2),
+    totalProjectedProfit:
+    projects.length > 0 ? (totalProjectedProfit / projects.length).toFixed(2) : "0",
     data: JSON.parse(JSON.stringify(projects)),
   };
 }
