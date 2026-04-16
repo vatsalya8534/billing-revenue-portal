@@ -82,7 +82,7 @@ export const getUsersColumns = ({
           (((revenue - cost) / revenue) * 100).toFixed(2)
         );
 
-        const isGood = gm >= projected;
+        const isGood = gm > projected;
 
         return (
           <span

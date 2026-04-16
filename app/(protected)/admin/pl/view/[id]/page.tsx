@@ -250,7 +250,7 @@ export default async function PLViewPage({ params }: Props) {
                       <td className="p-4 text-right">
                         <span
                           className={`px-3 py-1 rounded-md text-sm font-semibold ${
-                            Number(profitPercent) >=
+                            Number(profitPercent) >
                             safeNumber(project.projectedProfit)
                               ? "bg-green-100 text-green-700"
                               : "bg-red-100 text-red-700"

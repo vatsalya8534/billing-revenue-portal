@@ -611,7 +611,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                         <TableCell>
                           <span
                             className={`px-3 py-1 rounded-md text-xs font-semibold ${
-                              Number(profit) >=
+                              Number(profit) >
                               Number(project.projectedProfit || 0)
                                 ? "bg-green-100 text-green-700"
                                 : "bg-red-100 text-red-700"
