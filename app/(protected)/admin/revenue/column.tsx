@@ -1,83 +1,103 @@
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { ColumnDef } from "@tanstack/react-table"
-import { EditIcon, Trash, View } from "lucide-react"
-import Link from "next/link"
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ColumnDef } from "@tanstack/react-table";
+import { EditIcon, Eye, Trash } from "lucide-react";
+import Link from "next/link";
+
 export const getUsersColumns = ({
-    canEdit,
-    canDelete,
-    onDelete,
+  canEdit,
+  canDelete,
+  onDelete,
 }: any): ColumnDef<any>[] => {
-    const columns: ColumnDef<any>[] = [
+  const columns: ColumnDef<any>[] = [
+    {
+      header: "Company Name",
+      cell: ({ row }) => row.original.company?.name || "-",
+    },
 
-        {
-            header: "Company Name",
-            cell: ({ row }) =>
-                row.original.company?.name || "-",
-        },
+    {
+      header: "PO Number",
+      accessorKey: "customerPONumber",
+    },
 
-        {
-            header: "PO Number",
-            accessorKey: "customerPONumber",
-        },
+    {
+      header: "PO Amount",
+      cell: ({ row }) =>
+        `₹ ${Math.round(row.original.poAmount || 0).toLocaleString("en-IN")}`,
+    },
 
-        {
-            header: "PO Amount",
-            cell: ({ row }) =>
-                `₹ ${Math.round(row.original.poAmount || 0).toLocaleString("en-IN")}`,
-        },
+    {
+      header: "Billing Plan",
+      cell: ({ row }) => row.original.billingPlan?.name || "-",
+    },
 
-        {
-            header: "Billing Plan",
-            cell: ({ row }) => row.original.billingPlan?.name || "-",
-        },
+    {
+      header: "Service Type",
+      cell: ({ row }) => row.original.ServiceType?.name || "-",
+    },
 
-        {
-            header: "Service Type",
-            cell: ({ row }) => row.original.ServiceType?.name || "-",
-        },
+    {
+      header: "Status",
+      cell: ({ row }) => {
+        const status = row.original.status;
 
-        {
-            header: "Status",
-            cell: ({ row }) => row.original.status || "-",
-        },
-    ];
+        return status === "LIVE" ? (
+          <Badge className="bg-green-500 hover:bg-green-600">
+            LIVE
+          </Badge>
+        ) : (
+          <Badge variant="destructive">{status}</Badge>
+        );
+      },
+    },
+  ];
 
-    if (canEdit || canDelete) {
-        columns.push({
-            id: "actions",
-            header: "Action",
-            cell: ({ row }) => {
-                const id = row.original.id as string;
+  columns.push({
+    id: "actions",
+    header: "Action",
+    cell: ({ row }) => {
+      const id = row.original.id as string;
 
-                return (
-                    <div className="flex gap-2">
-                        {canEdit && (
-                            <Button
-                                asChild
-                                size="icon"
-                                className="bg-orange-500 hover:bg-orange-600"
-                            >
-                                <Link href={`/admin/revenue/edit/${id}`}>
-                                    <EditIcon size={16} />
-                                </Link>
-                            </Button>
-                        )}
+      return (
+        <div className="flex gap-2">
+          {/* 👁 View - Always Visible */}
+          <Button
+            size="icon"
+            asChild
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            <Link href={`/admin/revenue/view/${id}`}>
+              <Eye size={16} />
+            </Link>
+          </Button>
 
-                        {canDelete && (
-                            <Button
-                                size="icon"
-                                variant="destructive"
-                                onClick={() => onDelete(id)}
-                            >
-                                <Trash size={16} />
-                            </Button>
-                        )}
-                    </div>
-                );
-            },
-        });
-    }
+          {/* ✏️ Edit */}
+          {canEdit && (
+            <Button
+              asChild
+              size="icon"
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              <Link href={`/admin/revenue/edit/${id}`}>
+                <EditIcon size={16} />
+              </Link>
+            </Button>
+          )}
 
-    return columns;
+          {/* 🗑 Delete */}
+          {canDelete && (
+            <Button
+              size="icon"
+              variant="destructive"
+              onClick={() => onDelete(id)}
+            >
+              <Trash size={16} />
+            </Button>
+          )}
+        </div>
+      );
+    },
+  });
+
+  return columns;
 };
