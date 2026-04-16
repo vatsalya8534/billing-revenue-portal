@@ -46,6 +46,7 @@ import {
   AccordionTrigger,
 } from "../ui/accordion";
 import PLBillingCycle from "./pl-billing-cycle";
+import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
 
 const PLForm = ({
   billingPlans,
@@ -67,33 +68,31 @@ const PLForm = ({
   delete data?.updatedAt;
 
   if (data) {
-  data.billingCycle = billingCycles.map((value: any) => ({
-    id: value.id,
-    month: Number(value.month ?? 0),
-    year: Number(value.year ?? new Date().getFullYear()),
+    data.billingCycle = billingCycles.map((value: any) => ({
+      id: value.id,
+      month: Number(value.month ?? 0),
+      year: Number(value.year ?? new Date().getFullYear()),
 
-    billedAmount:
-      value.billedAmount === null ||
-      value.billedAmount === undefined
-        ? 0
-        : Number(value.billedAmount),
+      billedAmount:
+        value.billedAmount === null || value.billedAmount === undefined
+          ? 0
+          : Number(value.billedAmount),
 
-    billableAmount:
-      value.billableAmount === null ||
-      value.billableAmount === undefined
-        ? 0
-        : Number(value.billableAmount),
+      billableAmount:
+        value.billableAmount === null || value.billableAmount === undefined
+          ? 0
+          : Number(value.billableAmount),
 
-    fms: Number(value.fms ?? 0),
-    spare: Number(value.spare ?? 0),
-    resourceUsed: Number(value.resourceUsed ?? 0),
+      fms: Number(value.fms ?? 0),
+      spare: Number(value.spare ?? 0),
+      resourceUsed: Number(value.resourceUsed ?? 0),
 
-    otherCost:
-      typeof value.otherCost === "string"
-        ? value.otherCost
-        : JSON.stringify(value.otherCost ?? []),
-  }));
-}
+      otherCost:
+        typeof value.otherCost === "string"
+          ? value.otherCost
+          : JSON.stringify(value.otherCost ?? []),
+    }));
+  }
 
   const form = useForm<z.infer<typeof projectSchema>>({
     resolver: zodResolver(projectSchema) as any,
@@ -142,44 +141,40 @@ const PLForm = ({
   };
 
   useEffect(() => {
-    if (!update) {
-      const start = moment(startDate);
-      const end = moment(endDate);
+    if (update) return;
+    if (!billingPlanId || !startDate || !endDate) return;
 
-      form.setValue("billingCycle", []);
+    const start = moment(startDate);
+    const end = moment(endDate);
 
-      const months = Math.ceil(end.diff(start, "months", true));
+    form.setValue("billingCycle", []);
 
-      if (!billingPlanId) return;
+    const totalMonths = Math.max(1, end.diff(start, "months") + 1);
 
-      const billingPlanData = billingPlans.find(
-        (value) => value.id === billingPlanId,
-      );
+    const selectedPlan = billingPlans.find((item) => item.id === billingPlanId);
 
-      const monthGap = months / (billingPlanData?.totalBillingCycles ?? 1);
+    const planCycles = selectedPlan?.totalBillingCycles ?? 1;
 
-      let totalAmountPerCycle = Number(
-        (poValue / (billingPlanData?.totalBillingCycles ?? 1)).toFixed(0),
-      );
+    // never exceed project months
+    const actualCycles = Math.min(totalMonths, planCycles);
 
-      if (isNaN(totalAmountPerCycle)) totalAmountPerCycle = 0;
+    const amountPerCycle = Math.floor(Number(poValue || 0) / actualCycles);
 
-      let count = 0;
+    for (let i = 0; i < actualCycles; i++) {
+      const cycleDate = start.clone().add(i, "month");
 
-      while (count < months) {
-        const date = moment(start);
-
-        const newDate = date.clone().add(count, "month");
-
-        const monthIndex = newDate.month();
-        const year = newDate.year();
-
-        addMonthCycle(totalAmountPerCycle, monthIndex, year);
-
-        count += monthGap;
-      }
+      append({
+        month: cycleDate.month(),
+        year: cycleDate.year(),
+        billedAmount: 0,
+        fms: 0,
+        spare: 0,
+        billableAmount: amountPerCycle,
+        resourceUsed: 0,
+        otherCost: [],
+      });
     }
-  }, [billingPlanId]);
+  }, [billingPlanId, startDate, endDate, poValue]);
 
   return (
     <Form {...form}>
@@ -471,16 +466,21 @@ const PLForm = ({
             </div>
           </TabsContent>
           <TabsContent value="billing-cycle">
-            <Accordion type="single" collapsible defaultValue="billing-cycle-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               {fields.map((field, index) => (
-                <PLBillingCycle
-                  field={field}
-                  index={index}
-                  key={index}
-                  form={form}
-                />
+                <Card key={index} className="shadow-md rounded-xl border">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold">
+                      Billing Cycle {index + 1}
+                    </CardTitle>
+                  </CardHeader>
+
+                  <CardContent>
+                    <PLBillingCycle field={field} index={index} form={form} />
+                  </CardContent>
+                </Card>
               ))}
-            </Accordion>
+            </div>
           </TabsContent>
         </Tabs>
 

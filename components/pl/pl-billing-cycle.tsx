@@ -1,12 +1,9 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import moment from "moment";
-import {
-  AccordionItem,
-  AccordionContent,
-  AccordionTrigger,
-} from "../ui/accordion";
+import { useFieldArray } from "react-hook-form";
+
 import {
   FormField,
   FormItem,
@@ -15,9 +12,8 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { useFieldArray } from "react-hook-form";
 import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 
 interface OtherCost {
   key: string;
@@ -30,7 +26,9 @@ interface BillingCycleField {
   billedAmount: number;
   billableAmount: number;
   resourceUsed: number;
-  otherCost: OtherCost[] | string;
+  fms?: number;
+  spare?: number;
+  otherCost: OtherCost[] | string | null | undefined;
 }
 
 interface PLBillingCycleProps {
@@ -45,23 +43,20 @@ interface PLBillingCycleProps {
 const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   if (!form) {
     return (
-      <AccordionItem value={`billing-cycle-${index}`}>
-        <AccordionTrigger>Data not available</AccordionTrigger>
-        <AccordionContent>
-          <p className="text-red-500">Form control is missing</p>
-        </AccordionContent>
-      </AccordionItem>
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-600">
+        Form control is missing
+      </div>
     );
   }
 
-  const monthIndex = field?.month ?? 0;
-  const year = field?.year ?? new Date().getFullYear();
+  const initialized = useRef(false);
+
+  const monthIndex = Number(field?.month ?? 0);
+  const year = Number(field?.year ?? new Date().getFullYear());
   const monthName = moment().month(monthIndex).format("MMMM");
 
-  const [totalOtherBillAmount, setTotalOtherBillAmount] = useState(0);
-  const [monthlyGMPercentage, setMonthlyGMPercentage] = useState(0);
-
-  const initialized = useRef(false);
+  const [totalCost, setTotalCost] = useState(0);
+  const [gmPercentage, setGmPercentage] = useState(0);
 
   const {
     fields: otherFields,
@@ -76,206 +71,229 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   const billedAmount = Number(
     form.watch(`billingCycle.${index}.billedAmount`) || 0,
   );
+
   const fmsAmount = Number(form.watch(`billingCycle.${index}.fms`) || 0);
+
   const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
 
-  let otherBills: OtherCost[] =
-    form.watch(`billingCycle.${index}.otherCost`) || [];
+  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);
 
-  if (typeof otherBills === "string") {
-    try {
-      otherBills = JSON.parse(otherBills);
-    } catch {
-      otherBills = [];
+  const otherBills: OtherCost[] = useMemo(() => {
+    if (Array.isArray(watchedOtherCost)) {
+      return watchedOtherCost;
     }
-  }
+
+    if (typeof watchedOtherCost === "string") {
+      try {
+        const parsed = JSON.parse(watchedOtherCost);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+
+    return [];
+  }, [watchedOtherCost]);
 
   useEffect(() => {
-    if (!initialized.current) {
-      initialized.current = true;
+    if (initialized.current) return;
+    initialized.current = true;
 
-      let initialData: OtherCost[] = [];
+    let initialData: OtherCost[] = [];
 
-      if (typeof field.otherCost === "string") {
-        try {
-          initialData = JSON.parse(field.otherCost);
-        } catch {
-          initialData = [];
-        }
-      } else {
-        initialData = field.otherCost || [];
-      }
-
-      if (initialData.length > 0) {
-        replace(initialData);
+    if (Array.isArray(field.otherCost)) {
+      initialData = field.otherCost;
+    } else if (typeof field.otherCost === "string") {
+      try {
+        const parsed = JSON.parse(field.otherCost);
+        initialData = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        initialData = [];
       }
     }
+
+    replace(initialData);
   }, [field.otherCost, replace]);
 
   useEffect(() => {
-    if (typeof otherBills === "string") return;
+    const miscTotal = Array.isArray(otherBills)
+      ? otherBills.reduce((sum, item) => sum + Number(item?.value || 0), 0)
+      : 0;
 
-    const otherTotal = otherBills.reduce(
-      (sum, bill) => sum + Number(bill?.value || 0),
-      0,
-    );
-
-    const total = otherTotal + fmsAmount + spareAmount;
-    setTotalOtherBillAmount(total);
+    const total = miscTotal + fmsAmount + spareAmount;
+    setTotalCost(total);
 
     const gm =
       billedAmount > 0 ? ((billedAmount - total) / billedAmount) * 100 : 0;
 
-    setMonthlyGMPercentage(Number(gm.toFixed(2)));
-  }, [JSON.stringify(otherBills), billedAmount, fmsAmount, spareAmount]);
+    setGmPercentage(Number(gm.toFixed(2)));
+  }, [otherBills, billedAmount, fmsAmount, spareAmount]);
 
   const addMiscellaneousAmount = () => {
-    append({ key: "", value: 0 });
+    append({
+      key: "",
+      value: 0,
+    });
   };
 
   return (
-    <AccordionItem value={`billing-cycle-${index}`}>
-      <AccordionTrigger>
-        {monthName} {year}
-      </AccordionTrigger>
-
-      <AccordionContent>
-        <div className="grid grid-cols-2 gap-4">
-          <FormField
-            control={form.control}
-            name={`billingCycle.${index}.billableAmount`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Billable Amount</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    value={field.value ?? ""}
-                    onChange={field.onChange}
-                    disabled
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name={`billingCycle.${index}.resourceUsed`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Resource Used</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name={`billingCycle.${index}.billedAmount`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Billed Amount</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name={`billingCycle.${index}.fms`}
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>FMS</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name={`billingCycle.${index}.spare`}
-            render={({ field }) => (
-              <FormItem className="col-span-2">
-                <FormLabel>Spare</FormLabel>
-                <FormControl>
-                  <Input type="number" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="col-span-2 space-y-2">
-            <div className="flex justify-between items-center">
-              <h2>Total: ₹{totalOtherBillAmount.toLocaleString()}</h2>
-              <h2>GM%: {monthlyGMPercentage}%</h2>
-
-              <Button type="button" onClick={addMiscellaneousAmount}>
-                Add Misc
-              </Button>
-            </div>
-
-            {otherFields.map(
-              (item, ind) =>
-                "key" in item && (
-                  <Card key={item.id}>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name={`billingCycle.${index}.otherCost.${ind}.key`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Key</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <FormField
-                          control={form.control}
-                          name={`billingCycle.${index}.otherCost.${ind}.value`}
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Value</FormLabel>
-                              <FormControl>
-                                <Input type="number" {...field} />
-                              </FormControl>
-                            </FormItem>
-                          )}
-                        />
-
-                        <div className="mt-2 flex justify-end">
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            onClick={() => remove(ind)}
-                          >
-                            Remove
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ),
-            )}
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-xl font-bold">
+            {monthName} {year}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Billing Cycle #{index + 1}
+          </p>
         </div>
-      </AccordionContent>
-    </AccordionItem>
+
+        <div className="flex flex-wrap gap-4 text-sm font-medium">
+          <span>Total Cost: ₹{totalCost.toLocaleString()}</span>
+          <span>GM%: {gmPercentage}%</span>
+        </div>
+      </div>
+
+      {/* Main Fields */}
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <FormField
+          control={form.control}
+          name={`billingCycle.${index}.billableAmount`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Billable Amount</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  {...field}
+                  value={field.value ?? ""}
+                  disabled
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycle.${index}.resourceUsed`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Resource Used</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycle.${index}.billedAmount`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Billed Amount</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycle.${index}.fms`}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>FMS</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycle.${index}.spare`}
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel>Spare</FormLabel>
+              <FormControl>
+                <Input type="number" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+
+      {/* Other Cost Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-semibold">Other Costs</h3>
+
+          <Button type="button" onClick={addMiscellaneousAmount}>
+            Add Misc
+          </Button>
+        </div>
+
+        {otherFields.length === 0 && (
+          <div className="rounded-lg border p-4 text-sm text-muted-foreground">
+            No miscellaneous costs added.
+          </div>
+        )}
+
+        <div className="space-y-3">
+          {otherFields.map((item, ind) => (
+            <Card key={item.id} className="rounded-xl border shadow-sm">
+              <CardContent className="pt-5">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
+                  <FormField
+                    control={form.control}
+                    name={`billingCycle.${index}.otherCost.${ind}.key`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Particular</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter name" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name={`billingCycle.${index}.otherCost.${ind}.value`}
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Amount</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    onClick={() => remove(ind)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 };
 
