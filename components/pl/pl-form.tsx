@@ -141,40 +141,54 @@ const PLForm = ({
   };
 
   useEffect(() => {
-    if (update) return;
-    if (!billingPlanId || !startDate || !endDate) return;
+  if (update) return;
+  if (!billingPlanId || !startDate || !endDate) return;
 
-    const start = moment(startDate);
-    const end = moment(endDate);
+  const start = moment(startDate);
+  const end = moment(endDate);
 
-    form.setValue("billingCycle", []);
+  const selectedPlan = billingPlans.find(
+    (item) => item.id === billingPlanId
+  );
 
-    const totalMonths = Math.max(1, end.diff(start, "months") + 1);
+  if (!selectedPlan) return;
 
-    const selectedPlan = billingPlans.find((item) => item.id === billingPlanId);
+  let stepMonths = 1;
 
-    const planCycles = selectedPlan?.totalBillingCycles ?? 1;
+  const planName = selectedPlan.name.toLowerCase();
 
-    // never exceed project months
-    const actualCycles = Math.min(totalMonths, planCycles);
+  if (planName.includes("quarter")) {
+    stepMonths = 3;
+  } else if (planName.includes("half")) {
+    stepMonths = 6;
+  } else if (planName.includes("year")) {
+    stepMonths = 12;
+  }
 
-    const amountPerCycle = Math.floor(Number(poValue || 0) / actualCycles);
+  const totalCycles = selectedPlan.totalBillingCycles || 1;
+  const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
 
-    for (let i = 0; i < actualCycles; i++) {
-      const cycleDate = start.clone().add(i, "month");
+  const cycles = [];
 
-      append({
-        month: cycleDate.month(),
-        year: cycleDate.year(),
-        billedAmount: 0,
-        fms: 0,
-        spare: 0,
-        billableAmount: amountPerCycle,
-        resourceUsed: 0,
-        otherCost: [],
-      });
-    }
-  }, [billingPlanId, startDate, endDate, poValue]);
+  for (let i = 0; i < totalCycles; i++) {
+    const cycleDate = start.clone().add(i * stepMonths, "month");
+
+    if (cycleDate.isAfter(end, "month")) break;
+
+    cycles.push({
+      month: cycleDate.month(),
+      year: cycleDate.year(),
+      billedAmount: 0,
+      fms: 0,
+      spare: 0,
+      billableAmount: amountPerCycle,
+      resourceUsed: 0,
+      otherCost: [],
+    });
+  }
+
+  form.setValue("billingCycle", cycles);
+}, [billingPlanId, startDate, endDate, poValue]);
 
   return (
     <Form {...form}>
