@@ -218,7 +218,7 @@ export default async function PLViewPage({ params }: Props) {
                         Number(profitPercent) >=
                         safeNumber(project.projectedProfit)
                           ? "border-b last:border-none bg-green-50 hover:bg-green-100 transition"
-                          : "border-b last:border-none bg-red-50 hover:bg-red-100 transition"
+                          : "border-b last:border-none bg-red-400 hover:bg-red-450 transition"
                       }
                     >
                       <td className="p-4">{i + 1}</td>

@@ -63,7 +63,7 @@ export default function PLDataTable({
 
       return gm >= projected
         ? "bg-green-50 hover:bg-green-100"
-        : "bg-red-50 hover:bg-red-100";
+        : "bg-red-400 hover:bg-red-450";
     }}
   />
 );

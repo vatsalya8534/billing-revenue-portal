@@ -597,7 +597,7 @@ export function PLDashboardComponent({ companies, projects }: any) {
                         className={
                           Number(profit) >= Number(project.projectedProfit || 0)
                             ? "bg-green-50 hover:bg-green-100 transition-colors"
-                            : "bg-red-50 hover:bg-red-100 transition-colors"
+                            : "bg-red-400 hover:bg-red-450 transition-colors"
                         }
                       >
                         <TableCell>
