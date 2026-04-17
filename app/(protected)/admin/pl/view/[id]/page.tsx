@@ -214,13 +214,20 @@ export default async function PLViewPage({ params }: Props) {
                   return (
                     <tr
                       key={bc.id ?? i}
-                      className="border-b last:border-none hover:bg-gray-50 transition"
+                      className={
+                        Number(profitPercent) >=
+                        safeNumber(project.projectedProfit)
+                          ? "border-b last:border-none bg-green-50 hover:bg-green-100 transition"
+                          : "border-b last:border-none bg-red-50 hover:bg-red-100 transition"
+                      }
                     >
                       <td className="p-4">{i + 1}</td>
+
                       <td className="p-4">
                         {moment().month(Number(bc.month)).format("MMMM")}{" "}
                         {bc.year}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{safeNumber(bc.billableAmount).toLocaleString()}
                       </td>
@@ -232,33 +239,28 @@ export default async function PLViewPage({ params }: Props) {
                       <td className="p-4 text-right">
                         {safeNumber(bc.resourceUsed)}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{safeNumber(bc.fms).toLocaleString()}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{safeNumber(bc.spare).toLocaleString()}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{safeNumber(bc.otherCost).toLocaleString()}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{totalCost.toLocaleString()}
                       </td>
+
                       <td className="p-4 text-right">
                         ₹{profitAmount.toLocaleString()}
                       </td>
-                      <td className="p-4 text-right">
-                        <span
-                          className={`px-3 py-1 rounded-md text-sm font-semibold ${
-                            Number(profitPercent) >
-                            safeNumber(project.projectedProfit)
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {profitPercent}%
-                        </span>
-                      </td>
+
+                      <td className="p-4 text-right">{profitPercent}%</td>
                     </tr>
                   );
                 })}

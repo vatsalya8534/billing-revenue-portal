@@ -45,5 +45,26 @@ export default function PLDataTable({
         onDelete: deleteHandler,
     });
 
-    return <DataTable data={tableData} columns={columns} title={title} actions={actions} />;
+    return (
+  <DataTable
+    data={tableData}
+    columns={columns}
+    title={title}
+    actions={actions}
+    rowClassName={(row) => {
+      const revenue = Number(row.totalRevenue) || 0;
+      const cost = Number(row.totalCost) || 0;
+      const projected = Number(row.projectedProfit) || 0;
+
+      const gm =
+        revenue === 0
+          ? 0
+          : ((revenue - cost) / revenue) * 100;
+
+      return gm >= projected
+        ? "bg-green-50 hover:bg-green-100"
+        : "bg-red-50 hover:bg-red-100";
+    }}
+  />
+);
 }

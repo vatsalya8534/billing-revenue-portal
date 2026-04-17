@@ -60,41 +60,19 @@ export const getUsersColumns = ({
       accessorKey: "totalCost",
       header: "Total Other Cost",
     },
-
-    /* ✅ CURRENT GM WITH CONDITIONAL COLOR */
     {
       accessorKey: "currentGM",
       header: "Current GM%",
       cell: ({ row }) => {
         const revenue = Number(row.original.totalRevenue) || 0;
         const cost = Number(row.original.totalCost) || 0;
-        const projected = Number(row.original.projectedProfit) || 0;
 
-        if (revenue === 0) {
-          return (
-            <span className="px-2 py-1 rounded-md bg-gray-100 text-gray-600 text-xs font-semibold">
-              0 %
-            </span>
-          );
-        }
+        const gm =
+          revenue === 0
+            ? 0
+            : Number((((revenue - cost) / revenue) * 100).toFixed(2));
 
-        const gm = Number(
-          (((revenue - cost) / revenue) * 100).toFixed(2)
-        );
-
-        const isGood = gm > projected;
-
-        return (
-          <span
-            className={`px-3 py-1 rounded-md text-xs font-semibold ${
-              isGood
-                ? "bg-green-100 text-green-700"
-                : "bg-red-100 text-red-700"
-            }`}
-          >
-            {gm} %
-          </span>
-        );
+        return `${gm} %`;
       },
     },
 

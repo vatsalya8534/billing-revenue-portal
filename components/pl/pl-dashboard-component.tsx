@@ -592,34 +592,41 @@ export function PLDashboardComponent({ companies, projects }: any) {
                     if (!profit || isNaN(Number(profit))) profit = "0";
 
                     return (
-                      <TableRow key={index}>
+                      <TableRow
+                        key={index}
+                        className={
+                          Number(profit) >= Number(project.projectedProfit || 0)
+                            ? "bg-green-50 hover:bg-green-100 transition-colors"
+                            : "bg-red-50 hover:bg-red-100 transition-colors"
+                        }
+                      >
                         <TableCell>
                           {filters.month === "all"
                             ? "All"
                             : moment().month(filters.month).format("MMMM")}{" "}
                           / {formatFinancialYearLabel(filters.year)}
                         </TableCell>
+
                         <TableCell>{project.company.name}</TableCell>
+
                         <TableCell>{project.projectName}</TableCell>
+
                         <TableCell>{project.poValue}</TableCell>
+
                         <TableCell>{totalBillableValue}</TableCell>
+
                         <TableCell>{totalBilledValue}</TableCell>
+
                         <TableCell>{totalFmsValue}</TableCell>
+
                         <TableCell>{totalSpareValue}</TableCell>
+
                         <TableCell>{totalOtherCost}</TableCell>
+
                         <TableCell>{totalCostValue}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-3 py-1 rounded-md text-xs font-semibold ${
-                              Number(profit) >
-                              Number(project.projectedProfit || 0)
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                            }`}
-                          >
-                            {profit} %
-                          </span>
-                        </TableCell>
+
+                        <TableCell>{profit} %</TableCell>
+
                         <TableCell>{project.projectedProfit ?? 0} %</TableCell>
                       </TableRow>
                     );
