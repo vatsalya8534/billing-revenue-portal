@@ -32,6 +32,8 @@ import {
 import Link from "next/link";
 import { SettingsIcon } from "lucide-react";
 import Image from "next/image";
+import { useDispatch } from "react-redux";
+import { userLoginRequest } from "@/store/actions/user-actions";
 
 const data = {
   user: {
@@ -94,6 +96,11 @@ function filterNav(navMain: any[], allowedRoutes: string[]) {
 export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
   const allowedRoutes = user?.allowedRoutes || [];
   const filteredNav = filterNav(data.navMain, allowedRoutes);
+  const dispatch = useDispatch()
+
+  React.useEffect(() => {
+    dispatch(userLoginRequest(user))
+  }, [])
 
   return (
     <Sidebar
@@ -134,11 +141,6 @@ export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
         <NavMain items={filteredNav} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-
-      {/* 🔹 FOOTER */}
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
     </Sidebar>
   );
 }

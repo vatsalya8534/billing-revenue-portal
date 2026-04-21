@@ -23,13 +23,15 @@ export default function HomePage({ configuration }: HomePageProps) {
       {/* HEADER */}
       <header className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-3">
-          <Image
-            src={logo}
-            alt="Company Logo"
-            width={50}
-            height={50}
-            className="rounded-md"
-          />
+          {
+            logo && <Image
+              src={logo}
+              alt={companyName}
+              width={50}
+              height={50}
+              className="rounded-md"
+            />
+          }
           <h1 className="text-2xl font-bold uppercase tracking-wide text-[#1E3A8A]">
             {companyName}
           </h1>

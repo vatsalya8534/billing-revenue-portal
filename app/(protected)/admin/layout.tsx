@@ -32,22 +32,22 @@ export default async function AdminLayout({
 
   const user = userRoles
     ? {
-        name: userRoles.firstName || undefined,
-        email: userRoles.email || undefined,
-        allowedRoutes,
-      }
+      name: userRoles.firstName || undefined,
+      email: userRoles.email || undefined,
+      allowedRoutes,
+    }
     : undefined;
 
   // ✅ FETCH CONFIGURATION (COMPANY NAME + LOGO)
-const configData = await getConfiguration();
+  const configData = await getConfiguration();
 
-const configuration = configData
-  ? {
+  const configuration = configData
+    ? {
       name: configData.name,
       logo: configData.logo,
     }
-  : undefined;
-  
+    : undefined;
+
   return (
     <SidebarProvider
       style={
@@ -62,7 +62,9 @@ const configuration = configData
 
       <SidebarInset>
         {/* ✅ TOP HEADER */}
-        <SiteHeader />
+        <div className="sticky top-0 z-50 bg-white">
+          <SiteHeader />
+        </div>
 
         {/* ✅ MAIN CONTENT */}
         <div className="flex flex-1 flex-col">

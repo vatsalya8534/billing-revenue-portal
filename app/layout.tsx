@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getConfiguration } from "@/lib/actions/configuration";
+import { Providers } from "@/lib/providers";
 
 const APP_NAME = "Billing and Revenue Portal";
 const APP_DESCRIPTION = "Internal Billing Management System";
@@ -67,9 +68,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50`}
       >
-        <div className="flex">
-          <main className="flex-1">{children}</main>
-        </div>
+        <Providers>
+          <div className="flex">
+            <main className="flex-1">{children}</main>
+          </div>
+        </Providers>
       </body>
     </html>
   );
