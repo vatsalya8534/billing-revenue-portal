@@ -1,8 +1,8 @@
 import { put, takeLatest } from "redux-saga/effects";
-import { USER_LOGIN_REQUEST, USER_LOGOUT_REQUEST, UserInfo } from "../actions/user-actions";
+import { USER_LOGIN_REQUEST, USER_LOGOUT_REQUEST } from "../actions/user-actions";
 import { clearUser, setUser } from "../reducers/user-reducer";
 
-function* handleUserLogin(action: { payload: UserInfo }) {
+function* handleUserLogin(action: { payload: any }) {
     yield put(setUser(action.payload));
 }
 
