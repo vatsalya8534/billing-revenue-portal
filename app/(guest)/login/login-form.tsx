@@ -35,6 +35,7 @@ export function LoginForm({
   }, [data]);
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    
     const user = username.trim();
     const pass = password.trim();
 
@@ -46,6 +47,8 @@ export function LoginForm({
 
     setError("");
   };
+
+  
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>

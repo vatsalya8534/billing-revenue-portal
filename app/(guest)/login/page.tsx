@@ -23,18 +23,17 @@ async function SignInPage() {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(59,130,246,0.18),_transparent_32%),linear-gradient(135deg,#eff6ff_0%,#f8fafc_45%,#dbeafe_100%)]">
       <div className="mx-auto flex min-h-screen items-stretch">
-        <div className="grid w-full overflow-hidden border border-white/70 bg-white/80 shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur md:grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid w-full overflow-hidden  shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur md:grid-cols-1 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="relative hidden overflow-hidden bg-[linear-gradient(155deg,#0f172a_0%,#1d4ed8_48%,#60a5fa_100%)] px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.18),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(255,255,255,0.12),_transparent_25%)]" />
 
             <div className="relative z-10 flex items-center gap-4">
-              <div className="rounded-2xl border border-white/20 bg-white/10 p-3 shadow-lg backdrop-blur">
+              <div className="rounded-2xl h-[100px] w-[100px] backdrop-blur">
                 <Image
                   src={logo}
                   alt="Logo"
-                  width={56}
-                  height={56}
-                  className="rounded-xl"
+                  fill
+                  className="rounded-xl object-cover w-full h-full"
                 />
               </div>
               <div>
