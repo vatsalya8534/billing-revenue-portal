@@ -13,7 +13,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "companyId",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Company Name
         </span>
       ),
@@ -26,7 +26,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "projectName",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Project Name
         </span>
       ),
@@ -39,7 +39,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "startDate",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Start Date
         </span>
       ),
@@ -54,7 +54,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "endDate",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           End Date
         </span>
       ),
@@ -69,7 +69,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "poValue",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           PO Value
         </span>
       ),
@@ -82,7 +82,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "orderType",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Order Type
         </span>
       ),
@@ -98,7 +98,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "resourceCount",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Resources
         </span>
       ),
@@ -109,7 +109,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "billingPlanId",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Bill Plan
         </span>
       ),
@@ -122,7 +122,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "totalRevenue",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Billing Cost
         </span>
       ),
@@ -135,7 +135,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "totalCost",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Other Cost
         </span>
       ),
@@ -148,7 +148,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "currentGM",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Current GM%
         </span>
       ),
@@ -178,7 +178,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "projectedProfit",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Projected Profit %
         </span>
       ),
@@ -192,7 +192,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "status",
       header: () => (
-        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
           Status
         </span>
       ),
@@ -213,7 +213,7 @@ export const getUsersColumns = ({
   columns.push({
     id: "actions",
     header: () => (
-      <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+      <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
         Action
       </span>
     ),

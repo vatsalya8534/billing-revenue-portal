@@ -88,19 +88,7 @@ export default function PLDataTable({
         }}
         className="
           [&_table]:border-separate
-          [&_table]:border-spacing-y-2
-
-          [&_thead]:sticky
-          [&_thead]:top-0
-          [&_thead]:z-20
-          [&_thead]:bg-muted/70
-          [&_thead]:backdrop-blur-md
-
-          [&_thead_th]:text-muted-foreground
-          [&_thead_th]:uppercase
-          [&_thead_th]:tracking-wider
-          [&_thead_th]:text-xs
-          [&_thead_th]:font-semibold
+          [&_table]:border-spacing-y-1
 
           [&_tbody_tr]:rounded-xl
           [&_tbody_tr]:shadow-sm
@@ -111,7 +99,7 @@ export default function PLDataTable({
 
           [&_tbody_tr:nth-child(even)]:bg-muted/20
 
-          [&_tbody_td]:py-5
+          [&_tbody_td]:py-3
           [&_tbody_td]:px-4
           [&_tbody_td]:text-sm
         "
