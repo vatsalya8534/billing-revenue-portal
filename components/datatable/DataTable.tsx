@@ -26,13 +26,45 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card"
+import { cn } from "@/lib/utils"
 
 interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   title?: string
   actions?: React.ReactNode
-  rowClassName?: (row: TData) => string
+  rowClassName?: (row: TData, index: number) => string
+}
+
+function getRowEdgeClass(className: string) {
+  const tokens = className.split(/\s+/).filter(Boolean)
+
+  return tokens
+    .filter(
+      (token) =>
+        token.startsWith("border-l-") ||
+        token.startsWith("border-emerald-") ||
+        token.startsWith("border-rose-")
+    )
+    .join(" ")
+}
+
+function getDefaultAlternateRowClass(index: number) {
+  return index % 2 === 0
+    ? `
+      bg-emerald-50/70
+      dark:bg-emerald-950/20
+      hover:bg-emerald-100/80
+      dark:hover:bg-emerald-900/30
+      transition-all duration-300
+    `
+    : `
+      bg-white
+      dark:bg-background
+      hover:bg-slate-50
+      dark:hover:bg-slate-900/40
+      transition-all duration-300
+    `
 }
 
 export function DataTable<TData, TValue>({
@@ -102,12 +134,15 @@ export function DataTable<TData, TValue>({
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
+                  <TableRow
+                    key={headerGroup.id}
+                    className="bg-slate-400 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-800"
+                  >
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
                         onClick={header.column.getToggleSortingHandler()}
-                        className="cursor-pointer select-none whitespace-nowrap"
+                        className="cursor-pointer select-none whitespace-nowrap text-slate-900 dark:text-slate-100"
                       >
                         <div className="flex items-center gap-1">
                           {flexRender(
@@ -130,28 +165,35 @@ export function DataTable<TData, TValue>({
 
               <TableBody>
                 {table.getRowModel().rows.length > 0 ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      className={
-                        rowClassName
-                          ? rowClassName(row.original)
-                          : ""
-                      }
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell
-                          key={cell.id}
-                          className="whitespace-nowrap"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                  table.getRowModel().rows.map((row, index) => {
+                    const rowClasses = rowClassName
+                      ? rowClassName(row.original, index)
+                      : getDefaultAlternateRowClass(index)
+                    const rowEdgeClasses =
+                      getRowEdgeClass(rowClasses)
+
+                    return (
+                      <TableRow
+                        key={row.id}
+                        className={rowClasses}
+                      >
+                        {row.getVisibleCells().map((cell, index) => (
+                          <TableCell
+                            key={cell.id}
+                            className={cn(
+                              "whitespace-nowrap",
+                              index === 0 && rowEdgeClasses
+                            )}
+                          >
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext()
+                            )}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    )
+                  })
                 ) : (
                   <TableRow>
                     <TableCell

@@ -2,7 +2,13 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { BarChart3, DollarSign, FileText, TrendingUp } from "lucide-react";
+import {
+  ArrowRight,
+  BarChart3,
+  DollarSign,
+  FileText,
+  TrendingUp,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 
@@ -19,135 +25,177 @@ export default function HomePage({ configuration }: HomePageProps) {
   const logo = configuration?.logo || "";
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] text-[#0F172A] p-6">
-      {/* HEADER */}
-      <header className="flex items-center justify-between mb-12">
-        <div className="flex items-center gap-3">
-          {
-            logo && <Image
-              src={logo}
-              alt={companyName}
-              width={50}
-              height={50}
-              className="rounded-md"
-            />
-          }
-          <h1 className="text-2xl font-bold uppercase tracking-wide text-[#1E3A8A]">
-            {companyName}
-          </h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F5F7FB] text-slate-800 overflow-hidden">
+      {/* decorative blobs */}
+      <div className="absolute top-0 right-0 h-[400px] w-[400px] rounded-full bg-blue-100 blur-3xl opacity-70" />
+      <div className="absolute bottom-0 left-0 h-[350px] w-[350px] rounded-full bg-indigo-100 blur-3xl opacity-60" />
 
-      {/* HERO */}
-      <section className="text-center max-w-3xl mx-auto mb-14">
-        <h2 className="text-4xl md:text-5xl font-bold mb-4 leading-tight">
-          Billing & Revenue <br />
-          <span className="text-[#3B82F6]">Management Portal</span>
-        </h2>
+      <div className="relative z-10 px-6 md:px-12 lg:px-20 py-8">
+        {/* HEADER */}
+        <header className="flex items-center justify-between mb-16">
+          <div className="flex items-center gap-4">
+            {logo && (
+              <Image
+                src={logo}
+                alt={companyName}
+                width={48}
+                height={48}
+                className="rounded-xl shadow-md"
+              />
+            )}
+            <h1 className="text-2xl font-bold uppercase tracking-wide">
+              {companyName}
+            </h1>
+          </div>
+        </header>
 
-        <p className="text-gray-600 text-lg mt-4">
-          A secure and reliable platform to track revenue, manage billing
-          cycles, and analyze profit & loss with clarity and precision.
-        </p>
-      </section>
-
-      {/* ACTION BUTTONS */}
-      <div className="flex justify-center gap-6 mb-16 flex-wrap">
-        <Button
-          size="lg"
-          variant="outline"
-          className="cursor-pointer border-[#3B82F6] text-[#1E3A8A] hover:bg-[#3B82F6] hover:text-white px-6 py-3"
-          onClick={() => router.push("/admin/dashboard?tab=pl")}
-        >
-          <BarChart3 className="mr-2 h-5 w-5" />
-          Profit & Loss (P&L)
-        </Button>
-
-        <Button
-          size="lg"
-          className="cursor-pointer bg-[#1E3A8A] hover:bg-[#3B82F6] text-white px-6 py-3 shadow-md"
-          onClick={() => router.push("/admin/dashboard?tab=revenue")}
-        >
-          <DollarSign className="mr-2 h-5 w-5" />
-          Revenue Dashboard
-        </Button>
-      </div>
-
-      {/* FEATURES (NOW 3 CARDS) */}
-      <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-16">
-        <Card className="shadow-md hover:shadow-xl transition duration-300 border border-blue-100">
-          <CardContent className="p-6 text-center">
-            <DollarSign className="mx-auto mb-4 h-8 w-8 text-[#3B82F6]" />
-            <h3 className="font-semibold text-lg mb-2">Revenue Tracking</h3>
-            <p className="text-sm text-gray-500">
-              Track all invoices, payments, and collections in real-time with
-              complete visibility.
+        {/* HERO */}
+        <section className="grid lg:grid-cols-2 gap-10 items-center mb-24">
+          {/* Left */}
+          <div>
+            <p className="text-blue-600 font-medium mb-4">
+              Financial Operations Simplified
             </p>
-          </CardContent>
-        </Card>
 
-        <Card className="shadow-md hover:shadow-xl transition duration-300 border border-blue-100">
-          <CardContent className="p-6 text-center">
-            <BarChart3 className="mx-auto mb-4 h-8 w-8 text-[#3B82F6]" />
-            <h3 className="font-semibold text-lg mb-2">
-              Profit & Loss Analysis
-            </h3>
-            <p className="text-sm text-gray-500">
-              Analyze financial performance with accurate P&L insights and cost
-              breakdowns.
+            <h2 className="text-5xl md:text-6xl font-bold leading-tight">
+              One Portal for
+              <span className="block text-blue-600">
+                Revenue & Billing
+              </span>
+            </h2>
+
+            <p className="text-slate-500 text-lg mt-6 max-w-xl leading-relaxed">
+              Manage revenue streams, billing workflows, and profit analysis in
+              one clean and reliable workspace.
             </p>
-          </CardContent>
-        </Card>
 
-        <Card className="shadow-md hover:shadow-xl transition duration-300 border border-blue-100">
-          <CardContent className="p-6 text-center">
-            <FileText className="mx-auto mb-4 h-8 w-8 text-[#3B82F6]" />
-            <h3 className="font-semibold text-lg mb-2">Billing Management</h3>
-            <p className="text-sm text-gray-500">
-              Manage billing cycles, invoices, and payment schedules
-              efficiently.
+            <div className="flex flex-wrap gap-4 mt-8">
+              <Button
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-7 rounded-2xl"
+                onClick={() => router.push("/admin/dashboard?tab=revenue")}
+              >
+                Open Revenue Dashboard
+              </Button>
+
+              <Button
+                size="lg"
+                variant="outline"
+                className="rounded-2xl px-7"
+                onClick={() => router.push("/admin/dashboard?tab=pl")}
+              >
+                Open P&L
+              </Button>
+            </div>
+          </div>
+
+          {/* Right */}
+          <div className="relative">
+            <Card className="rounded-3xl shadow-xl border-none bg-white">
+              <CardContent className="p-8">
+                <div className="grid gap-5">
+                  <div className="rounded-2xl bg-blue-50 p-5 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold">Revenue Tracking</h4>
+                      <p className="text-sm text-slate-500">
+                        Monitor payments & collections
+                      </p>
+                    </div>
+                    <DollarSign className="text-blue-600" />
+                  </div>
+
+                  <div className="rounded-2xl bg-indigo-50 p-5 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold">Profit & Loss</h4>
+                      <p className="text-sm text-slate-500">
+                        Analyze performance
+                      </p>
+                    </div>
+                    <BarChart3 className="text-indigo-600" />
+                  </div>
+
+                  <div className="rounded-2xl bg-sky-50 p-5 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold">Billing Management</h4>
+                      <p className="text-sm text-slate-500">
+                        Organize billing cycles
+                      </p>
+                    </div>
+                    <FileText className="text-sky-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* floating mini card */}
+            <div className="absolute -top-6 -left-9 bg-white rounded-2xl shadow-lg px-5 py-4 flex items-center gap-3">
+              <TrendingUp className="text-green-500" />
+              <div>
+                <p className="text-sm font-semibold">Smarter Decisions</p>
+                <p className="text-xs text-slate-500">Data-driven insights</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* FEATURES */}
+        <section className="grid md:grid-cols-3 gap-6 mb-24">
+          {[
+            {
+              icon: DollarSign,
+              title: "Revenue Tracking",
+              desc: "Track all financial activities in real time.",
+            },
+            {
+              icon: BarChart3,
+              title: "P&L Insights",
+              desc: "Understand profitability clearly.",
+            },
+            {
+              icon: FileText,
+              title: "Billing Control",
+              desc: "Manage billing efficiently.",
+            },
+          ].map((item, i) => (
+            <Card
+              key={i}
+              className={`rounded-3xl border-none shadow-md hover:shadow-xl transition-all ${
+                i === 1 ? "md:-mt-6" : ""
+              }`}
+            >
+              <CardContent className="p-8">
+                <item.icon className="h-8 w-8 text-blue-600 mb-4" />
+                <h3 className="text-xl font-semibold">{item.title}</h3>
+                <p className="text-slate-500 mt-2">{item.desc}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </section>
+
+        {/* CTA */}
+        <section className="bg-white rounded-[32px] shadow-lg p-10 flex flex-col md:flex-row items-center justify-between">
+          <div>
+            <h3 className="text-3xl font-bold">Ready to manage finances?</h3>
+            <p className="text-slate-500 mt-2">
+              Access your dashboards and insights instantly.
             </p>
-          </CardContent>
-        </Card>
+          </div>
+
+          <Button
+            size="lg"
+            className="mt-5 md:mt-0 bg-blue-600 hover:bg-blue-700 rounded-2xl"
+            onClick={() => router.push("/admin/dashboard?tab=pl")}
+          >
+            Get Started
+            <ArrowRight className="ml-2 h-5 w-5" />
+          </Button>
+        </section>
+
+        {/* FOOTER */}
+        <footer className="text-center text-sm text-slate-500 mt-12">
+          © {new Date().getFullYear()} {companyName}. All rights reserved.
+        </footer>
       </div>
-
-      {/* EXTRA CONTENT */}
-      <section className="max-w-4xl mx-auto text-center mb-16">
-        <h3 className="text-2xl font-semibold mb-4 text-[#1E3A8A]">
-          Why Choose This Portal?
-        </h3>
-        <p className="text-gray-600 leading-relaxed">
-          Designed for businesses that need clarity in financial operations,
-          this portal provides a centralized system to manage billing, monitor
-          revenue streams, and evaluate profitability.
-        </p>
-      </section>
-
-      {/* HIGHLIGHTS */}
-      <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto mb-16 text-center">
-        <div>
-          <TrendingUp className="mx-auto mb-2 text-[#3B82F6]" />
-          <p className="text-xl font-bold">Reliable Insights</p>
-          <p className="text-gray-500 text-sm">Accurate financial reporting</p>
-        </div>
-
-        <div>
-          <DollarSign className="mx-auto mb-2 text-[#3B82F6]" />
-          <p className="text-xl font-bold">Better Cash Flow</p>
-          <p className="text-gray-500 text-sm">Track income efficiently</p>
-        </div>
-
-        <div>
-          <BarChart3 className="mx-auto mb-2 text-[#3B82F6]" />
-          <p className="text-xl font-bold">Data Driven</p>
-          <p className="text-gray-500 text-sm">Make smarter decisions</p>
-        </div>
-      </div>
-
-      {/* FOOTER */}
-      <footer className="text-center text-sm text-gray-500">
-        &copy; {new Date().getFullYear()} {companyName}. All rights reserved.
-      </footer>
     </div>
   );
 }

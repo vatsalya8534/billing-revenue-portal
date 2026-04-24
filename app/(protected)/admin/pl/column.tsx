@@ -12,57 +12,146 @@ export const getUsersColumns = ({
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "companyId",
-      header: "Company Name",
-      cell: ({ row }) => row.original.company.name ?? "",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Company Name
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-semibold  text-black dark:text-slate-4000">
+          {row.original.company.name ?? ""}
+        </span>
+      ),
     },
     {
       accessorKey: "projectName",
-      header: "Project Name",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black">
+          Project Name
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium text-indigo-600 dark:text-indigo-400">
+          {row.original.projectName}
+        </span>
+      ),
     },
     {
       accessorKey: "startDate",
-      header: "Start Date",
-      cell: ({ row }) =>
-        row.original.startDate
-          ? new Date(row.original.startDate).toLocaleDateString("en-GB")
-          : "-",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black">
+          Start Date
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-slate-700 dark:text-slate-300">
+          {row.original.startDate
+            ? new Date(row.original.startDate).toLocaleDateString("en-GB")
+            : "-"}
+        </span>
+      ),
     },
     {
       accessorKey: "endDate",
-      header: "End Date",
-      cell: ({ row }) =>
-        row.original.endDate
-          ? new Date(row.original.endDate).toLocaleDateString("en-GB")
-          : "-",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black">
+          End Date
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="text-slate-700 dark:text-slate-300">
+          {row.original.endDate
+            ? new Date(row.original.endDate).toLocaleDateString("en-GB")
+            : "-"}
+        </span>
+      ),
     },
     {
       accessorKey: "poValue",
-      header: "PO Value",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black">
+          PO Value
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-semibold text-emerald-600">
+          ₹ {row.original.poValue}
+        </span>
+      ),
     },
     {
       accessorKey: "orderType",
-      header: "Order Type",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black">
+          Order Type
+        </span>
+      ),
+      cell: ({ row }) => (
+        <Badge
+          variant="outline"
+          className="border-blue-400 text-blue-600 dark:text-blue-400"
+        >
+          {row.original.orderType}
+        </Badge>
+      ),
     },
     {
       accessorKey: "resourceCount",
-      header: "Agreed count of Resources",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Resources
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium">{row.original.resourceCount}</span>
+      ),
     },
     {
       accessorKey: "billingPlanId",
-      header: "Bill Plan",
-      cell: ({ row }) => row.original.billingPlan.name ?? "",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Bill Plan
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-medium text-cyan-600">
+          {row.original.billingPlan.name ?? ""}
+        </span>
+      ),
     },
     {
       accessorKey: "totalRevenue",
-      header: "Total Billing Cost",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Billing Cost
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-semibold text-green-600">
+          ₹ {row.original.totalRevenue}
+        </span>
+      ),
     },
     {
       accessorKey: "totalCost",
-      header: "Total Other Cost",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Other Cost
+        </span>
+      ),
+      cell: ({ row }) => (
+        <span className="font-semibold text-rose-600">
+          ₹ {row.original.totalCost}
+        </span>
+      ),
     },
     {
       accessorKey: "currentGM",
-      header: "Current GM%",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Current GM%
+        </span>
+      ),
       cell: ({ row }) => {
         const revenue = Number(row.original.totalRevenue) || 0;
         const cost = Number(row.original.totalCost) || 0;
@@ -72,15 +161,29 @@ export const getUsersColumns = ({
             ? 0
             : Number((((revenue - cost) / revenue) * 100).toFixed(2));
 
-        return `${gm} %`;
+        return (
+          <Badge
+            className={
+              gm >= 20
+                ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
+                : "bg-rose-100 text-rose-700 hover:bg-rose-200"
+            }
+          >
+            {gm} %
+          </Badge>
+        );
       },
     },
 
     {
       accessorKey: "projectedProfit",
-      header: "Projected Profit %",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Projected Profit %
+        </span>
+      ),
       cell: ({ row }) => (
-        <span className="font-medium text-blue-600">
+        <span className="font-semibold text-blue-600 dark:text-blue-400">
           {row.original.projectedProfit ?? 0} %
         </span>
       ),
@@ -88,12 +191,18 @@ export const getUsersColumns = ({
 
     {
       accessorKey: "status",
-      header: "Status",
+      header: () => (
+        <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+          Status
+        </span>
+      ),
       cell: ({ row }) => {
         const status = row.original.status;
 
         return status === "ACTIVE" ? (
-          <Badge className="bg-green-500">ACTIVE</Badge>
+          <Badge className="bg-green-500 hover:bg-green-600 text-white">
+            ACTIVE
+          </Badge>
         ) : (
           <Badge variant="destructive">INACTIVE</Badge>
         );
@@ -103,7 +212,11 @@ export const getUsersColumns = ({
 
   columns.push({
     id: "actions",
-    header: "Action",
+    header: () => (
+      <span className="text-xs font-bold uppercase tracking-wider text-black dark:text-slate-4000">
+        Action
+      </span>
+    ),
     cell: ({ row }) => {
       const id = row.original.id as string;
 
@@ -113,7 +226,7 @@ export const getUsersColumns = ({
           <Button
             size="icon"
             asChild
-            className="cursor-pointer bg-blue-500 hover:bg-blue-600"
+            className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 shadow-sm"
           >
             <Link href={`/admin/pl/view/${id}`}>
               <Eye size={16} />
@@ -125,7 +238,7 @@ export const getUsersColumns = ({
             <Button
               asChild
               size="icon"
-              className="cursor-pointer bg-orange-500 hover:bg-orange-600"
+              className="cursor-pointer rounded-xl bg-orange-500 hover:bg-orange-600 shadow-sm"
             >
               <Link href={`/admin/pl/edit/${id}`}>
                 <EditIcon size={16} />
@@ -138,7 +251,7 @@ export const getUsersColumns = ({
             <Button
               size="icon"
               variant="destructive"
-              className="cursor-pointer"
+              className="cursor-pointer rounded-xl shadow-sm"
               onClick={() => onDelete(id)}
             >
               <Trash size={16} />

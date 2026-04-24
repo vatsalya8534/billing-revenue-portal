@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { EditIcon, Trash } from "lucide-react"
+import { ColumnDef } from "@tanstack/react-table";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { EditIcon, Trash } from "lucide-react";
+
 export const getUsersColumns = ({
   canEdit,
   canDelete,
@@ -13,51 +14,86 @@ export const getUsersColumns = ({
   const columns: ColumnDef<any>[] = [
     {
       accessorKey: "name",
-      header: "Name",
+      header: () => (
+        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+          Name
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="font-medium text-gray-900 dark:text-gray-100">
+          {row.original.name}
+        </div>
+      ),
     },
     {
       accessorKey: "remark",
-      header: "Remark",
-      cell: ({ row }) => row.original.remark ?? "-",
+      header: () => (
+        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+          Remark
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-gray-600 dark:text-gray-300">
+          {row.original.remark ?? "-"}
+        </div>
+      ),
     },
     {
       accessorKey: "createdAt",
-      header: "Created Date",
-      cell: ({ row }) =>
-        row.original.createdAt
-          ? new Date(row.original.createdAt).toLocaleDateString("en-GB")
-          : "-",
+      header: () => (
+        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+          Created Date
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-gray-600 dark:text-gray-300">
+          {row.original.createdAt
+            ? new Date(row.original.createdAt).toLocaleDateString("en-GB")
+            : "-"}
+        </div>
+      ),
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: () => (
+        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+          Status
+        </div>
+      ),
       cell: ({ row }) => {
         const status = row.original.status;
 
         return status === "ACTIVE" ? (
-          <Badge className="bg-green-500">ACTIVE</Badge>
+          <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1 rounded-full">
+            ACTIVE
+          </Badge>
         ) : (
-          <Badge variant="destructive">INACTIVE</Badge>
+          <Badge className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-full">
+            INACTIVE
+          </Badge>
         );
       },
     },
   ];
 
-  // ✅ Add Action column only if permission exists
   if (canEdit || canDelete) {
     columns.push({
       id: "actions",
-      header: "Action",
+      header: () => (
+        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+          Action
+        </div>
+      ),
       cell: ({ row }) => {
         const id = row.original.id as string;
 
         return (
-          <div className="flex gap-2">
+          <div className="flex items-center gap-2">
             {canEdit && (
               <Button
                 asChild
                 size="icon"
-                className="bg-orange-500 hover:bg-orange-600"
+                className="h-9 w-9 rounded-lg bg-amber-500 hover:bg-amber-600 shadow-sm"
               >
                 <Link href={`/admin/contract-type/edit/${id}`}>
                   <EditIcon size={16} />
@@ -68,7 +104,7 @@ export const getUsersColumns = ({
             {canDelete && (
               <Button
                 size="icon"
-                variant="destructive"
+                className="h-9 w-9 rounded-lg bg-red-500 hover:bg-red-600 shadow-sm"
                 onClick={() => onDelete(id)}
               >
                 <Trash size={16} />
