@@ -33,6 +33,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   title?: string
   actions?: React.ReactNode
+  className?: string
   rowClassName?: (row: TData, index: number) => string
 }
 
@@ -72,6 +73,7 @@ export function DataTable<TData, TValue>({
   data,
   title = "",
   actions,
+  className,
   rowClassName,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -130,7 +132,7 @@ export function DataTable<TData, TValue>({
             className="max-w-sm"
           />
 
-          <div className="rounded-xl border overflow-x-auto">
+          <div className={cn("rounded-xl border overflow-x-auto", className)}>
             <Table>
               <TableHeader>
                 {table.getHeaderGroups().map((headerGroup) => (

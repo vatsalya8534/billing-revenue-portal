@@ -135,7 +135,7 @@ type CostDetail = {
   billedAmount: number | string;
   fms: number | string;
   spare: number | string;
-  other?: number | string;
+  other?: unknown;
   totalCost?: number;
   profitPercentage?: number;
 };
@@ -158,7 +158,18 @@ type DashboardTotals = {
   totalProjectedProfit: number;
 };
 
-type DashboardResponse = DashboardTotals & {
+type DashboardResponse = {
+  totalPOValue: number | string;
+  totalBilledValue: number | string;
+  totalBillableAmount: number | string;
+  totalCostValue: number | string;
+  totalFMSValue: number | string;
+  totalSpareValue: number | string;
+  totalMiscCostValue?: number | string;
+  totalOtherCostValue?: number | string;
+  totalResourceCount: number | string;
+  totalProfit: number | string;
+  totalProjectedProfit: number | string;
   data: ProjectRow[];
 };
 
@@ -440,12 +451,15 @@ export function PLDashboardComponent({
     if (!selectedMonth) return;
 
     let active = true;
+    const currentSelectedMonth = selectedMonth;
 
     async function loadDetails() {
+      const { month, year } = currentSelectedMonth;
+
       const billing = (await getBillingDetailsByMonth(
         {
-          month: selectedMonth.month,
-          year: selectedMonth.year,
+          month,
+          year,
           project: filters.project,
           company: filters.company,
         },
@@ -454,8 +468,8 @@ export function PLDashboardComponent({
 
       const cost = (await getCostDetailsByMonth(
         {
-          month: selectedMonth.month,
-          year: selectedMonth.year,
+          month,
+          year,
           project: filters.project,
           company: filters.company,
         },
@@ -1216,7 +1230,7 @@ export function PLDashboardComponent({
                             {formatCurrency(item.spare)}
                           </td>
                           <td className="px-5 py-4 font-mono text-sm text-slate-600 tabular-nums">
-                            {formatCurrency(item.other ?? 0)}
+                            {formatCurrency(Number(item.other ?? 0))}
                           </td>
                           <td className="px-5 py-4 font-mono text-sm font-semibold text-slate-950 tabular-nums">
                             {formatCurrency(item.totalCost ?? 0)}
