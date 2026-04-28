@@ -15,7 +15,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "name",
       header: () => (
-        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+        <div className="font-semibold text-xs uppercase tracking-wider text-white dark:text-slate-4000">
           Name
         </div>
       ),
@@ -28,7 +28,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "remark",
       header: () => (
-        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+        <div className="font-semibold text-xs uppercase tracking-wider text-white dark:text-slate-4000">
           Remark
         </div>
       ),
@@ -41,7 +41,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "createdAt",
       header: () => (
-        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+        <div className="font-semibold text-xs uppercase tracking-wider text-white dark:text-slate-4000">
           Created Date
         </div>
       ),
@@ -56,7 +56,7 @@ export const getUsersColumns = ({
     {
       accessorKey: "status",
       header: () => (
-        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+        <div className="font-semibold text-xs uppercase tracking-wider text-white dark:text-slate-4000">
           Status
         </div>
       ),
@@ -80,7 +80,7 @@ export const getUsersColumns = ({
     columns.push({
       id: "actions",
       header: () => (
-        <div className="font-semibold text-xs uppercase tracking-wider text-black dark:text-slate-4000">
+        <div className="font-semibold text-xs uppercase tracking-wider text-white dark:text-slate-4000">
           Action
         </div>
       ),
