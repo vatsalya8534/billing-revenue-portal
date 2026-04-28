@@ -15,13 +15,6 @@ import {
   ChartTooltip,
   type ChartConfig,
 } from "@/components/ui/chart";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { getMonthlyRevenueCost } from "@/lib/actions/project";
 import {
   BarChart3,
@@ -197,16 +190,16 @@ function CustomTooltip({ active, payload }: TooltipProps) {
 }
 
 export function TotalCostChart({ onMonthClick, filters }: Props) {
-  const currentYear = new Date().getFullYear();
-  const [year, setYear] = useState(currentYear.toString());
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
-
-  const years = Array.from({ length: 5 }, (_, index) =>
-    (currentYear - index).toString(),
-  );
+  const selectedYear =
+    typeof filters.year === "string" && filters.year !== "all"
+      ? Number(filters.year)
+      : new Date().getMonth() < 3
+        ? new Date().getFullYear() - 1
+        : new Date().getFullYear();
 
   useEffect(() => {
     let active = true;
@@ -216,7 +209,7 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
 
       try {
         const response = (await getMonthlyRevenueCost(
-          Number(year),
+          selectedYear,
           filters,
         )) as MonthlyCostResponse;
 
@@ -227,7 +220,7 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
             month: entry.month,
             value: Number(entry.value || 0),
             monthNumber: index + 1,
-            year: Number(year),
+            year: selectedYear,
           })),
         );
       } catch (error) {
@@ -247,7 +240,11 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
     return () => {
       active = false;
     };
-  }, [filters, year]);
+  }, [filters, selectedYear]);
+
+  useEffect(() => {
+    setActiveIndex(null);
+  }, [selectedYear]);
 
   const chartStats = useMemo(() => {
     const values = data.map((item) => item.value).filter((value) => value > 0);
@@ -293,20 +290,8 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          
-          <Select value={year} onValueChange={setYear}>
-            <SelectTrigger className="h-10 w-[108px] rounded-2xl border-slate-200 bg-slate-50 text-sm font-medium text-slate-700">
-              <SelectValue placeholder="Year" />
-            </SelectTrigger>
-            <SelectContent className="rounded-2xl">
-              {years.map((value) => (
-                <SelectItem key={value} value={value}>
-                  {value}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="rounded-2xl border border-rose-100 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+          FY {selectedYear}-{String(selectedYear + 1).slice(-2)}
         </div>
       </div>
 
@@ -354,7 +339,7 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
               <BarChart3 className="h-6 w-6" />
             </div>
             <p className="mt-4 text-sm font-semibold text-slate-700">
-              No cost data for {year}
+              No cost data for FY {selectedYear}-{String(selectedYear + 1).slice(-2)}
             </p>
             <p className="mt-1 text-sm text-slate-400">
               Try a different year or adjust the dashboard filters.

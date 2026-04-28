@@ -120,8 +120,8 @@ export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
                   <Image
                     src={configuration?.logo || "/sy.png"}
                     alt="logo"
-                    width={28}
-                    height={28}
+                    width={45}
+                    height={45}
                     className="rounded-md"
                   />
 

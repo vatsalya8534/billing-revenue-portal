@@ -29,7 +29,7 @@ const PurchaseOrdersPage = async () => {
       title="Revenue"
       actions={
         canCreate && (
-          <Button className="bg-blue-500 hover:bg-blue-600">
+          <Button className="rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-700">
             <Link href="/admin/revenue/create">Add Revenue</Link>
           </Button>
         )

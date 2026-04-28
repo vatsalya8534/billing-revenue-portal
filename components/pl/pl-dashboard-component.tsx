@@ -410,6 +410,18 @@ export function PLDashboardComponent({
   };
 
   useEffect(() => {
+    setActiveTable(null);
+    setSelectedMonth(null);
+  }, [
+    filters.year,
+    filters.month,
+    filters.company,
+    filters.project,
+    filters.startDate,
+    filters.endDate,
+  ]);
+
+  useEffect(() => {
     let active = true;
 
     async function loadDashboardData() {

@@ -49,7 +49,7 @@ export default function PLDataTable({
       "
     >
       {/* Top Gradient Strip */}
-      <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500" />
+      {/* <div className="h-1 w-full bg-gradient-to-r from-emerald-500 via-blue-500 to-purple-500" /> */}
 
       <DataTable
         data={tableData}

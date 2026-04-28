@@ -181,13 +181,13 @@ export function DataTable<TData, TValue>({
                 {table.getHeaderGroups().map((headerGroup) => (
                   <TableRow
                     key={headerGroup.id}
-                    className="bg-[#2F6F57] hover:bg-[#2F6F57]"
+                    className="border-b border-sky-300/60 bg-sky-600 hover:bg-sky-600"
                   >
                     {headerGroup.headers.map((header) => (
                       <TableHead
                         key={header.id}
                         onClick={header.column.getToggleSortingHandler()}
-                        className="cursor-pointer select-none whitespace-nowrap text-white"
+                        className="cursor-pointer select-none whitespace-nowrap text-sky-50"
                       >
                         <div className="flex items-center gap-1">
                           {flexRender(
