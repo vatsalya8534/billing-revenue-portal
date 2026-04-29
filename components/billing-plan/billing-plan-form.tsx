@@ -41,20 +41,20 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
   const [isPending, startTransition] = React.useTransition();
 
   const onSubmit: SubmitHandler<z.infer<typeof billingPlanSchema>> = (values: any) => {
-  
+
     startTransition(async () => {
       let res;
 
       const payload = {
         ...values,
       };
-      
+
 
       if (update && id) {
         res = await updateBillingPlan(payload, id);
       } else {
         res = await createBillingPlan(payload);
-      }      
+      }
 
       if (!res?.success) {
         toast.error("Error", {
@@ -69,7 +69,7 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        
+
         <div className="grid grid-cols-2 gap-6">
           {/* Role Name */}
           <FormField
@@ -89,7 +89,7 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
             control={form.control}
             name="billingCycleType"
             render={({ field }) => (
-            
+
               <FormItem>
                 <FormLabel>Billing Cycle Type</FormLabel>
                 <FormControl>
@@ -104,7 +104,7 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
                       <SelectItem value="START">Start</SelectItem>
                       <SelectItem value="MID">Mid</SelectItem>
                       <SelectItem value="END">End</SelectItem>
-                      
+
                     </SelectContent>
                   </Select>
                 </FormControl>
@@ -117,14 +117,25 @@ const BillingPlanForm = ({ data, update = false }: { data?: BillingPlan; update:
             name="totalBillingCycles"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Total Billing Cycles</FormLabel>
+                <FormLabel>Billing Cycles (in months)</FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="Enter total billing cycles"
-                    {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))} // important
-                  />
+                  <Select
+                    defaultValue={String(field.value)}
+                    onValueChange={(v) => field.onChange(v as Status)}
+                  >
+                    <SelectTrigger className="w-full" {...field}>
+                      <SelectValue placeholder="Billing Cycle" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value={String(1)}>1</SelectItem>
+                        <SelectItem value={String(3)}>3</SelectItem>
+                        <SelectItem value={String(6)}>6</SelectItem>
+                        <SelectItem value={String(12)}>12</SelectItem>
+
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>
