@@ -39,32 +39,40 @@ export default async function AdminLayout({
 
   const user = userRoles
     ? {
-        name: userRoles.firstName || undefined,
-        email: userRoles.email || undefined,
-        allowedRoutes,
-      }
+      name: userRoles.firstName || undefined,
+      email: userRoles.email || undefined,
+      allowedRoutes,
+    }
     : undefined;
 
   const configData = await getConfiguration();
   const configuration = configData
     ? {
-        name: configData.name,
-        logo: configData.logo,
-      }
+      name: configData.name,
+      logo: configData.logo,
+    }
     : undefined;
 
   return (
     <SidebarProvider
+      defaultOpen={false}
+      className="group/sidebar"
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 76)",
+          "--sidebar-width-icon": "calc(var(--spacing) * 14)", // ✅ important for icon mode
           "--header-height": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }
     >
       <AppSidebar user={user} configuration={configuration} />
 
-      <SidebarInset className="bg-[radial-gradient(circle_at_top,_rgba(186,230,253,0.28),_transparent_22%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_50%,#f1f5f9_100%)]">
+      <SidebarInset
+        className="
+          transition-[margin] duration-300 ease-in-out
+          bg-[radial-gradient(circle_at_top,_rgba(186,230,253,0.28),_transparent_22%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_50%,#f1f5f9_100%)]
+        "
+      >
         <div className="sticky top-0 z-50 border-b border-sky-100/80 bg-white/80 backdrop-blur-xl">
           <SiteHeader />
         </div>
