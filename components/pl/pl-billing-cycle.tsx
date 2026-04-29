@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import moment from "moment";
-import { useFieldArray } from "react-hook-form";
+import { useFieldArray, UseFormReturn } from "react-hook-form";
 
 import {
   FormField,
@@ -14,30 +15,19 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { Card, CardContent } from "../ui/card";
+import { projectMonthlyPLSchema, projectSchema } from "@/lib/validators";
 
 interface OtherCost {
   key: string;
   value: number | string;
 }
 
-interface BillingCycleField {
-  month?: number;
-  year?: number;
-  billedAmount: number;
-  billableAmount: number;
-  resourceUsed: number;
-  fms?: number;
-  spare?: number;
-  otherCost: OtherCost[] | string | null | undefined;
-}
+type BillingCycleField = z.infer<typeof projectMonthlyPLSchema>;
 
 interface PLBillingCycleProps {
   field: BillingCycleField;
   index: number;
-  form: {
-    control: any;
-    watch: any;
-  } | null;
+  form: UseFormReturn<z.infer<typeof projectSchema>> | null;
 }
 
 const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
@@ -48,8 +38,6 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
       </div>
     );
   }
-
-  const initialized = useRef(false);
 
   const monthIndex = Number(field?.month ?? 0);
   const year = Number(field?.year ?? new Date().getFullYear());
@@ -76,7 +64,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
   const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
 
-  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);  
+  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);
 
   const otherBills: OtherCost[] = useMemo(() => {
     if (Array.isArray(watchedOtherCost)) {
@@ -96,9 +84,6 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   }, [watchedOtherCost]);
 
   useEffect(() => {
-    if (initialized.current) return;
-    initialized.current = true;
-
     let initialData: OtherCost[] = [];
 
     if (Array.isArray(field.otherCost)) {
@@ -113,10 +98,10 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
     }
 
     replace(initialData);
-  }, [field.otherCost, replace]);
-  
+  }, [index, field.otherCost, replace]);
 
-  useEffect(() => {    
+
+  useEffect(() => {
     const miscTotal = Array.isArray(otherBills)
       ? otherBills.reduce((sum, item) => sum + Number(item?.value || 0), 0)
       : 0;
@@ -145,9 +130,6 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
           <h2 className="text-xl font-bold">
             {monthName} {year}
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Billing Cycle #{index + 1}
-          </p>
         </div>
 
         <div className="flex flex-wrap gap-4 text-sm font-medium">
@@ -277,9 +259,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                     name={`billingCycle.${index}.otherCost.${ind}.key`}
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Particular</FormLabel>
+                        <FormLabel>Cost Title</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter name" {...field} />
+                          <Input placeholder="Enter Cost title" {...field} />
                         </FormControl>
                       </FormItem>
                     )}

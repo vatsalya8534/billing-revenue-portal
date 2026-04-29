@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
-import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
+import { useEffect, useState, useTransition } from "react";
+import { useForm, SubmitHandler, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -48,6 +48,7 @@ import { plDefaultValues } from "@/lib/constants";
 import { BillingPlan, Company, Project as ProjectType } from "@/types";
 import { createProject, updateProject } from "@/lib/actions/project";
 import PLBillingCycle from "./pl-billing-cycle";
+import { formatBillingCycleLabel } from "@/lib/billing-cycle-utils";
 
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
@@ -112,6 +113,7 @@ const PLForm = ({
   });
 
   const [isPending, startTransition] = useTransition();
+  const [selectedCycleIndex, setSelectedCycleIndex] = useState(0);
   const startDate = form.watch("startDate");
   const endDate = form.watch("endDate");
   const billingPlanId = form.watch("billingPlanId");
@@ -136,6 +138,16 @@ const PLForm = ({
     });
   };
 
+  const watchedBillingCycles =
+    useWatch({
+      control: form.control,
+      name: "billingCycle",
+    }) ?? [];
+  const activeCycleIndex =
+    fields.length === 0
+      ? 0
+      : Math.min(selectedCycleIndex, fields.length - 1);
+
   useEffect(() => {
     if (update) return;
     if (!billingPlanId || !startDate || !endDate) return;
@@ -152,13 +164,13 @@ const PLForm = ({
     const months = end.diff(start, "months", true);
     console.log(months); // 14
 
-    const totalCycles = months / selectedPlan.totalBillingCycles ;
+    const totalCycles = months / selectedPlan.totalBillingCycles;
     const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
 
     const cycles = [];
 
     for (let i = 0; i < totalCycles; i++) {
-      const cycleDate = start.clone().add(i * selectedPlan.totalBillingCycles , "month");
+      const cycleDate = start.clone().add(i * selectedPlan.totalBillingCycles, "month");
 
       if (cycleDate.isAfter(end, "month")) break;
 
@@ -176,6 +188,12 @@ const PLForm = ({
 
     form.setValue("billingCycle", cycles);
   }, [billingPlanId, startDate, endDate, poValue]);
+
+  useEffect(() => {
+    if (selectedCycleIndex > fields.length - 1) {
+      setSelectedCycleIndex(Math.max(fields.length - 1, 0));
+    }
+  }, [fields.length, selectedCycleIndex]);
 
   return (
     <Form {...form}>
@@ -446,15 +464,10 @@ const PLForm = ({
           </TabsContent>
 
           <TabsContent value="billing-cycle" className="mt-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {fields.map((field, index) => (
                 <Card key={index} className={billingCardClassName}>
-                  <CardHeader className="space-y-3 bg-[radial-gradient(circle_at_top_right,_rgba(125,211,252,0.16),_transparent_34%),linear-gradient(180deg,rgba(255,255,255,1),rgba(240,249,255,0.72))]">
-                    <CardTitle className="text-lg font-semibold text-slate-900">
-                      Billing Cycle {index + 1}
-                    </CardTitle>
-                  </CardHeader>
-
+                 
                   <CardContent>
                     <PLBillingCycle field={field} index={index} form={form} />
                   </CardContent>
@@ -465,7 +478,46 @@ const PLForm = ({
               <div className={cn(themedSectionClassName, "mt-4 text-center text-slate-500")}>
                 Billing cycles will appear here once the project dates and billing plan are selected.
               </div>
-            ) : null}
+            ) : null} */}
+            {fields.length > 0 ? (
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  {fields.map((field, index) => (
+                    <Button
+                      key={field.id}
+                      type="button"
+                      variant={
+                        activeCycleIndex === index ? "default" : "outline"
+                      }
+                      className="min-w-[120px] justify-start px-4"
+                      onClick={() => setSelectedCycleIndex(index)}
+                    >
+                      {formatBillingCycleLabel(
+                        undefined,
+                        watchedBillingCycles[index]?.month,
+                        watchedBillingCycles[index]?.year,
+                      )}
+                    </Button>
+                  ))}
+                </div>
+
+                <Card className="shadow-md rounded-xl border">
+                  <CardContent>
+                    <PLBillingCycle
+                      field={fields[activeCycleIndex]}
+                      index={activeCycleIndex}
+                      form={form}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+            ) : (
+              <Card className="border border-dashed border-sky-200 bg-gradient-to-b from-white to-sky-50/70 shadow-[0_20px_52px_-34px_rgba(14,165,233,0.32)]">
+                <CardContent className="py-10 text-center text-slate-500">
+                  No billing cycles generated yet.
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
         </Tabs>
 
