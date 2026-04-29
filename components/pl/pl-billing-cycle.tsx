@@ -76,7 +76,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
   const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
 
-  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);
+  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);  
 
   const otherBills: OtherCost[] = useMemo(() => {
     if (Array.isArray(watchedOtherCost)) {
@@ -114,8 +114,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
     replace(initialData);
   }, [field.otherCost, replace]);
+  
 
-  useEffect(() => {
+  useEffect(() => {    
     const miscTotal = Array.isArray(otherBills)
       ? otherBills.reduce((sum, item) => sum + Number(item?.value || 0), 0)
       : 0;
@@ -127,7 +128,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
       billedAmount > 0 ? ((billedAmount - total) / billedAmount) * 100 : 0;
 
     setGmPercentage(Number(gm.toFixed(2)));
-  }, [otherBills, billedAmount, fmsAmount, spareAmount]);
+  }, [JSON.stringify(otherBills), billedAmount, fmsAmount, spareAmount]);
 
   const addMiscellaneousAmount = () => {
     append({
@@ -151,6 +152,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
         <div className="flex flex-wrap gap-4 text-sm font-medium">
           <span>Total Cost: ₹{totalCost.toLocaleString()}</span>
+          <span>GM: {billedAmount - totalCost}</span>
           <span>GM%: {gmPercentage}%</span>
         </div>
       </div>
@@ -239,13 +241,13 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
           <h3 className="text-base font-semibold">Other Costs</h3>
 
           <Button type="button" onClick={addMiscellaneousAmount}>
-            Add Misc
+            Add Other Cost
           </Button>
         </div>
 
         {otherFields.length === 0 && (
           <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-            No miscellaneous costs added.
+            No other costs added.
           </div>
         )}
 
