@@ -1,18 +1,19 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ColumnDef,
   PaginationState,
   SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import { ChevronLeft, ChevronRight } from "lucide-react"
+} from "@tanstack/react-table";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
   Table,
@@ -21,44 +22,40 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { cn } from "@/lib/utils";
+
+/* ✅ NEW IMPORTS (shadcn dropdown) */
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../ui/card"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { cn } from "@/lib/utils"
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
-  title?: string
-  actions?: React.ReactNode
-  className?: string
-  rowClassName?: (row: TData, index: number) => string
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  title?: string;
+  actions?: React.ReactNode;
+  className?: string;
+  rowClassName?: (row: TData, index: number) => string;
 }
 
 function getRowEdgeClass(className: string) {
-  const tokens = className.split(/\s+/).filter(Boolean)
+  const tokens = className.split(/\s+/).filter(Boolean);
 
   return tokens
     .filter(
       (token) =>
         token.startsWith("border-l-") ||
         token.startsWith("border-emerald-") ||
-        token.startsWith("border-rose-")
+        token.startsWith("border-rose-"),
     )
-    .join(" ")
+    .join(" ");
 }
 
 function getDefaultAlternateRowClass(index: number) {
@@ -76,7 +73,7 @@ function getDefaultAlternateRowClass(index: number) {
       hover:bg-slate-50
       dark:hover:bg-slate-900/40
       transition-all duration-300
-    `
+    `;
 }
 
 export function DataTable<TData, TValue>({
@@ -87,31 +84,31 @@ export function DataTable<TData, TValue>({
   className,
   rowClassName,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [globalFilter, setGlobalFilter] = React.useState("")
-  const [currentData, setCurrentData] = React.useState<TData[]>(data)
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = React.useState("");
+  const [currentData, setCurrentData] = React.useState<TData[]>(data);
   const [pagination, setPagination] = React.useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
-  })
+  });
+
+  /* ✅ NEW STATE */
+  const [columnVisibility, setColumnVisibility] =
+    React.useState<VisibilityState>({});
 
   React.useEffect(() => {
-    setCurrentData(data)
-  }, [data])
+    setCurrentData(data);
+  }, [data]);
 
   React.useEffect(() => {
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [globalFilter, data])
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  }, [globalFilter, data]);
 
-  const globalFilterFn = (
-    row: any,
-    columnId: string,
-    filterValue: string
-  ) => {
+  const globalFilterFn = (row: any, columnId: string, filterValue: string) => {
     return String(row.getValue(columnId) ?? "")
       .toLowerCase()
-      .includes(filterValue.toLowerCase())
-  }
+      .includes(filterValue.toLowerCase());
+  };
 
   const table = useReactTable({
     data: currentData,
@@ -120,27 +117,55 @@ export function DataTable<TData, TValue>({
       sorting,
       globalFilter,
       pagination,
+      columnVisibility, 
     },
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    onColumnVisibilityChange: setColumnVisibility, 
     globalFilterFn,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-  })
+  });
 
   return (
     <Card className="rounded-2xl shadow-sm">
       <CardHeader>
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <CardTitle className="text-2xl font-bold">
-            {title}
-          </CardTitle>
+          <CardTitle className="text-2xl font-bold">{title}</CardTitle>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
             {actions}
+
+            {/* ✅ COLUMN TOGGLE BUTTON */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                {/* <Button variant="outline" size="sm">
+                  Columns
+                </Button> */}
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => {
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={column.id}
+                        checked={column.getIsVisible()}
+                        onCheckedChange={(value) =>
+                          column.toggleVisibility(!!value)
+                        }
+                      >
+                        {column.id}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
@@ -155,24 +180,31 @@ export function DataTable<TData, TValue>({
               className="max-w-sm"
             />
 
-            {/* <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span className="font-medium">Rows per page</span>
-              <Select
-                value={`${table.getState().pagination.pageSize}`}
-                onValueChange={(value) => table.setPageSize(Number(value))}
-              >
-                <SelectTrigger className="h-9 w-[88px]">
-                  <SelectValue placeholder="10" />
-                </SelectTrigger>
-                <SelectContent>
-                  {[8, 10].map((pageSize) => (
-                    <SelectItem key={pageSize} value={`${pageSize}`}>
-                      {pageSize}
-                    </SelectItem>
+            {/* ✅ Columns button moved here */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Columns
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                {table
+                  .getAllColumns()
+                  .filter((column) => column.getCanHide())
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
                   ))}
-                </SelectContent>
-              </Select>
-            </div> */}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           <div className={cn("rounded-xl border overflow-x-auto", className)}>
@@ -192,15 +224,13 @@ export function DataTable<TData, TValue>({
                         <div className="flex items-center gap-1">
                           {flexRender(
                             header.column.columnDef.header,
-                            header.getContext()
+                            header.getContext(),
                           )}
 
                           {{
                             asc: "🔼",
                             desc: "🔽",
-                          }[
-                            header.column.getIsSorted() as string
-                          ] ?? null}
+                          }[header.column.getIsSorted() as string] ?? null}
                         </div>
                       </TableHead>
                     ))}
@@ -213,31 +243,27 @@ export function DataTable<TData, TValue>({
                   table.getRowModel().rows.map((row, index) => {
                     const rowClasses = rowClassName
                       ? rowClassName(row.original, index)
-                      : getDefaultAlternateRowClass(index)
-                    const rowEdgeClasses =
-                      getRowEdgeClass(rowClasses)
+                      : getDefaultAlternateRowClass(index);
+                    const rowEdgeClasses = getRowEdgeClass(rowClasses);
 
                     return (
-                      <TableRow
-                        key={row.id}
-                        className={rowClasses}
-                      >
+                      <TableRow key={row.id} className={rowClasses}>
                         {row.getVisibleCells().map((cell, index) => (
                           <TableCell
                             key={cell.id}
                             className={cn(
                               "whitespace-nowrap",
-                              index === 0 && rowEdgeClasses
+                              index === 0 && rowEdgeClasses,
                             )}
                           >
                             {flexRender(
                               cell.column.columnDef.cell,
-                              cell.getContext()
+                              cell.getContext(),
                             )}
                           </TableCell>
                         ))}
                       </TableRow>
-                    )
+                    );
                   })
                 ) : (
                   <TableRow>
@@ -299,5 +325,5 @@ export function DataTable<TData, TValue>({
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }

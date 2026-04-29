@@ -1,59 +1,67 @@
 "use client";
 
+import { ChevronDown } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
+
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { RootState } from "@/store/store";
-import { signOut } from "@/auth";
 import { userLogoutRequest } from "@/store/actions/user-actions";
 import { logoutUser } from "@/lib/actions/users";
 
+type HeaderUser = {
+  name?: string;
+};
+
 export function SiteHeader() {
   const router = useRouter();
-  const user = useSelector((state: RootState) => state.user.user  as any)
+  const user = useSelector((state: RootState) => state.user.user as HeaderUser | undefined);
   const dispatch = useDispatch();
-  
 
   const handleLogout = async () => {
-    dispatch(userLogoutRequest())
-
+    dispatch(userLogoutRequest());
     await logoutUser();
-    
-    router.push("/login"); // redirect to login
+    router.push("/login");
   };
 
   return (
-    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-background">
+    <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 bg-transparent">
       <div className="flex w-full items-center gap-3 px-4 lg:px-6">
-
-        {/* Sidebar Toggle */}
-        <SidebarTrigger className="-ml-1" />
+        <SidebarTrigger className="-ml-1 rounded-xl border border-sky-100 bg-white/90 shadow-sm hover:bg-sky-50" />
 
         <Separator orientation="vertical" className="h-4" />
 
-        {/* Spacer pushes Logout button to the right */}
-        <div className="flex-1" />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold tracking-[0.18em] text-sky-700">
+            ADMIN PANEL
+          </p>
+          <p className="truncate text-sm text-slate-500">
+            Manage billing operations, master data, and revenue workflows.
+          </p>
+        </div>
 
-        {/* Logout Button */}
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-              <span>{user?.name}</span>
-              <ChevronDown className="w-4 h-4"/>
+            <Button variant="outline" className="h-10 rounded-xl border-sky-100 bg-white/90 shadow-sm hover:bg-sky-50">
+              <span>{user?.name || "User"}</span>
+              <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="rounded-xl border-sky-100">
             <DropdownMenuGroup>
               <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
-
       </div>
     </header>
   );

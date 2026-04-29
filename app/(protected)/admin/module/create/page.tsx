@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ModuleForm from "@/components/user/module-form";
 import { canAccess } from "@/lib/rbac";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CreatePageShell } from "@/components/ui/create-page-shell";
 
 const ModuleCreatePage = async () => {
 
@@ -14,21 +12,9 @@ const ModuleCreatePage = async () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <h1>Add Module</h1>
-
-          <Button asChild className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/module">Back</Link>
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <ModuleForm update={false} />
-      </CardContent>
-    </Card>
+    <CreatePageShell title="Add Module" backHref="/admin/module">
+      <ModuleForm update={false} />
+    </CreatePageShell>
   );
 };
 

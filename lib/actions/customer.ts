@@ -1,6 +1,6 @@
 "use server";
 
-import { Customer, Role } from "@/types";
+import { Customer } from "@/types";
 import { prisma } from "../prisma";
 import { customerSchema } from "../validators";
 import { formatError } from "../utils";
@@ -81,7 +81,7 @@ export async function getCustomerById(id: string) {
   }
 }
 
-export async function updateCustomer(data: Role, id: string) {
+export async function updateCustomer(data: Customer, id: string) {
   try {
 
     const customer = customerSchema.parse(data)

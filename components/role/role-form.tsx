@@ -6,22 +6,67 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Loader2, ArrowRight } from "lucide-react";
+import { Status } from "@prisma/client";
+import { z } from "zod";
 
 import { roleSchema } from "@/lib/validators";
 import { roleDefaultValues } from "@/lib/constants";
 import { createRole, updateRole } from "@/lib/actions/role";
-import { Status } from "@prisma/client";
-
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, } from "@/components/ui/form";
+import { Module } from "@/types";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ThemedFormSection,
+  themedCheckboxClassName,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTextareaClassName,
+} from "@/components/ui/form-theme";
 
-import { z } from "zod";
-import { Module } from "@/types";
+type RoleModulePermission = {
+  moduleId: string;
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
+};
 
-const RoleForm = ({ data, update = false, modules }: { data?: any; update: boolean; modules: Module[] }) => {
+type PermissionKey = "canView" | "canCreate" | "canEdit" | "canDelete";
 
+type RoleFormData = {
+  id?: string;
+  roleModules?: RoleModulePermission[];
+};
+
+const RoleForm = ({
+  data,
+  update = false,
+  modules,
+}: {
+  data?: RoleFormData;
+  update: boolean;
+  modules: Module[];
+}) => {
   const router = useRouter();
   const id = data?.id;
 
@@ -31,23 +76,20 @@ const RoleForm = ({ data, update = false, modules }: { data?: any; update: boole
   });
 
   const [isPending, startTransition] = React.useTransition();
+  const [selectedModules, setSelectedModules] = React.useState<RoleModulePermission[]>(
+    update ? (data?.roleModules ?? []) : [],
+  );
 
-  const [selectedModules, setSelectedModules] = React.useState<any[]>(update ? data.roleModules : []);
-
-  const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values: any) => {
+  const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values) => {
     startTransition(async () => {
-      let res;
-
       const payload = {
         ...values,
         modules: selectedModules,
       };
 
-      if (update && id) {
-        res = await updateRole(payload, id);
-      } else {
-        res = await createRole(payload);
-      }
+      const res = update && id
+        ? await updateRole(payload, id)
+        : await createRole(payload);
 
       if (!res?.success) {
         toast.error("Error", {
@@ -62,116 +104,133 @@ const RoleForm = ({ data, update = false, modules }: { data?: any; update: boole
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Role Name */}
+        <ThemedFormSection
+          title="Role Details"
+          
+        >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Role Name</FormLabel>
+                  <FormControl>
+                    <Input className={themedInputClassName} placeholder="Enter role name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Status</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={(value) => field.onChange(value as Status)}>
+                      <SelectTrigger className={themedSelectTriggerClassName}>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value={Status.ACTIVE}>Active</SelectItem>
+                          <SelectItem value={Status.INACTIVE}>Inactive</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </ThemedFormSection>
+
+        <ThemedFormSection title="Role Notes">
           <FormField
             control={form.control}
-            name="name"
+            name="remark"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Remark</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter role name" {...field} />
+                  <Textarea
+                    className={themedTextareaClassName}
+                    placeholder="Enter Notes"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <select {...field} className="border rounded px-3 py-2 w-full">
-                    <option value={Status.ACTIVE}>Active</option>
-                    <option value={Status.INACTIVE}>Inactive</option>
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        </ThemedFormSection>
 
-        {/* Remark */}
-        <FormField
-          control={form.control}
-          name="remark"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Remark</FormLabel>
-              <FormControl>
-                <Textarea
-                  className="h-40"
-                  placeholder="Enter Notes"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex flex-col gap-3">
-          <FormLabel>Assign Modules & Permissions</FormLabel>
-
-          {/* ✅ 3 MODULES PER ROW */}
-          <div className="grid grid-cols-3 gap-4">
-            {modules.map((m) => {
+        <ThemedFormSection
+          title="Permissions Matrix"
+          description="Choose which modules this role can view, create, edit, and delete."
+        >
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+            {modules.map((module) => {
+              const moduleId = module.id ?? "";
               const selected = selectedModules.find(
-                (sm) => sm.moduleId === m.id,
+                (selectedModule) => selectedModule.moduleId === moduleId,
               );
 
               return (
-                <div key={m.id} className="border rounded-md p-3">
-                  {/* MODULE NAME */}
-                  <div className="font-medium mb-3 text-left">{m.name}</div>
+                <div
+                  key={moduleId || module.name}
+                  className="rounded-2xl border border-sky-100 bg-white/85 p-4 shadow-[0_16px_36px_-28px_rgba(14,165,233,0.32)]"
+                >
+                  <div className="mb-3 text-left text-base font-semibold text-slate-900">
+                    {module.name}
+                  </div>
 
-                  {/* ✅ HORIZONTAL PERMISSIONS */}
-                  <div className="flex flex-wrap gap-3 justify-left text-spacebetween">
-                    {["view", "create", "edit", "delete"].map((perm) => {
-                      const key =
-                        "can" + perm.charAt(0).toUpperCase() + perm.slice(1);
+                  <div className="flex flex-wrap gap-3 text-sm text-slate-700">
+                    {["view", "create", "edit", "delete"].map((permission) => {
+                      const key = `can${permission.charAt(0).toUpperCase()}${permission.slice(1)}` as PermissionKey;
 
                       return (
-                        <label key={perm} className="flex items-center gap-1">
+                        <label
+                          key={permission}
+                          className="flex items-center gap-2 rounded-full border border-sky-100 bg-sky-50/60 px-3 py-1.5"
+                        >
                           <input
                             type="checkbox"
+                            className={themedCheckboxClassName}
                             checked={selected?.[key] || false}
                             onChange={() => {
                               setSelectedModules((prev) => {
                                 const exists = prev.find(
-                                  (p) => p.moduleId === m.id,
+                                  (item) => item.moduleId === moduleId,
                                 );
 
                                 if (!exists) {
                                   return [
                                     ...prev,
                                     {
-                                      moduleId: m.id,
-                                      canView: perm === "view",
-                                      canCreate: perm === "create",
-                                      canEdit: perm === "edit",
-                                      canDelete: perm === "delete",
+                                      moduleId,
+                                      canView: permission === "view",
+                                      canCreate: permission === "create",
+                                      canEdit: permission === "edit",
+                                      canDelete: permission === "delete",
                                     },
                                   ];
                                 }
 
-                                return prev.map((p) =>
-                                  p.moduleId === m.id
-                                    ? {
-                                      ...p,
-                                      [key]: !p[key],
-                                    }
-                                    : p,
+                                return prev.map((item) =>
+                                  item.moduleId === moduleId
+                                    ? { ...item, [key]: !item[key] }
+                                    : item,
                                 );
                               });
                             }}
                           />
-                          {perm}
+                          {permission}
                         </label>
                       );
                     })}
@@ -180,15 +239,14 @@ const RoleForm = ({ data, update = false, modules }: { data?: any; update: boole
               );
             })}
           </div>
-        </div>
+        </ThemedFormSection>
 
-        {/* Submit */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
             {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="h-4 w-4" />
             )}
             Save Role
           </Button>

@@ -32,6 +32,17 @@ import BillingCycleForm from "./billing-cycle-form";
 import { Calendar } from "../ui/calendar";
 import { Loader2, ArrowRight, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSectionClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTabTriggerClassName,
+  themedTabsListClassName,
+  themedTextareaClassName,
+} from "@/components/ui/form-theme";
 
 import { purchaseOrderSchema } from "@/lib/validators";
 import {
@@ -60,27 +71,15 @@ interface Billing {
   billingCycleType: "START" | "MID" | "END"; // default for this plan
 }
 
-const inputClassName =
-  "h-11 rounded-xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100";
-
-const selectTriggerClassName =
-  "h-11 w-full rounded-xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus:border-sky-400 focus:ring-4 focus:ring-sky-100";
-
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
-    "h-11 w-full justify-start rounded-xl border-sky-200/90 bg-white/95 text-left font-normal shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100",
+    themedSelectTriggerClassName,
+    "justify-start text-left font-normal",
     !hasValue && "text-muted-foreground",
   );
 
-const tabClassName =
-  "rounded-xl px-5 py-2.5 font-medium text-slate-600 transition-all duration-200 hover:text-sky-700 data-[state=active]:bg-white data-[state=active]:text-sky-700 data-[state=active]:shadow-[0_12px_28px_-18px_rgba(14,165,233,0.45)]";
-
 const formCardClassName =
   "overflow-hidden rounded-2xl border border-sky-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,252,255,0.95))] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_28px_74px_-36px_rgba(14,165,233,0.22)]";
-
-const fieldItemClassName = "space-y-2.5";
-const fieldLabelClassName =
-  "text-[0.95rem] font-medium text-slate-700 transition-colors duration-200";
 
 const POForm = ({
   billingPlan,
@@ -324,25 +323,29 @@ const POForm = ({
         className="space-y-6"
       >
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl md:w-fit">
-            <TabsTrigger value="general" >General</TabsTrigger>
-            <TabsTrigger value="billing-cycle">Billing Cycle</TabsTrigger>
+          <TabsList>
+            <TabsTrigger  value="general">
+              General
+            </TabsTrigger>
+            <TabsTrigger className={themedTabTriggerClassName} value="billing-cycle">
+              Billing Cycle
+            </TabsTrigger>
           </TabsList>
 
           {/* ================= GENERAL TAB ================= */}
           <TabsContent value="general" className="mt-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div className={cn(themedSectionClassName, "grid grid-cols-1 gap-6 md:grid-cols-2")}>
               {/* Customer PO Number */}
               <FormField
                 control={form.control}
                 name="customerPONumber"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Customer PO Number</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Customer PO Number</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Enter Customer PO Number"
-                        className={inputClassName}
+                        className={themedInputClassName}
                         {...field}
                       />
                     </FormControl>
@@ -356,14 +359,14 @@ const POForm = ({
                 control={form.control}
                 name="companyId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Company</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Company</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Select Company" />
                         </SelectTrigger>
                         <SelectContent>
@@ -390,14 +393,14 @@ const POForm = ({
                 control={form.control}
                 name="poAmount"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>PO Amount</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>PO Amount</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
                         step="0.01"
                         placeholder="Enter PO Amount"
-                        className={inputClassName}
+                        className={themedInputClassName}
                         {...field}
                       />
                     </FormControl>
@@ -411,14 +414,14 @@ const POForm = ({
                 control={form.control}
                 name="serviceTypeId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Service Type</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Service Type</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Select Service Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -445,14 +448,14 @@ const POForm = ({
                 control={form.control}
                 name="contractDurationId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Contract Duration</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Contract Duration</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Contract Duration" />
                         </SelectTrigger>
                         <SelectContent>
@@ -479,14 +482,14 @@ const POForm = ({
                 control={form.control}
                 name="contractId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Contract Type</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Contract Type</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Contract Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -513,8 +516,8 @@ const POForm = ({
                 control={form.control}
                 name="startFrom"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Start Date</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Start Date</FormLabel>
                     <FormControl>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -547,8 +550,8 @@ const POForm = ({
                 control={form.control}
                 name="endDate"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>End Date</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>End Date</FormLabel>
                     <FormControl>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -581,10 +584,10 @@ const POForm = ({
                 control={form.control}
                 name="scope"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Scope</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Scope</FormLabel>
                     <FormControl>
-                      <Input className={inputClassName} {...field} />
+                      <Input className={themedInputClassName} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -596,8 +599,8 @@ const POForm = ({
                 control={form.control}
                 name="ageingDays"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Contract Days</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Contract Days</FormLabel>
                     <FormControl>
                       <Input
                         type="number"
@@ -616,10 +619,10 @@ const POForm = ({
                 control={form.control}
                 name="paymentTerms"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Payment Terms</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Payment Terms</FormLabel>
                     <FormControl>
-                      <Input className={inputClassName} placeholder="Enter Payment Terms" {...field} />
+                      <Input className={themedInputClassName} placeholder="Enter Payment Terms" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -631,10 +634,10 @@ const POForm = ({
                 control={form.control}
                 name="poOwner"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>PO Owner</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>PO Owner</FormLabel>
                     <FormControl>
-                      <Input className={inputClassName} placeholder="Enter PO Owner" {...field} />
+                      <Input className={themedInputClassName} placeholder="Enter PO Owner" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -646,14 +649,14 @@ const POForm = ({
                 control={form.control}
                 name="billingPlanId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Billing Plan</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Billing Plan</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Select Billing Plan" />
                         </SelectTrigger>
                         <SelectContent>
@@ -677,14 +680,14 @@ const POForm = ({
                 control={form.control}
                 name="customerId"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Customer</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Customer</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value ?? ""}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Customer" />
                         </SelectTrigger>
                         <SelectContent>
@@ -711,14 +714,14 @@ const POForm = ({
                 control={form.control}
                 name="status"
                 render={({ field }) => (
-                  <FormItem className={fieldItemClassName}>
-                    <FormLabel className={fieldLabelClassName}>Status</FormLabel>
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Status</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
                       >
-                        <SelectTrigger className={selectTriggerClassName}>
+                        <SelectTrigger className={themedSelectTriggerClassName}>
                           <SelectValue placeholder="Status" />
                         </SelectTrigger>
                         <SelectContent>
@@ -743,11 +746,11 @@ const POForm = ({
                 name="remark"
                 render={({ field }) => (
                   <FormItem className="space-y-2.5 md:col-span-2">
-                    <FormLabel className={fieldLabelClassName}>Remark</FormLabel>
+                    <FormLabel className={themedLabelClassName}>Remark</FormLabel>
                     <FormControl>
                       <Textarea
                         placeholder="Additional notes"
-                        className="min-h-[120px] rounded-2xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100"
+                        className={themedTextareaClassName}
                         {...field}
                       />
                     </FormControl>
@@ -805,7 +808,7 @@ const POForm = ({
           <Button
             type="submit"
             disabled={isPending}
-            className="h-11 rounded-xl bg-gradient-to-r from-sky-500 via-sky-600 to-cyan-500 px-6 text-white shadow-[0_18px_42px_-18px_rgba(14,165,233,0.55)] transition-all duration-200 hover:-translate-y-0.5 hover:from-sky-600 hover:via-sky-700 hover:to-cyan-600 hover:shadow-[0_22px_48px_-16px_rgba(14,165,233,0.62)]"
+            className={themedSubmitButtonClassName}
           >
             {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />

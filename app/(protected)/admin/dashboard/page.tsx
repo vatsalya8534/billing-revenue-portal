@@ -2,7 +2,6 @@ import { getProjects } from "@/lib/actions/project";
 import { getCompanys } from "@/lib/actions/company";
 import { PLDashboardComponent } from "@/components/pl/pl-dashboard-component";
 import PurchaseOrderDashboard from "@/components/purchase-order/purchase-order-dashboard";
-import { getDashboardStats } from "@/lib/actions/dashboard";
 
 export default async function DashboardPage({
   searchParams,
@@ -12,7 +11,6 @@ export default async function DashboardPage({
   const resolvedSearchParams = searchParams ? await searchParams : {};
   const projects = await getProjects();
   const companies = await getCompanys();
-  const stats = await getDashboardStats();
 
   const currentTab =
     resolvedSearchParams?.tab === "revenue" ? "revenue" : "pl";
@@ -21,7 +19,6 @@ export default async function DashboardPage({
     return (
       <PurchaseOrderDashboard
         companies={JSON.parse(JSON.stringify(companies))}
-        stats={stats}
       />
     );
   }

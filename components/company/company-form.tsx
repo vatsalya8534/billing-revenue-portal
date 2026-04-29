@@ -23,6 +23,14 @@ import { Status } from "@prisma/client"
 import { ArrowRight, Loader2 } from "lucide-react"
 import z from "zod"
 import { createCompany, updateCompany } from "@/lib/actions/company"
+import {
+  ThemedFormSection,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+} from "../ui/form-theme"
 
 export default function CompanyForm({ data, update = false }: { data?: Company, update: boolean }) {
 
@@ -30,13 +38,13 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
   const id = data?.id;
 
   const form = useForm<z.infer<typeof companySchema>>({
-    resolver: zodResolver(companySchema) as any,
+    resolver: zodResolver(companySchema),
     defaultValues: data || companyDefaultValues,
   });
 
   const [isPending, startTransition] = React.useTransition();
 
-  const onSubmit: SubmitHandler<z.infer<typeof companySchema>> = (values: any) => {
+  const onSubmit: SubmitHandler<z.infer<typeof companySchema>> = (values) => {
     startTransition(async () => {
       let res;
 
@@ -63,16 +71,19 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, (error) => console.log(error))} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
+        <ThemedFormSection
+          title="Company Details"
+                 >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Company Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Company name" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter Company name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -83,10 +94,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="phone"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter phone number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -97,10 +108,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="alternatePhone"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Alternate Phone</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Alternate Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter alternate phone number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter alternate phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -111,10 +122,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter email" {...field} />
+                  <Input className={themedInputClassName} type="email" placeholder="Enter email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -125,10 +136,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="addressLine1"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Address Line 1</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter address line 1" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter address line 1" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -140,10 +151,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="addressLine2"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Address Line 2</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter address line 2" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter address line 2" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -155,10 +166,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="city"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>City</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter city" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter city" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -169,10 +180,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="state"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>State</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>State</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter state" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter state" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -184,10 +195,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="country"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Country</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter country" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter country" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -198,10 +209,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="pincode"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Pin Code</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Pin Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter pin code" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter pin code" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -213,10 +224,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="gstNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>GST Number</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>GST Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter GST number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter GST number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -227,10 +238,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="panNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>PAN Number</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>PAN Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter PAN number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter PAN number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -241,10 +252,10 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="cinNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Cin Number</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Cin Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Cin Number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter Cin Number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -255,14 +266,14 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             control={form.control}
             name="status"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Status</FormLabel>
                 <FormControl>
                   <Select
                     defaultValue={field.value}
                     onValueChange={(v) => field.onChange(v as Status)}
                   >
-                    <SelectTrigger className="w-full" {...field}>
+                    <SelectTrigger className={themedSelectTriggerClassName}>
                       <SelectValue placeholder="status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -279,10 +290,11 @@ export default function CompanyForm({ data, update = false }: { data?: Company, 
             )}
           />
         </div>
+        </ThemedFormSection>
 
         {/* Submit */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
             {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

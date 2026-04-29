@@ -1,12 +1,17 @@
 "use client";
 
-import { moduleSchema } from "@/lib/validators";
-import { Module, Role } from "@/types";
-import { zodResolver } from "@hookform/resolvers/zod";
 import React from "react";
-import { ControllerRenderProps, SubmitHandler, useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ArrowRight, Loader } from "lucide-react";
 import z from "zod";
+import { Status } from "@prisma/client";
+
+import { moduleSchema } from "@/lib/validators";
+import { Module } from "@/types";
+import { createModule, updateModule } from "@/lib/actions/module-action";
 import {
   Form,
   FormControl,
@@ -24,11 +29,16 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Button } from "../ui/button";
-import { ArrowRight, Loader } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { Textarea } from "../ui/textarea";
-import { createModule, updateModule } from "@/lib/actions/module-action";
-import { Status } from "@prisma/client";
+import {
+  ThemedFormSection,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTextareaClassName,
+} from "../ui/form-theme";
 
 type Props = {
   data?: Module;
@@ -58,17 +68,11 @@ const ModuleForm = ({ data, update = false }: Props) => {
 
   const [isPending, startTransition] = React.useTransition();
 
-  const onSubmit: SubmitHandler<z.infer<typeof moduleSchema>> = async (
-    values: any,
-  ) => {
+  const onSubmit: SubmitHandler<z.infer<typeof moduleSchema>> = async (values) => {
     startTransition(async () => {
-      let res;
-
-      if (update && id) {
-        res = await updateModule(values, id);
-      } else {
-        res = await createModule(values);
-      }
+      const res = update && id
+        ? await updateModule(values, id)
+        : await createModule(values);
 
       if (!res?.success) {
         toast.error("Error", {
@@ -83,61 +87,56 @@ const ModuleForm = ({ data, update = false }: Props) => {
   return (
     <Form {...form}>
       <form
-        className="space-y-4"
+        className="space-y-6"
         onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))}
       >
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-5">
+        <ThemedFormSection
+          title="Module Details"
+        
+        >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <FormField
               control={form.control}
               name="name"
-              render={({
-                field,
-              }: {
-                field: ControllerRenderProps<
-                  z.infer<typeof moduleSchema>,
-                  "name"
-                >;
-              }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Enter name" {...field} />
+                    <Input className={themedInputClassName} placeholder="Enter name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          </div>
 
-          {/*  Status   */}
-          <div className="flex flex-col gap-5">
+            <FormField
+              control={form.control}
+              name="route"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Route</FormLabel>
+                  <FormControl>
+                    <Input className={themedInputClassName} placeholder="Enter route" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="status"
-              render={({
-                field,
-              }: {
-                field: ControllerRenderProps<
-                  z.infer<typeof moduleSchema>,
-                  "status"
-                >;
-              }) => (
-                <FormItem>
-                  <FormLabel>Status</FormLabel>
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Status</FormLabel>
                   <FormControl>
-                    <Select
-                      value={field.value}
-                      onValueChange={(v) => field.onChange(v as Status)}
-                    >
-                      <SelectTrigger className="w-full">
+                    <Select value={field.value} onValueChange={(value) => field.onChange(value as Status)}>
+                      <SelectTrigger className={themedSelectTriggerClassName}>
                         <SelectValue placeholder="Status" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value={Status.ACTIVE}>Active</SelectItem>
-                        <SelectItem value={Status.INACTIVE}>
-                          Inactive
-                        </SelectItem>
+                        <SelectItem value={Status.INACTIVE}>Inactive</SelectItem>
                       </SelectContent>
                     </Select>
                   </FormControl>
@@ -146,26 +145,19 @@ const ModuleForm = ({ data, update = false }: Props) => {
               )}
             />
           </div>
-        </div>
-        {/*  Description   */}
-        <div className="flex flex-col gap-5">
+        </ThemedFormSection>
+
+        <ThemedFormSection title="Description">
           <FormField
             control={form.control}
             name="description"
-            render={({
-              field,
-            }: {
-              field: ControllerRenderProps<
-                z.infer<typeof moduleSchema>,
-                "description"
-              >;
-            }) => (
-              <FormItem>
-                <FormLabel>Description</FormLabel>
+            render={({ field }) => (
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Description</FormLabel>
                 <FormControl>
                   <Textarea
-                    rows={20}
-                    className="h-40"
+                    rows={8}
+                    className={themedTextareaClassName}
                     placeholder="Enter description"
                     {...field}
                   />
@@ -174,14 +166,15 @@ const ModuleForm = ({ data, update = false }: Props) => {
               </FormItem>
             )}
           />
-        </div>
+        </ThemedFormSection>
+
         <div className="flex gap-2">
-          <Button type="submit" className="cursor-pointer" disabled={isPending}>
+          <Button type="submit" className={themedSubmitButtonClassName} disabled={isPending}>
             {isPending ? (
-              <Loader className="w-4 h-4 animate-spin cursor-pointer" />
+              <Loader className="h-4 w-4 animate-spin" />
             ) : (
-              <ArrowRight className="w-4 h-4" />
-            )}{" "}
+              <ArrowRight className="h-4 w-4" />
+            )}
             Save
           </Button>
         </div>

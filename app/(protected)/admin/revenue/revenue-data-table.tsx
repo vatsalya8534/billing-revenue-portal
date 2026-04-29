@@ -273,34 +273,6 @@ export default function RevenueDataTable({
                     "
                 />
             </div>
-
-            <section className="grid gap-4 lg:grid-cols-3">
-                <div className="rounded-3xl border border-sky-100 bg-white p-5 shadow-sm">
-                    <div className="flex items-center gap-3">
-                        <div className="rounded-2xl bg-sky-100 p-3 text-sky-700">
-                            <BriefcaseBusiness className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <p className="text-sm font-semibold text-slate-900">Portfolio Coverage</p>
-                            <p className="text-sm text-slate-500">
-                                Revenue spread across {metrics.companyCount} companies.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                <div className="rounded-3xl border border-emerald-100 bg-white p-5 shadow-sm">
-                    <p className="text-sm font-semibold text-slate-900">Healthy Accounts</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Green rows indicate high realization and faster collections, making it easier to spot accounts performing well.
-                    </p>
-                </div>
-                <div className="rounded-3xl border border-amber-100 bg-white p-5 shadow-sm">
-                    <p className="text-sm font-semibold text-slate-900">Follow-up Queue</p>
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Amber rows highlight live orders with revenue still open so the team can prioritize collection follow-ups.
-                    </p>
-                </div>
-            </section>
         </div>
     );
 }

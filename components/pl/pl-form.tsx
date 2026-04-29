@@ -1,9 +1,15 @@
 "use client";
 
+import { useEffect, useTransition } from "react";
 import { useForm, SubmitHandler, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { format } from "date-fns";
+import moment from "moment";
+import { ArrowRight, CalendarIcon, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { OrderType, Status } from "@prisma/client";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -15,17 +21,8 @@ import {
   FormControl,
   FormMessage,
 } from "@/components/ui/form";
-import { Loader2, ArrowRight, CalendarIcon } from "lucide-react";
-
-import { z } from "zod";
-import { Status, OrderType } from "@prisma/client";
-import { projectSchema } from "@/lib/validators";
-import { plDefaultValues } from "@/lib/constants";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { Calendar } from "../ui/calendar";
-import { BillingPlan, Company } from "@/types";
 import {
   Select,
   SelectContent,
@@ -34,19 +31,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { createProject, updateProject } from "@/lib/actions/project";
-import { Project as ProjectType } from "@/types";
-import { useEffect, useTransition } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import moment from "moment";
+import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "../ui/accordion";
+  ThemedFormSection,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSectionClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTabTriggerClassName,
+  themedTabsListClassName,
+} from "../ui/form-theme";
+import { cn } from "@/lib/utils";
+import { projectSchema } from "@/lib/validators";
+import { plDefaultValues } from "@/lib/constants";
+import { BillingPlan, Company, Project as ProjectType } from "@/types";
+import { createProject, updateProject } from "@/lib/actions/project";
 import PLBillingCycle from "./pl-billing-cycle";
-import { Card, CardHeader, CardTitle, CardContent } from "../ui/card";
+
+const dateButtonClassName = (hasValue?: boolean) =>
+  cn(
+    themedSelectTriggerClassName,
+    "justify-start text-left font-normal",
+    !hasValue && "text-muted-foreground",
+  );
+
+const billingCardClassName =
+  "overflow-hidden rounded-2xl border border-sky-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,252,255,0.95))] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.24)]";
+
+type BillingCycleSeed = {
+  id?: string;
+  month?: number | string | null;
+  year?: number | string | null;
+  billedAmount?: number | string | null;
+  billableAmount?: number | string | null;
+  fms?: number | string | null;
+  spare?: number | string | null;
+  resourceUsed?: number | string | null;
+  otherCost?: unknown;
+};
 
 const PLForm = ({
   billingPlans,
@@ -59,7 +84,7 @@ const PLForm = ({
   companies: Company[];
   data?: ProjectType;
   update: boolean;
-  billingCycles: any;
+  billingCycles: BillingCycleSeed[];
 }) => {
   const router = useRouter();
   const id = data?.id;
@@ -68,29 +93,18 @@ const PLForm = ({
   delete data?.updatedAt;
 
   if (data) {
-    data.billingCycle = billingCycles.map((value: any) => ({
+    data.billingCycle = billingCycles.map((value) => ({
       id: value.id,
       month: Number(value.month ?? 0),
       year: Number(value.year ?? new Date().getFullYear()),
-
-      billedAmount:
-        value.billedAmount === null || value.billedAmount === undefined
-          ? 0
-          : Number(value.billedAmount),
-
-      billableAmount:
-        value.billableAmount === null || value.billableAmount === undefined
-          ? 0
-          : Number(value.billableAmount),
-
+      billedAmount: value.billedAmount == null ? 0 : Number(value.billedAmount),
+      billableAmount: value.billableAmount == null ? 0 : Number(value.billableAmount),
       fms: Number(value.fms ?? 0),
       spare: Number(value.spare ?? 0),
       resourceUsed: Number(value.resourceUsed ?? 0),
-
-      otherCost:
-        typeof value.otherCost === "string"
-          ? value.otherCost
-          : JSON.stringify(value.otherCost ?? []),
+      otherCost: typeof value.otherCost === "string"
+        ? value.otherCost
+        : JSON.stringify(value.otherCost ?? []),
     }));
   }
 
@@ -105,32 +119,16 @@ const PLForm = ({
   const billingPlanId = form.watch("billingPlanId");
   const poValue = form.watch("poValue");
 
-  const { fields, append, remove } = useFieldArray({
+  const { fields } = useFieldArray({
     control: form.control,
     name: "billingCycle",
   });
 
-  const addMonthCycle = (amount: number, month: number, year: number) => {
-    append({
-      month,
-      year,
-      billedAmount: 0,
-      fms: 0,
-      spare: 0,
-      billableAmount: Math.floor(amount) ?? 0,
-      resourceUsed: 0,
-      otherCost: [],
-    });
-  };
-
   const onSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (values) => {
     startTransition(async () => {
-      let res;
-      if (update && id) {
-        res = await updateProject(values, id);
-      } else {
-        res = await createProject(values);
-      }
+      const res = update && id
+        ? await updateProject(values, id)
+        : await createProject(values);
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -141,54 +139,43 @@ const PLForm = ({
   };
 
   useEffect(() => {
-  if (update) return;
-  if (!billingPlanId || !startDate || !endDate) return;
+    if (update) return;
+    if (!billingPlanId || !startDate || !endDate) return;
 
-  const start = moment(startDate);
-  const end = moment(endDate);
+    const start = moment(startDate);
+    const end = moment(endDate);
+    const selectedPlan = billingPlans.find((item) => item.id === billingPlanId);
+    if (!selectedPlan) return;
 
-  const selectedPlan = billingPlans.find(
-    (item) => item.id === billingPlanId
-  );
+    let stepMonths = 1;
+    const planName = selectedPlan.name.toLowerCase();
 
-  if (!selectedPlan) return;
+    if (planName.includes("quarter")) stepMonths = 3;
+    else if (planName.includes("half")) stepMonths = 6;
+    else if (planName.includes("year")) stepMonths = 12;
 
-  let stepMonths = 1;
+    const totalCycles = selectedPlan.totalBillingCycles || 1;
+    const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
+    const cycles = [];
 
-  const planName = selectedPlan.name.toLowerCase();
+    for (let i = 0; i < totalCycles; i += 1) {
+      const cycleDate = start.clone().add(i * stepMonths, "month");
+      if (cycleDate.isAfter(end, "month")) break;
 
-  if (planName.includes("quarter")) {
-    stepMonths = 3;
-  } else if (planName.includes("half")) {
-    stepMonths = 6;
-  } else if (planName.includes("year")) {
-    stepMonths = 12;
-  }
+      cycles.push({
+        month: cycleDate.month(),
+        year: cycleDate.year(),
+        billedAmount: 0,
+        fms: 0,
+        spare: 0,
+        billableAmount: amountPerCycle,
+        resourceUsed: 0,
+        otherCost: [],
+      });
+    }
 
-  const totalCycles = selectedPlan.totalBillingCycles || 1;
-  const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
-
-  const cycles = [];
-
-  for (let i = 0; i < totalCycles; i++) {
-    const cycleDate = start.clone().add(i * stepMonths, "month");
-
-    if (cycleDate.isAfter(end, "month")) break;
-
-    cycles.push({
-      month: cycleDate.month(),
-      year: cycleDate.year(),
-      billedAmount: 0,
-      fms: 0,
-      spare: 0,
-      billableAmount: amountPerCycle,
-      resourceUsed: 0,
-      otherCost: [],
-    });
-  }
-
-  form.setValue("billingCycle", cycles);
-}, [billingPlanId, startDate, endDate, poValue]);
+    form.setValue("billingCycle", cycles);
+  }, [billingPlanId, billingPlans, endDate, form, poValue, startDate, update]);
 
   return (
     <Form {...form}>
@@ -198,293 +185,272 @@ const PLForm = ({
       >
         <Tabs defaultValue="general" className="w-full">
           <TabsList>
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="billing-cycle">Billing Cycle</TabsTrigger>
+            <TabsTrigger value="general">
+              General
+            </TabsTrigger>
+            <TabsTrigger value="billing-cycle">
+              Billing Cycle
+            </TabsTrigger>
           </TabsList>
-          <TabsContent value="general">
-            <div className="grid grid-cols-2 gap-6 mt-5">
-              <FormField
-                control={form.control}
-                name="companyId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Company Name</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue={field.value}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger className="w-full" {...field}>
-                          <SelectValue placeholder="Company Name" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {companies?.length > 0 &&
-                              companies.map((company, index) => (
-                                <SelectItem
-                                  value={company.id ?? ""}
-                                  key={index}
-                                >
+
+          <TabsContent value="general" className="mt-6">
+            <ThemedFormSection
+              title="Project Details"
+            >
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="companyId"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Company Name</FormLabel>
+                      <FormControl>
+                        <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                          <SelectTrigger className={themedSelectTriggerClassName}>
+                            <SelectValue placeholder="Company Name" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {companies.map((company) => (
+                                <SelectItem value={company.id ?? ""} key={company.id}>
                                   {company.name}
                                 </SelectItem>
                               ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="projectName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>project name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter project name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="projectName"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Project Name</FormLabel>
+                      <FormControl>
+                        <Input className={themedInputClassName} placeholder="Enter project name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="startDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Start Date</FormLabel>
-                    <FormControl>
-                      <Popover>
-                        <PopoverTrigger disabled={update} asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground",
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value as Date}
-                            onSelect={(date) => field.onChange(date)}
-                            disabled={update}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Start Date</FormLabel>
+                      <FormControl>
+                        <Popover>
+                          <PopoverTrigger disabled={update} asChild>
+                            <Button variant="outline" className={dateButtonClassName(!!field.value)}>
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={field.value as Date}
+                              onSelect={(date) => field.onChange(date)}
+                              disabled={update}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="endDate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>End Date</FormLabel>
-                    <FormControl>
-                      <Popover>
-                        <PopoverTrigger disabled={update} asChild>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground",
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={field.value as Date}
-                            onSelect={field.onChange}
-                            disabled={update}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>End Date</FormLabel>
+                      <FormControl>
+                        <Popover>
+                          <PopoverTrigger disabled={update} asChild>
+                            <Button variant="outline" className={dateButtonClassName(!!field.value)}>
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={field.value as Date}
+                              onSelect={field.onChange}
+                              disabled={update}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="poValue"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>PO Value</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter PO Value"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="poValue"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>PO Value</FormLabel>
+                      <FormControl>
+                        <Input
+                          className={themedInputClassName}
+                          type="number"
+                          placeholder="Enter PO Value"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="billingPlanId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Billing Plan</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue={field.value}
-                        onValueChange={(v) => field.onChange(v)}
-                        disabled={update}
-                      >
-                        <SelectTrigger className="w-full" {...field}>
-                          <SelectValue placeholder="Billing plan" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {billingPlans?.length > 0 &&
-                              billingPlans.map((billing, index) => (
-                                <SelectItem
-                                  value={billing.id ?? ""}
-                                  key={index}
-                                >
+                <FormField
+                  control={form.control}
+                  name="billingPlanId"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Billing Plan</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value ?? ""}
+                          onValueChange={field.onChange}
+                          disabled={update}
+                        >
+                          <SelectTrigger className={themedSelectTriggerClassName}>
+                            <SelectValue placeholder="Billing plan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {billingPlans.map((billing) => (
+                                <SelectItem value={billing.id ?? ""} key={billing.id}>
                                   {billing.name}
                                 </SelectItem>
                               ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="resourceCount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Resource Count</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter Resource Count"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="resourceCount"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Resource Count</FormLabel>
+                      <FormControl>
+                        <Input
+                          className={themedInputClassName}
+                          type="number"
+                          placeholder="Enter Resource Count"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="projectedProfit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Projected Profit Percentage</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Enter Projected Profit"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="projectedProfit"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Projected Profit Percentage</FormLabel>
+                      <FormControl>
+                        <Input
+                          className={themedInputClassName}
+                          type="number"
+                          placeholder="Enter Projected Profit"
+                          {...field}
+                          onChange={(e) => field.onChange(Number(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="orderType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Order type</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue={field.value}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger className="w-full" {...field}>
-                          <SelectValue placeholder="Order type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {Object.values(OrderType).map((status, index) => (
-                              <SelectItem value={status} key={index}>
-                                {status}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <FormField
+                  control={form.control}
+                  name="orderType"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Order Type</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={themedSelectTriggerClassName}>
+                            <SelectValue placeholder="Order type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {Object.values(OrderType).map((status) => (
+                                <SelectItem value={status} key={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <Select
-                        defaultValue={field.value}
-                        onValueChange={(v) => field.onChange(v)}
-                      >
-                        <SelectTrigger className="w-full" {...field}>
-                          <SelectValue placeholder="Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {Object.values(Status).map((status, index) => (
-                              <SelectItem value={status} key={index}>
-                                {status}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem className={themedFieldClassName}>
+                      <FormLabel className={themedLabelClassName}>Status</FormLabel>
+                      <FormControl>
+                        <Select value={field.value} onValueChange={field.onChange}>
+                          <SelectTrigger className={themedSelectTriggerClassName}>
+                            <SelectValue placeholder="Status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {Object.values(Status).map((status) => (
+                                <SelectItem value={status} key={status}>
+                                  {status}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </ThemedFormSection>
           </TabsContent>
-          <TabsContent value="billing-cycle">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+
+          <TabsContent value="billing-cycle" className="mt-6">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               {fields.map((field, index) => (
-                <Card key={index} className="shadow-md rounded-xl border">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-semibold">
+                <Card key={index} className={billingCardClassName}>
+                  <CardHeader className="space-y-3 bg-[radial-gradient(circle_at_top_right,_rgba(125,211,252,0.16),_transparent_34%),linear-gradient(180deg,rgba(255,255,255,1),rgba(240,249,255,0.72))]">
+                    <CardTitle className="text-lg font-semibold text-slate-900">
                       Billing Cycle {index + 1}
                     </CardTitle>
                   </CardHeader>
@@ -495,17 +461,17 @@ const PLForm = ({
                 </Card>
               ))}
             </div>
+            {!fields.length ? (
+              <div className={cn(themedSectionClassName, "mt-4 text-center text-slate-500")}>
+                Billing cycles will appear here once the project dates and billing plan are selected.
+              </div>
+            ) : null}
           </TabsContent>
         </Tabs>
 
-        {/* Submit */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <ArrowRight className="w-4 h-4" />
-            )}
+          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
             Save Project
           </Button>
         </div>

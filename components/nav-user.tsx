@@ -1,18 +1,15 @@
 "use client"
 
+import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
-  IconCreditCard,
-  IconDotsVertical,
+  IconBell,
+  IconChevronUp,
   IconLogout,
-  IconNotification,
+  IconSettings,
   IconUserCircle,
 } from "@tabler/icons-react"
 
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,32 +25,23 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { getCurrentUser, logoutUser } from "@/lib/actions/users"
-import { useEffect, useState } from "react"
+import { logoutUser } from "@/lib/actions/users"
 
 export function NavUser({
   user,
 }: {
-  user: {
-    name: string
-    email: string
-    avatar: string
+  user?: {
+    name?: string
+    email?: string
   }
 }) {
+  const router = useRouter()
   const { isMobile } = useSidebar()
 
-  const [currentUser, setCurrentUser] = useState<any>({})
-
-  const getCurrentUserData = async () => {
-    const user = await getCurrentUser()
-    if (user?.data) {
-      setCurrentUser(user.data)
-    }
+  const handleLogout = async () => {
+    await logoutUser()
+    router.push("/login")
   }
-
-  useEffect(() => {
-    getCurrentUserData()
-  }, [])
 
   return (
     <SidebarMenu>
@@ -62,34 +50,57 @@ export function NavUser({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              className="h-auto rounded-2xl bg-white/6 px-3 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-white/10 hover:text-white data-[state=open]:bg-white/10 data-[state=open]:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-full"
             >
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{currentUser.firstName}</span>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/8 text-sky-200">
+                <IconUserCircle className="size-5" />
               </div>
-              <IconDotsVertical className="ml-auto size-4" />
+              <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-medium">{user?.name || "Admin User"}</span>
+                <span className="truncate text-xs text-slate-400">
+                  {user?.email || "No email available"}
+                </span>
+              </div>
+              <IconChevronUp className="ml-auto size-4 text-slate-400 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="min-w-60 rounded-xl border-sky-100 bg-white/95 shadow-[0_24px_60px_-24px_rgba(15,23,42,0.28)] backdrop-blur"
             side={isMobile ? "bottom" : "right"}
             align="end"
-            sideOffset={4}
+            sideOffset={10}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
-              <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-medium">{currentUser.firstName}</span>
-                  <span className="text-muted-foreground truncate text-xs">
-                    {currentUser.email}
-                  </span>
-                </div>
+            <DropdownMenuLabel className="px-3 py-3 font-normal">
+              <div className="space-y-1">
+                <p className="truncate text-sm font-semibold text-slate-900">
+                  {user?.name || "Admin User"}
+                </p>
+                <p className="truncate text-xs text-slate-500">
+                  {user?.email || "No email available"}
+                </p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => logoutUser()}>
-              <IconLogout />
-              Log out
+            <DropdownMenuGroup>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/configuration" className="cursor-pointer">
+                  <IconSettings className="size-4" />
+                  Configuration
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <IconBell className="size-4" />
+                Notifications
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <IconUserCircle className="size-4" />
+                Admin Profile
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-700">
+              <IconLogout className="size-4" />
+              Logout
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

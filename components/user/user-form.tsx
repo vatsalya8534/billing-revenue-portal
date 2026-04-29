@@ -1,58 +1,84 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { useForm, SubmitHandler, ControllerRenderProps } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { ArrowRight, Loader2 } from "lucide-react";
+import { z } from "zod";
+import { Status } from "@prisma/client";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
-import { Loader2, ArrowRight } from "lucide-react";
-
-import { z } from "zod";
-import { Status } from "@prisma/client";
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage,
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ThemedFormSection,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTextareaClassName,
+} from "@/components/ui/form-theme";
 import { createUserSchema, userSchema } from "@/lib/validators";
-
 import { createUser, updateUser } from "@/lib/actions/users";
 import { getRoles } from "@/lib/actions/role";
-import { Role, User } from "@/types";
+import { User } from "@/types";
 import { userDefaultValues } from "@/lib/constants";
 
-const UserForm = ({ data, update = false }: { data?: User, update: boolean }) => {
-  const router = useRouter();
+type RoleOption = {
+  id: string;
+  name: string;
+};
 
+const UserForm = ({ data, update = false }: { data?: User; update: boolean }) => {
+  const router = useRouter();
   const id = data?.id;
 
   const currentSchema = update ? userSchema : createUserSchema;
-
   const currentData = update
-    ? (({ password, ...rest }) => rest)(userDefaultValues)
-    : userDefaultValues
+    ? {
+        username: userDefaultValues.username,
+        email: userDefaultValues.email,
+        firstName: userDefaultValues.firstName,
+        lastName: userDefaultValues.lastName,
+        roleId: userDefaultValues.roleId,
+        status: userDefaultValues.status,
+        remark: userDefaultValues.remark,
+      }
+    : userDefaultValues;
 
   const form = useForm<z.infer<typeof currentSchema>>({
     resolver: zodResolver(currentSchema),
-    defaultValues: data || (currentData)
+    defaultValues: data || currentData,
   });
 
   const [isPending, startTransition] = React.useTransition();
-  const [allRole, setAllRole] = React.useState<any>([]);
+  const [allRole, setAllRole] = React.useState<RoleOption[]>([]);
 
   const onSubmit: SubmitHandler<z.infer<typeof currentSchema>> = async (values) => {
     startTransition(async () => {
-      let res;
-
-      const payload = {
-        ...values,
-      };
-
-      if (update && id) {
-        res = await updateUser(payload, id);
-      } else {
-        res = await createUser(payload);
-      }
+      const payload = { ...values };
+      const res = update && id
+        ? await updateUser(payload, id)
+        : await createUser(payload);
 
       if (!res?.success) {
         toast.error("Error", {
@@ -67,148 +93,167 @@ const UserForm = ({ data, update = false }: { data?: User, update: boolean }) =>
   useEffect(() => {
     getRoles().then((res) => {
       setAllRole(res);
-    })
-  }, [])
+    });
+  }, []);
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Username */}
-          <FormField
-            control={form.control}
-            name="username"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Username</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter username" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Password (only if not updating) */}
-          {!update && (
+      <form
+        onSubmit={form.handleSubmit(onSubmit, (errors) => console.log(errors))}
+        className="space-y-6"
+      >
+        <ThemedFormSection
+          title="User Profile"
+         
+        >
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <FormField
               control={form.control}
-              name="password"
+              name="username"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Username</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Enter password" {...field} />
+                    <Input className={themedInputClassName} placeholder="Enter username" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
-          {/* First Name */}
+            <FormField
+              control={form.control}
+              name="email"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Email</FormLabel>
+                  <FormControl>
+                    <Input className={themedInputClassName} placeholder="Enter email" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {!update && (
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem className={themedFieldClassName}>
+                    <FormLabel className={themedLabelClassName}>Password</FormLabel>
+                    <FormControl>
+                      <Input className={themedInputClassName} type="password" placeholder="Enter password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="firstName"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>First Name</FormLabel>
+                  <FormControl>
+                    <Input className={themedInputClassName} placeholder="Enter first name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="lastName"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Last Name</FormLabel>
+                  <FormControl>
+                    <Input className={themedInputClassName} placeholder="Enter last name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="roleId"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Role</FormLabel>
+                  <FormControl>
+                    <Select value={field.value ?? ""} onValueChange={field.onChange}>
+                      <SelectTrigger className={themedSelectTriggerClassName}>
+                        <SelectValue placeholder="Select Role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {allRole.map((role) => (
+                            <SelectItem value={role.id} key={role.id}>
+                              {role.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem className={themedFieldClassName}>
+                  <FormLabel className={themedLabelClassName}>Status</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={(value) => field.onChange(value as Status)}>
+                      <SelectTrigger className={themedSelectTriggerClassName}>
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value={Status.ACTIVE}>Active</SelectItem>
+                          <SelectItem value={Status.INACTIVE}>Inactive</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </ThemedFormSection>
+
+        <ThemedFormSection
+          title="Notes"
+          description="Add internal remarks or onboarding context for collaborators."
+        >
           <FormField
             control={form.control}
-            name="firstName"
+            name="remark"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>First Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Remark</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter first name" {...field} />
+                  <Textarea className={themedTextareaClassName} placeholder="Additional notes" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
+        </ThemedFormSection>
 
-          {/* Last Name */}
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last Name</FormLabel>
-                <FormControl>
-                  <Input placeholder="Enter last name" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="roleId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <FormControl>
-                  <select {...field} className="border rounded px-3 py-2 w-full">
-                    <option value="" hidden>Select Role</option>
-                    {
-                      allRole.length > 0 && allRole.map((role: any, index: number) => (
-                        <option value={role.id} key={index}>{role.name}</option>
-                      ))
-                    }
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Status */}
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
-                <FormControl>
-                  <select {...field} className="border rounded px-3 py-2 w-full">
-                    <option value={Status.ACTIVE}>Active</option>
-                    <option value={Status.INACTIVE}>Inactive</option>
-                  </select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Remark */}
-        <FormField
-          control={form.control}
-          name="remark"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Remark</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Additional notes" className="h-32" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Submit Button */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
+          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
+            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
             {update ? "Update User" : "Save User"}
           </Button>
         </div>
@@ -218,4 +263,3 @@ const UserForm = ({ data, update = false }: { data?: User, update: boolean }) =>
 };
 
 export default UserForm;
-

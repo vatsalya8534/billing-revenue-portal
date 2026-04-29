@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import ServiceTypeForm from "@/components/service-type/service-type-form";
 import { canAccess } from "@/lib/rbac";
 import { redirect } from "next/navigation";
+import { CreatePageShell } from "@/components/ui/create-page-shell";
 
 const ServiceTypeCreatePage = async () => {
   const route = "/admin/service-type";
@@ -13,20 +11,9 @@ const ServiceTypeCreatePage = async () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Add Service Type</CardTitle>
-          <Button className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/service-type">Back</Link>
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <ServiceTypeForm update={false} />
-      </CardContent>
-    </Card>
+    <CreatePageShell title="Add Service Type" backHref="/admin/service-type">
+      <ServiceTypeForm update={false} />
+    </CreatePageShell>
   );
 };
 

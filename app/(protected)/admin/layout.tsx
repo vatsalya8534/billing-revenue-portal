@@ -1,72 +1,75 @@
 import { auth } from "@/auth";
 import { AppSidebar } from "@/components/app-sidebar";
 import { SiteHeader } from "@/components/site-header";
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { getConfiguration } from "@/lib/actions/configuration";
 import { getAllowedRoute, getUserPermissions } from "@/lib/rbac";
 import { redirect } from "next/navigation";
-import { getConfiguration } from "@/lib/actions/configuration";
+
+type SessionUser = {
+  user?: {
+    email?: string | null;
+  } | null;
+} | null;
+
+type RoleModule = {
+  module: {
+    route: string;
+  };
+};
 
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  // ✅ AUTH CHECK
-  const session: any = await auth();
+  const session = await auth() as SessionUser;
 
-  if (!session || !session.user || !session.user.email) {
+  if (!session?.user?.email) {
     redirect("/login");
   }
 
-  // ✅ RBAC PERMISSIONS
   const userRoles = await getUserPermissions();
 
   const allowedRoutes = await Promise.all(
-    (userRoles?.role?.roleModules || []).map(async (rm: any) => {
-      return await getAllowedRoute(rm.module.route);
-    })
+    (userRoles?.role?.roleModules || []).map(async (roleModule: RoleModule) => {
+      return getAllowedRoute(roleModule.module.route);
+    }),
   );
 
   const user = userRoles
     ? {
-      name: userRoles.firstName || undefined,
-      email: userRoles.email || undefined,
-      allowedRoutes,
-    }
+        name: userRoles.firstName || undefined,
+        email: userRoles.email || undefined,
+        allowedRoutes,
+      }
     : undefined;
 
-  // ✅ FETCH CONFIGURATION (COMPANY NAME + LOGO)
   const configData = await getConfiguration();
-
   const configuration = configData
     ? {
-      name: configData.name,
-      logo: configData.logo,
-    }
+        name: configData.name,
+        logo: configData.logo,
+      }
     : undefined;
 
   return (
     <SidebarProvider
+      defaultOpen
       style={
         {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--sidebar-width": "calc(var(--spacing) * 76)",
           "--header-height": "calc(var(--spacing) * 12)",
         } as React.CSSProperties
       }
     >
-      {/* ✅ SIDEBAR WITH USER + CONFIG */}
       <AppSidebar user={user} configuration={configuration} />
 
-      <SidebarInset>
-        {/* ✅ TOP HEADER */}
-        <div className="sticky top-0 z-50 bg-white">
+      <SidebarInset className="bg-[radial-gradient(circle_at_top,_rgba(186,230,253,0.28),_transparent_22%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_50%,#f1f5f9_100%)]">
+        <div className="sticky top-0 z-50 border-b border-sky-100/80 bg-white/80 backdrop-blur-xl">
           <SiteHeader />
         </div>
 
-        {/* ✅ MAIN CONTENT */}
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="flex flex-col gap-4 p-4 py-4 md:gap-6 md:py-6">

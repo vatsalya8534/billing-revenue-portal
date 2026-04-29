@@ -1,17 +1,16 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { getServiceTypes } from "@/lib/actions/service-type"
-import { ServiceType } from "@/types"
-import { canAccess, getUserPermissions } from "@/lib/rbac"
+import { canAccess } from "@/lib/rbac"
 import { redirect } from "next/navigation"
 import ServiceTypeDataTable from "./service-type-datatable"
 
-const RolesPage = async () => {
-  const serviceTypes: ServiceType[] = await getServiceTypes()
+const ServiceTypePage = async () => {
+  const serviceTypes = await getServiceTypes()
 
   const route = "/admin/service-type";
 
-  let canView = await canAccess(route, "view");
+  const canView = await canAccess(route, "view");
 
   if (!canView) {
     redirect("/404");
@@ -28,7 +27,7 @@ const RolesPage = async () => {
       title="Service Type"
       actions={
         canCreate && (
-          <Button className="bg-blue-500 hover:bg-blue-600">
+          <Button className="rounded-xl bg-sky-600 text-white shadow-sm hover:bg-sky-700">
             <Link href="/admin/service-type/create">Add Service Type</Link>
           </Button>
         )
@@ -36,4 +35,4 @@ const RolesPage = async () => {
   )
 }
 
-export default RolesPage
+export default ServiceTypePage

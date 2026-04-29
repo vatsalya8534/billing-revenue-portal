@@ -661,6 +661,7 @@ export function PLDashboardComponent({
                   Refine by company, project, date, month, and year
                 </p>
               </div>
+               
               {activeFilterCount > 0 ? (
                 <span className="inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-slate-900 px-2 text-[11px] font-semibold text-white">
                   {activeFilterCount}
@@ -677,20 +678,20 @@ export function PLDashboardComponent({
           </button>
 
           {filtersOpen ? (
-            <div className="border-t border-slate-100 px-6 py-6 sm:px-7">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-7 xl:items-end">
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Company
-                  </Label>
-                  <Select
-                    value={filters.company}
-                    onValueChange={(value) => updateFilter("company", value)}
-                  >
-                    <SelectTrigger className="h-10 rounded-2xl border-slate-200 bg-slate-50 text-sm">
-                      <SelectValue placeholder="All Companies" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
+              <div className="border-t border-slate-100 px-6 py-6 sm:px-7">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7 2xl:items-end">
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Company
+                    </Label>
+                    <Select
+                      value={filters.company}
+                      onValueChange={(value) => updateFilter("company", value)}
+                    >
+                      <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                        <SelectValue placeholder="All Companies" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl">
                       <SelectItem value="all">All Companies</SelectItem>
                       {companies?.map((company) => (
                         <SelectItem key={company.id} value={company.id}>
@@ -701,18 +702,18 @@ export function PLDashboardComponent({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Project
-                  </Label>
-                  <Select
-                    value={filters.project}
-                    onValueChange={(value) => updateFilter("project", value)}
-                  >
-                    <SelectTrigger className="h-10 rounded-2xl border-slate-200 bg-slate-50 text-sm">
-                      <SelectValue placeholder="All Projects" />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-2xl">
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Project
+                    </Label>
+                    <Select
+                      value={filters.project}
+                      onValueChange={(value) => updateFilter("project", value)}
+                    >
+                      <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                        <SelectValue placeholder="All Projects" />
+                      </SelectTrigger>
+                      <SelectContent className="rounded-2xl">
                       <SelectItem value="all">All Projects</SelectItem>
                       {projects?.map((project) => (
                         <SelectItem key={project.id} value={project.id}>
@@ -723,20 +724,20 @@ export function PLDashboardComponent({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    From Date
-                  </Label>
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      From Date
+                    </Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-10 w-full justify-start rounded-2xl border-slate-200 bg-slate-50 text-left text-sm font-normal text-slate-700"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                        {filters.startDate
-                          ? format(filters.startDate, "PPP")
-                          : "Select date"}
+                        <Button
+                          variant="outline"
+                          className="h-10 w-full min-w-0 justify-start overflow-hidden rounded-2xl border-slate-200 bg-slate-50 text-left text-sm font-normal text-slate-700"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+                          {filters.startDate
+                            ? format(filters.startDate, "PPP")
+                            : "Select date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto rounded-2xl p-0">
@@ -749,20 +750,20 @@ export function PLDashboardComponent({
                   </Popover>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    To Date
-                  </Label>
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      To Date
+                    </Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className="h-10 w-full justify-start rounded-2xl border-slate-200 bg-slate-50 text-left text-sm font-normal text-slate-700"
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4 text-slate-400" />
-                        {filters.endDate
-                          ? format(filters.endDate, "PPP")
-                          : "Select date"}
+                        <Button
+                          variant="outline"
+                          className="h-10 w-full min-w-0 justify-start overflow-hidden rounded-2xl border-slate-200 bg-slate-50 text-left text-sm font-normal text-slate-700"
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+                          {filters.endDate
+                            ? format(filters.endDate, "PPP")
+                            : "Select date"}
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto rounded-2xl p-0">
@@ -775,17 +776,17 @@ export function PLDashboardComponent({
                   </Popover>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Month
-                  </Label>
-                  <Select
-                    value={filters.month}
-                    onValueChange={(value) => updateFilter("month", value)}
-                  >
-                    <SelectTrigger className="h-10 rounded-2xl border-slate-200 bg-slate-50 text-sm">
-                      <SelectValue placeholder="Select Month" />
-                    </SelectTrigger>
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Month
+                    </Label>
+                    <Select
+                      value={filters.month}
+                      onValueChange={(value) => updateFilter("month", value)}
+                    >
+                      <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                        <SelectValue placeholder="Select Month" />
+                      </SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       <SelectItem value="all">All Months</SelectItem>
                       <SelectGroup>
@@ -799,17 +800,17 @@ export function PLDashboardComponent({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
-                    Year
-                  </Label>
-                  <Select
-                    value={filters.year}
-                    onValueChange={(value) => updateFilter("year", value)}
-                  >
-                    <SelectTrigger className="h-10 rounded-2xl border-slate-200 bg-slate-50 text-sm">
-                      <SelectValue placeholder="Select Year" />
-                    </SelectTrigger>
+                  <div className="min-w-0 space-y-2">
+                    <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                      Year
+                    </Label>
+                    <Select
+                      value={filters.year}
+                      onValueChange={(value) => updateFilter("year", value)}
+                    >
+                      <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                        <SelectValue placeholder="Select Year" />
+                      </SelectTrigger>
                     <SelectContent className="rounded-2xl">
                       <SelectItem value="all">All Years</SelectItem>
                       <SelectGroup>
@@ -823,15 +824,17 @@ export function PLDashboardComponent({
                   </Select>
                 </div>
 
-                <Button
-                  variant="outline"
-                  onClick={resetFilters}
-                  className="h-10 rounded-2xl border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 hover:bg-rose-100 hover:text-rose-800"
-                >
-                  <X className="mr-2 h-4 w-4" />
-                  Reset Filters
-                </Button>
-              </div>
+                  <div className="min-w-0 md:col-span-2 xl:col-span-3 2xl:col-span-1">
+                    <Button
+                      variant="outline"
+                      onClick={resetFilters}
+                      className="h-10 w-full rounded-2xl border-rose-200 bg-rose-50 text-sm font-semibold text-rose-700 hover:bg-rose-100 hover:text-rose-800"
+                    >
+                      <X className="mr-2 h-4 w-4 shrink-0" />
+                      Reset Filters
+                    </Button>
+                  </div>
+                </div>
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">

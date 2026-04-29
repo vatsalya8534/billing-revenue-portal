@@ -1,7 +1,6 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import {
@@ -12,12 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 import { Customer } from "@/types"
 import { useRouter } from "next/navigation"
 import { SubmitHandler, useForm } from "react-hook-form"
@@ -31,6 +24,15 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Status } from "@prisma/client"
 import { ArrowRight, Loader2 } from "lucide-react"
 import z from "zod"
+import {
+  ThemedFormSection,
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedSubmitButtonClassName,
+  themedTextareaClassName,
+} from "../ui/form-theme"
 
 export default function CustomerForm({ data, update = false }: { data?: Customer, update: boolean }) {
 
@@ -38,13 +40,13 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
   const id = data?.id;
 
   const form = useForm<z.infer<typeof customerSchema>>({
-    resolver: zodResolver(customerSchema) as any,
+    resolver: zodResolver(customerSchema),
     defaultValues: data || customerDefaultValues,
   });
 
   const [isPending, startTransition] = React.useTransition();
 
-  const onSubmit: SubmitHandler<z.infer<typeof customerSchema>> = (values: any) => {
+  const onSubmit: SubmitHandler<z.infer<typeof customerSchema>> = (values) => {
     startTransition(async () => {
       let res;
 
@@ -74,15 +76,18 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit, (error) => console.log(error))} className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
+        <ThemedFormSection
+          title="Customer Details"
+                 >
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           <FormField
             control={form.control}
             name="customerCode"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Customer Code</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Customer Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter Customer Code" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter Customer Code" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -93,10 +98,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="firstName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>First Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>First Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter first name" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter first name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -106,10 +111,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="lastName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Last Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Last Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter last name" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter last name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -120,10 +125,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="companyName"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Company Name</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Company Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter company name" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter company name" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -135,10 +140,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="phone"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter phone number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -150,10 +155,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="alternatePhone"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Alternate Phone</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Alternate Phone</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter alternate phone number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter alternate phone number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -164,10 +169,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Email</FormLabel>
                 <FormControl>
-                  <Input type="email" placeholder="Enter email" {...field} />
+                  <Input className={themedInputClassName} type="email" placeholder="Enter email" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -178,10 +183,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="website"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Website</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Website</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter website" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter website" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -193,10 +198,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="addressLine1"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 1</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Address Line 1</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter address line 1" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter address line 1" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -208,10 +213,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="addressLine2"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Address Line 2</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Address Line 2</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter address line 2" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter address line 2" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -223,10 +228,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="city"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>City</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>City</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter city" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter city" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -237,10 +242,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="state"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>State</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>State</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter state" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter state" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -252,10 +257,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="country"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Country</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Country</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter country" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter country" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -266,10 +271,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="postalCode"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Postal Code</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Postal Code</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter postal code" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter postal code" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -281,10 +286,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="gstNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>GST Number</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>GST Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter GST number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter GST number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -295,10 +300,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="panNumber"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>PAN Number</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>PAN Number</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter PAN number" {...field} />
+                  <Input className={themedInputClassName} placeholder="Enter PAN number" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -309,14 +314,14 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             control={form.control}
             name="status"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status</FormLabel>
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Status</FormLabel>
                 <FormControl>
                   <Select
                     defaultValue={field.value}
                     onValueChange={(v) => field.onChange(v as Status)}
                   >
-                    <SelectTrigger className="w-full" {...field}>
+                    <SelectTrigger className={themedSelectTriggerClassName}>
                       <SelectValue placeholder="status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -333,30 +338,32 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
             )}
           />
         </div>
+        </ThemedFormSection>
 
-        {/* Remark */}
-        <FormField
-          control={form.control}
-          name="remark"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Remark</FormLabel>
-              <FormControl>
-                <Textarea
-                  className="h-40"
-                  placeholder="Enter Remarks"
-                  {...field}
-                  value={field.value ?? ""}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <ThemedFormSection title="Notes" description="Keep internal remarks and onboarding context in one place.">
+          <FormField
+            control={form.control}
+            name="remark"
+            render={({ field }) => (
+              <FormItem className={themedFieldClassName}>
+                <FormLabel className={themedLabelClassName}>Remark</FormLabel>
+                <FormControl>
+                  <Textarea
+                    className={themedTextareaClassName}
+                    placeholder="Enter Remarks"
+                    {...field}
+                    value={field.value ?? ""}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </ThemedFormSection>
 
         {/* Submit */}
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending}>
+          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
             {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (

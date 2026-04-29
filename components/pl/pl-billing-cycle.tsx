@@ -183,7 +183,11 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
             <FormItem>
               <FormLabel>Resource Used</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input
+                  type="number"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -197,7 +201,11 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
             <FormItem>
               <FormLabel>Billed Amount</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input
+                  type="number"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -211,7 +219,11 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
             <FormItem>
               <FormLabel>FMS</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input
+                  type="number"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -225,7 +237,11 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
             <FormItem className="md:col-span-2">
               <FormLabel>Spare</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input
+                  type="number"
+                  {...field}
+                  onChange={(e) => field.onChange(Number(e.target.value))}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -274,7 +290,12 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                       <FormItem>
                         <FormLabel>Amount</FormLabel>
                         <FormControl>
-                          <Input type="number" placeholder="0" {...field} />
+                          <Input
+                            type="number"
+                            placeholder="0"
+                            {...field}
+                            onChange={(e) => field.onChange(Number(e.target.value))}
+                          />
                         </FormControl>
                       </FormItem>
                     )}

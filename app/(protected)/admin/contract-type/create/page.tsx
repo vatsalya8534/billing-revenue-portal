@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import Link from "next/link";
 import ContractTypeForm from "@/components/contract-type/contract-type-form";
 import { canAccess } from "@/lib/rbac";
 import { redirect } from "next/navigation";
+import { CreatePageShell } from "@/components/ui/create-page-shell";
 
 const ContractTypeCreatePage = async () => {
   const route = "/admin/contract-type";
@@ -14,20 +12,9 @@ const ContractTypeCreatePage = async () => {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Add Contract Type</CardTitle>
-          <Button className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/contract-type">Back</Link>
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <ContractTypeForm update={false} />
-      </CardContent>
-    </Card>
+    <CreatePageShell title="Add Contract Type" backHref="/admin/contract-type">
+      <ContractTypeForm update={false} />
+    </CreatePageShell>
   );
 };
 
