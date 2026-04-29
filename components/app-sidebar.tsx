@@ -124,7 +124,7 @@ export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="sidebar-scrollbar overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(125,211,252,0.12),_transparent_20%),linear-gradient(180deg,#082f49_0%,#0f172a_48%,#020617_100%)] px-2 py-3">
+      <SidebarContent className="sidebar-scrollbar overflow-y-auto bg-[radial-gradient(circle_at_top,_rgba(125,211,252,0.12),_transparent_20%),linear-gradient(180deg,#082f49_0%,#0f172a_48%,#020617_100%)]">
         <NavMain items={filteredNav} />
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
