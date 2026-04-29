@@ -55,7 +55,6 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider
-      defaultOpen
       style={
         {
           "--sidebar-width": "calc(var(--spacing) * 76)",
