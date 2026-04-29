@@ -41,8 +41,6 @@ import {
   themedSectionClassName,
   themedSelectTriggerClassName,
   themedSubmitButtonClassName,
-  themedTabTriggerClassName,
-  themedTabsListClassName,
 } from "../ui/form-theme";
 import { cn } from "@/lib/utils";
 import { projectSchema } from "@/lib/validators";
@@ -144,22 +142,24 @@ const PLForm = ({
 
     const start = moment(startDate);
     const end = moment(endDate);
-    const selectedPlan = billingPlans.find((item) => item.id === billingPlanId);
+
+    const selectedPlan = billingPlans.find(
+      (item) => item.id === billingPlanId
+    );
+
     if (!selectedPlan) return;
 
-    let stepMonths = 1;
-    const planName = selectedPlan.name.toLowerCase();
+    const months = end.diff(start, "months", true);
+    console.log(months); // 14
 
-    if (planName.includes("quarter")) stepMonths = 3;
-    else if (planName.includes("half")) stepMonths = 6;
-    else if (planName.includes("year")) stepMonths = 12;
-
-    const totalCycles = selectedPlan.totalBillingCycles || 1;
+    const totalCycles = months / selectedPlan.totalBillingCycles ;
     const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
+
     const cycles = [];
 
-    for (let i = 0; i < totalCycles; i += 1) {
-      const cycleDate = start.clone().add(i * stepMonths, "month");
+    for (let i = 0; i < totalCycles; i++) {
+      const cycleDate = start.clone().add(i * selectedPlan.totalBillingCycles , "month");
+
       if (cycleDate.isAfter(end, "month")) break;
 
       cycles.push({
@@ -175,7 +175,7 @@ const PLForm = ({
     }
 
     form.setValue("billingCycle", cycles);
-  }, [billingPlanId, billingPlans, endDate, form, poValue, startDate, update]);
+  }, [billingPlanId, startDate, endDate, poValue]);
 
   return (
     <Form {...form}>
