@@ -27,8 +27,8 @@ async function SignInPage() {
           <div className="relative hidden overflow-hidden bg-[linear-gradient(155deg,#0f172a_0%,#1d4ed8_48%,#60a5fa_100%)] px-10 py-12 text-white lg:flex lg:flex-col lg:justify-between">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(255,255,255,0.18),_transparent_28%),radial-gradient(circle_at_bottom_left,_rgba(255,255,255,0.12),_transparent_25%)]" />
 
-            <div className="relative z-10 flex items-center gap-4">
-              <div className="rounded-2xl h-[100px] w-[100px] backdrop-blur">
+            <div className="relative  flex align-items gap-4">
+              <div className="rounded-2xl h-[100px] w-[100px] flex align-items justify-content backdrop-blur">
                 <Image
                   src={logo}
                   alt="Logo"
