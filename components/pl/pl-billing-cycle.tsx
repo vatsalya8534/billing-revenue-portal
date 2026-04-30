@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { z } from "zod";
-import moment from "moment";
 import { useFieldArray, UseFormReturn } from "react-hook-form";
 
 import {
@@ -30,6 +29,37 @@ interface PLBillingCycleProps {
   form: UseFormReturn<z.infer<typeof projectSchema>> | null;
 }
 
+const convertToArray = (data: any): any[] => {
+  // ✅ If already array → done
+  if (Array.isArray(data)) return data;
+
+  // ✅ If string → try parsing and recurse again
+  if (typeof data === "string") {
+    try {
+      const parsed = JSON.parse(data);
+      return convertToArray(parsed); // 🔁 recursion
+    } catch {
+      return [];
+    }
+  }
+
+  // ❌ Anything else → fallback
+  return [];
+};
+
+// ✅ Normalize once
+const normalizeOtherCost = (data: unknown): OtherCost[] => {
+  if (Array.isArray(data)) return data;
+
+  if (typeof data === "string") {
+    let parsed = convertToArray(data);
+
+    return Array.isArray(parsed) ? parsed : [];
+  }
+
+  return [];
+};
+
 const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   if (!form) {
     return (
@@ -39,9 +69,13 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
     );
   }
 
+  // ✅ Fix hydration issue (no moment, no timezone issue)
   const monthIndex = Number(field?.month ?? 0);
   const year = Number(field?.year ?? new Date().getFullYear());
-  const monthName = moment().month(monthIndex).format("MMMM");
+
+  const monthName = new Date(year, monthIndex).toLocaleString("en-IN", {
+    month: "long",
+  });
 
   const [totalCost, setTotalCost] = useState(0);
   const [gmPercentage, setGmPercentage] = useState(0);
@@ -56,55 +90,38 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
     name: `billingCycle.${index}.otherCost`,
   });
 
+  // ✅ Watch values safely
   const billedAmount = Number(
-    form.watch(`billingCycle.${index}.billedAmount`) || 0,
+    form.watch(`billingCycle.${index}.billedAmount`) || 0
+  );
+  const fmsAmount = Number(
+    form.watch(`billingCycle.${index}.fms`) || 0
+  );
+  const spareAmount = Number(
+    form.watch(`billingCycle.${index}.spare`) || 0
   );
 
-  const fmsAmount = Number(form.watch(`billingCycle.${index}.fms`) || 0);
+  const watchedOtherCost = form.watch(
+    `billingCycle.${index}.otherCost`
+  );
 
-  const spareAmount = Number(form.watch(`billingCycle.${index}.spare`) || 0);
+  // ✅ Ensure always array
+  const otherBills: OtherCost[] = Array.isArray(watchedOtherCost)
+    ? watchedOtherCost
+    : [];
 
-  const watchedOtherCost = form.watch(`billingCycle.${index}.otherCost`);
-
-  const otherBills: OtherCost[] = useMemo(() => {
-    if (Array.isArray(watchedOtherCost)) {
-      return watchedOtherCost;
-    }
-
-    if (typeof watchedOtherCost === "string") {
-      try {
-        const parsed = JSON.parse(watchedOtherCost);
-        return Array.isArray(parsed) ? parsed : [];
-      } catch {
-        return [];
-      }
-    }
-
-    return [];
-  }, [watchedOtherCost]);
-
+  // ✅ Initialize safely
   useEffect(() => {
-    let initialData: OtherCost[] = [];
+    const normalized = normalizeOtherCost(field?.otherCost);
+    replace(normalized);
+  }, [index, field?.otherCost]);
 
-    if (Array.isArray(field.otherCost)) {
-      initialData = field.otherCost;
-    } else if (typeof field.otherCost === "string") {
-      try {
-        const parsed = JSON.parse(field.otherCost);
-        initialData = Array.isArray(parsed) ? parsed : [];
-      } catch {
-        initialData = [];
-      }
-    }
-
-    replace(initialData);
-  }, [index, field.otherCost, replace]);
-
-
+  // ✅ Safe calculation
   useEffect(() => {
-    const miscTotal = Array.isArray(otherBills)
-      ? otherBills.reduce((sum, item) => sum + Number(item?.value || 0), 0)
-      : 0;
+    const miscTotal = otherBills.reduce(
+      (sum, item) => sum + Number(item?.value || 0),
+      0
+    );
 
     const total = miscTotal + fmsAmount + spareAmount;
     setTotalCost(total);
@@ -116,10 +133,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
   }, [JSON.stringify(otherBills), billedAmount, fmsAmount, spareAmount]);
 
   const addMiscellaneousAmount = () => {
-    append({
-      key: "",
-      value: 0,
-    });
+    append({ key: "", value: 0 });
   };
 
   return (
@@ -134,7 +148,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
         <div className="flex flex-wrap gap-4 text-sm font-medium">
           <span>Total Cost: ₹{totalCost.toLocaleString()}</span>
-          <span>GM: {billedAmount - totalCost}</span>
+          <span>
+            GM: ₹{(billedAmount - totalCost).toLocaleString()}
+          </span>
           <span>GM%: {gmPercentage}%</span>
         </div>
       </div>
@@ -148,12 +164,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
             <FormItem>
               <FormLabel>Billable Amount</FormLabel>
               <FormControl>
-                <Input
-                  type="number"
-                  {...field}
-                  value={field.value ?? ""}
-                  disabled
-                />
+                <Input type="number" {...field} disabled />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -170,7 +181,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                 <Input
                   type="number"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(Number(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -188,7 +201,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                 <Input
                   type="number"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(Number(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -206,7 +221,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                 <Input
                   type="number"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(Number(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -224,7 +241,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                 <Input
                   type="number"
                   {...field}
-                  onChange={(e) => field.onChange(Number(e.target.value))}
+                  onChange={(e) =>
+                    field.onChange(Number(e.target.value))
+                  }
                 />
               </FormControl>
               <FormMessage />
@@ -233,11 +252,10 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
         />
       </div>
 
-      {/* Other Cost Section */}
+      {/* Other Costs */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-base font-semibold">Other Costs</h3>
-
           <Button type="button" onClick={addMiscellaneousAmount}>
             Add Other Cost
           </Button>
@@ -251,9 +269,9 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
 
         <div className="space-y-3">
           {otherFields.map((item, ind) => (
-            <Card key={item.id} className="rounded-xl border shadow-sm">
+            <Card key={item.id}>
               <CardContent className="pt-5">
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:items-end">
+                <div className="grid md:grid-cols-3 gap-4 items-end">
                   <FormField
                     control={form.control}
                     name={`billingCycle.${index}.otherCost.${ind}.key`}
@@ -261,7 +279,7 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                       <FormItem>
                         <FormLabel>Cost Title</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter Cost title" {...field} />
+                          <Input {...field} />
                         </FormControl>
                       </FormItem>
                     )}
@@ -276,9 +294,10 @@ const PLBillingCycle = ({ field, index, form }: PLBillingCycleProps) => {
                         <FormControl>
                           <Input
                             type="number"
-                            placeholder="0"
                             {...field}
-                            onChange={(e) => field.onChange(Number(e.target.value))}
+                            onChange={(e) =>
+                              field.onChange(Number(e.target.value))
+                            }
                           />
                         </FormControl>
                       </FormItem>
