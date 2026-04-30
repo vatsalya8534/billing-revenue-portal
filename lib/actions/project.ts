@@ -113,7 +113,7 @@ export async function getprojectById(id: string) {
     });
 
     // console.log(project );
-    
+
 
     if (project) {
       return {
@@ -197,6 +197,10 @@ export async function getBillingCyclesByPOID(id: string) {
       where: {
         projectId: id,
       },
+      orderBy: [
+        { year: "asc" },
+        { month: "asc" },
+      ],
     });
 
     if (billingCycles) {
@@ -371,14 +375,14 @@ export async function getPLData(year: number, filters?: any): Promise<PLData> {
 
         ...(filters?.company && filters.company !== "all"
           ? [
-              {
-                project: {
-                  is: {
-                    companyId: filters.company,
-                  },
+            {
+              project: {
+                is: {
+                  companyId: filters.company,
                 },
               },
-            ]
+            },
+          ]
           : []),
       ],
     },
@@ -580,7 +584,7 @@ export async function fetchPLPageData(projectId: string) {
     return { success: false, message: "Project not found" };
   }
 
-  const project : any = projectRes.data;
+  const project: any = projectRes.data;
   const billingCycles =
     billingRes.success && billingRes.data ? billingRes.data : [];
 
@@ -690,7 +694,7 @@ export async function filterProjectData(filters: any) {
   let totalPOValue = 0;
   let totalBilledValue = 0;
   let totalCostValue = 0;
-  let totalBillableAmount = 0;  
+  let totalBillableAmount = 0;
   let totalFMSValue = 0;
   let totalSpareValue = 0;
   let totalOtherCostValue = 0;
@@ -698,7 +702,7 @@ export async function filterProjectData(filters: any) {
   let totalResourceCount = 0;
   let totalProfitPercentage = 0;
   let totalProjectedProfit = 0;
-  
+
 
   const projects = await prisma.project.findMany({
     where,
@@ -714,25 +718,25 @@ export async function filterProjectData(filters: any) {
   });
 
   if (projects.length > 0) {
-  for (const project of projects) {
-    const res = getDetailsByProject(project);
+    for (const project of projects) {
+      const res = getDetailsByProject(project);
 
-    totalPOValue += Number(project.poValue || 0);
-    totalBilledValue += res.totalBilledValue;
-    totalCostValue += res.totalCostValue;
-    totalFMSValue += res.totalFmsValue;
-    totalSpareValue += res.totalSpareValue;
-    totalOtherCostValue += res.totalOtherCost;
-    totalMiscCostValue += res.totalMiscellaneousCost;
-    totalResourceCount += Number(project.resourceCount || 0);
-    totalProfitPercentage += Number(res.profit || 0);
-    totalProjectedProfit += Number(project.projectedProfit || 0);
+      totalPOValue += Number(project.poValue || 0);
+      totalBilledValue += res.totalBilledValue;
+      totalCostValue += res.totalCostValue;
+      totalFMSValue += res.totalFmsValue;
+      totalSpareValue += res.totalSpareValue;
+      totalOtherCostValue += res.totalOtherCost;
+      totalMiscCostValue += res.totalMiscellaneousCost;
+      totalResourceCount += Number(project.resourceCount || 0);
+      totalProfitPercentage += Number(res.profit || 0);
+      totalProjectedProfit += Number(project.projectedProfit || 0);
 
-    for (const cycle of project.monthlyPLs || []) {
-      totalBillableAmount += Number(cycle.billableAmount || 0);
+      for (const cycle of project.monthlyPLs || []) {
+        totalBillableAmount += Number(cycle.billableAmount || 0);
+      }
     }
   }
-}
 
   return {
     totalPOValue,
@@ -746,7 +750,7 @@ export async function filterProjectData(filters: any) {
     totalResourceCount,
     totalProfit: (totalProfitPercentage / (projects.length || 1)).toFixed(2),
     totalProjectedProfit:
-    projects.length > 0 ? (totalProjectedProfit / projects.length).toFixed(2) : "0",
+      projects.length > 0 ? (totalProjectedProfit / projects.length).toFixed(2) : "0",
     data: JSON.parse(JSON.stringify(projects)),
   };
 }
@@ -783,41 +787,41 @@ export async function getBillingDetailsByMonth(
 
       ...(project &&
         project !== "all" && {
-          projectId: project,
-        }),
+        projectId: project,
+      }),
 
       ...(company &&
         company !== "all" && {
-          project: {
-            is: {
-              companyId: company,
-            },
+        project: {
+          is: {
+            companyId: company,
           },
-        }),
+        },
+      }),
 
       ...(filters?.startDate || filters?.endDate
         ? {
-            project: {
-              is: {
-                ...(filters.company &&
-                  filters.company !== "all" && {
-                    companyId: filters.company,
-                  }),
+          project: {
+            is: {
+              ...(filters.company &&
+                filters.company !== "all" && {
+                companyId: filters.company,
+              }),
 
-                ...(filters.startDate && {
-                  startDate: {
-                    gte: new Date(filters.startDate),
-                  },
-                }),
+              ...(filters.startDate && {
+                startDate: {
+                  gte: new Date(filters.startDate),
+                },
+              }),
 
-                ...(filters.endDate && {
-                  endDate: {
-                    lte: new Date(filters.endDate),
-                  },
-                }),
-              },
+              ...(filters.endDate && {
+                endDate: {
+                  lte: new Date(filters.endDate),
+                },
+              }),
             },
-          }
+          },
+        }
         : {}),
     },
     include: {
@@ -856,41 +860,41 @@ export async function getCostDetailsByMonth(
 
       ...(project &&
         project !== "all" && {
-          projectId: project,
-        }),
+        projectId: project,
+      }),
 
       ...(company &&
         company !== "all" && {
-          project: {
-            is: {
-              companyId: company,
-            },
+        project: {
+          is: {
+            companyId: company,
           },
-        }),
+        },
+      }),
 
       ...(filters?.startDate || filters?.endDate
         ? {
-            project: {
-              is: {
-                ...(filters.company &&
-                  filters.company !== "all" && {
-                    companyId: filters.company,
-                  }),
+          project: {
+            is: {
+              ...(filters.company &&
+                filters.company !== "all" && {
+                companyId: filters.company,
+              }),
 
-                ...(filters.startDate && {
-                  startDate: {
-                    gte: new Date(filters.startDate),
-                  },
-                }),
+              ...(filters.startDate && {
+                startDate: {
+                  gte: new Date(filters.startDate),
+                },
+              }),
 
-                ...(filters.endDate && {
-                  endDate: {
-                    lte: new Date(filters.endDate),
-                  },
-                }),
-              },
+              ...(filters.endDate && {
+                endDate: {
+                  lte: new Date(filters.endDate),
+                },
+              }),
             },
-          }
+          },
+        }
         : {}),
     },
     include: {
@@ -946,9 +950,9 @@ function getDetailsByProject(project: any) {
   let profit =
     totalBilledValue > 0
       ? (
-          ((totalBilledValue - totalCostValue) / totalBilledValue) *
-          100
-        ).toFixed(2)
+        ((totalBilledValue - totalCostValue) / totalBilledValue) *
+        100
+      ).toFixed(2)
       : "0";
 
   return {
