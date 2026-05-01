@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import ConfigurationForm from "./configuration-form";
 import { getConfiguration } from "@/lib/actions/configuration";
 

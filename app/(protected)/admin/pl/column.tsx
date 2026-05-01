@@ -26,6 +26,7 @@ type ProjectRow = {
 };
 
 type ProjectColumnsProps = {
+  canView?: boolean;
   canEdit?: boolean;
   canDelete?: boolean;
   onDelete: (id: string) => void;
