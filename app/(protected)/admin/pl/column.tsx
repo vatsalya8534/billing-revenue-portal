@@ -1,15 +1,42 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteDialog } from "@/components/ui/delete-dailog";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditIcon, Eye, Trash } from "lucide-react";
 import Link from "next/link";
+
+type ProjectRow = {
+  id: string;
+  company: {
+    name?: string | null;
+  };
+  billingPlan: {
+    name?: string | null;
+  };
+  projectName?: string | null;
+  startDate?: string | Date | null;
+  endDate?: string | Date | null;
+  poValue?: number | string | null;
+  orderType?: string | null;
+  resourceCount?: number | null;
+  totalRevenue?: number | string | null;
+  totalCost?: number | string | null;
+  projectedProfit?: number | string | null;
+  status?: string | null;
+};
+
+type ProjectColumnsProps = {
+  canEdit?: boolean;
+  canDelete?: boolean;
+  onDelete: (id: string) => void;
+};
 
 export const getUsersColumns = ({
   canEdit,
   canDelete,
   onDelete,
-}: any): ColumnDef<any>[] => {
-  const columns: ColumnDef<any>[] = [
+}: ProjectColumnsProps): ColumnDef<ProjectRow>[] => {
+  const columns: ColumnDef<ProjectRow>[] = [
     {
       accessorKey: "companyId",
       header: () => (
@@ -248,14 +275,20 @@ export const getUsersColumns = ({
 
           {/* 🗑 Delete */}
           {canDelete && (
-            <Button
-              size="icon"
-              variant="destructive"
-              className="cursor-pointer rounded-xl shadow-sm"
-              onClick={() => onDelete(id)}
+            <DeleteDialog
+              onConfirm={() => onDelete(id)}
+              title="Delete Project?"
+              description="Are you sure you want to delete this project? This action cannot be undone."
+              confirmText="OK"
             >
-              <Trash size={16} />
-            </Button>
+              <Button
+                size="icon"
+                variant="destructive"
+                className="cursor-pointer rounded-xl shadow-sm"
+              >
+                <Trash size={16} />
+              </Button>
+            </DeleteDialog>
           )}
         </div>
       );

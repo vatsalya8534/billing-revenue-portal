@@ -17,6 +17,8 @@ type DeleteDialogProps = {
   children?: React.ReactNode
   title?: string
   description?: string
+  confirmText?: string
+  cancelText?: string
 }
 
 export function DeleteDialog({
@@ -24,6 +26,8 @@ export function DeleteDialog({
   children,
   title = "Are you sure?",
   description = "Click confirm to delete",
+  confirmText = "Confirm",
+  cancelText = "Cancel",
 }: DeleteDialogProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -42,10 +46,10 @@ export function DeleteDialog({
         </DialogHeader>
         <DialogFooter>
           <Button variant="outline" onClick={() => setOpen(false)}>
-            Cancel
+            {cancelText}
           </Button>
           <Button variant="destructive" onClick={handleConfirm}>
-            Confirm
+            {confirmText}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -32,13 +32,12 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
 import {
   ThemedFormSection,
   themedFieldClassName,
   themedInputClassName,
   themedLabelClassName,
-  themedSectionClassName,
   themedSelectTriggerClassName,
   themedSubmitButtonClassName,
 } from "../ui/form-theme";
@@ -57,9 +56,6 @@ const dateButtonClassName = (hasValue?: boolean) =>
     !hasValue && "text-muted-foreground",
   );
 
-const billingCardClassName =
-  "overflow-hidden rounded-2xl border border-sky-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,252,255,0.95))] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.24)]";
-
 type BillingCycleSeed = {
   id?: string;
   month?: number | string | null;
@@ -70,6 +66,21 @@ type BillingCycleSeed = {
   spare?: number | string | null;
   resourceUsed?: number | string | null;
   otherCost?: unknown;
+};
+
+const normalizeOtherCost = (value: unknown) => {
+  if (Array.isArray(value)) return value;
+
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+
+  return [];
 };
 
 const PLForm = ({
@@ -101,9 +112,7 @@ const PLForm = ({
       fms: Number(value.fms ?? 0),
       spare: Number(value.spare ?? 0),
       resourceUsed: Number(value.resourceUsed ?? 0),
-      otherCost: typeof value.otherCost === "string"
-        ? value.otherCost
-        : JSON.stringify(value.otherCost ?? []),
+      otherCost: normalizeOtherCost(value.otherCost),
     }));
   }
 
@@ -162,11 +171,12 @@ const PLForm = ({
     if (!selectedPlan) return;
 
     const months = end.diff(start, "months", true);
-    console.log(months); // 14
+    console.log(months);
 
     const totalCycles = months / selectedPlan.totalBillingCycles;
     const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
 
+    const existingCycles = form.getValues("billingCycle") ?? [];
     const cycles = [];
 
     for (let i = 0; i < totalCycles; i++) {
@@ -174,20 +184,26 @@ const PLForm = ({
 
       if (cycleDate.isAfter(end, "month")) break;
 
+      const existingCycle = existingCycles.find((cycle) =>
+        Number(cycle?.month ?? -1) === cycleDate.month() &&
+        Number(cycle?.year ?? -1) === cycleDate.year()
+      );
+
       cycles.push({
+        id: existingCycle?.id,
         month: cycleDate.month(),
         year: cycleDate.year(),
-        billedAmount: 0,
-        fms: 0,
-        spare: 0,
-        billableAmount: amountPerCycle,
-        resourceUsed: 0,
-        otherCost: [],
+        billedAmount: Number(existingCycle?.billedAmount ?? 0),
+        fms: Number(existingCycle?.fms ?? 0),
+        spare: Number(existingCycle?.spare ?? 0),
+        billableAmount: Number(existingCycle?.billableAmount ?? amountPerCycle),
+        resourceUsed: Number(existingCycle?.resourceUsed ?? 0),
+        otherCost: normalizeOtherCost(existingCycle?.otherCost),
       });
     }
 
     form.setValue("billingCycle", cycles);
-  }, [billingPlanId, startDate, endDate, poValue]);
+  }, [billingPlanId, startDate, endDate, poValue, form, billingPlans, update]);
 
   useEffect(() => {
     if (selectedCycleIndex > fields.length - 1) {
@@ -504,6 +520,7 @@ const PLForm = ({
                 <Card className="shadow-md rounded-xl border">
                   <CardContent>
                     <PLBillingCycle
+                      key={fields[activeCycleIndex]?.id ?? `${activeCycleIndex}-${watchedBillingCycles[activeCycleIndex]?.month}-${watchedBillingCycles[activeCycleIndex]?.year}`}
                       field={fields[activeCycleIndex]}
                       index={activeCycleIndex}
                       form={form}
