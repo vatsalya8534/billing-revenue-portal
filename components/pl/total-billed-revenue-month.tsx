@@ -71,9 +71,10 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 function formatCompactCurrency(value: number) {
-  if (value >= 10_00_000) return `Rs ${Number(value / 10_00_000).toFixed(1)}L`;
-  if (value >= 1_000) return `Rs ${Number(value / 1_000).toFixed(1)}K`;
-  return `Rs ${value.toFixed(0)}`;
+  return new Intl.NumberFormat("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 function formatCurrency(value: number) {
