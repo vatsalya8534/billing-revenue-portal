@@ -47,7 +47,10 @@ import { plDefaultValues } from "@/lib/constants";
 import { BillingPlan, Company, Project as ProjectType } from "@/types";
 import { createProject, updateProject } from "@/lib/actions/project";
 import PLBillingCycle from "./pl-billing-cycle";
-import { formatBillingCycleLabel } from "@/lib/billing-cycle-utils";
+import {
+  formatBillingCycleLabel,
+  generateProjectBillingCycles,
+} from "@/lib/billing-cycle-utils";
 
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
@@ -164,43 +167,46 @@ const PLForm = ({
     const start = moment(startDate);
     const end = moment(endDate);
 
+    if (!start.isValid() || !end.isValid() || end.isBefore(start, "day")) {
+      return;
+    }
+
     const selectedPlan = billingPlans.find(
       (item) => item.id === billingPlanId
     );
 
     if (!selectedPlan) return;
 
-    const months = end.diff(start, "months", true);
-    console.log(months);
-
-    const totalCycles = months / selectedPlan.totalBillingCycles;
-    const amountPerCycle = Math.floor(Number(poValue || 0) / totalCycles);
-
+    const generatedCycles = generateProjectBillingCycles({
+      startDate: start.toDate(),
+      endDate: end.toDate(),
+      totalBillingCycles: Number(selectedPlan.totalBillingCycles || 0),
+      planName: selectedPlan.name,
+      type: selectedPlan.billingCycleType,
+    });
+    const amountPerCycle =
+      generatedCycles.length > 0
+        ? Math.floor(Number(poValue || 0) / generatedCycles.length)
+        : 0;
     const existingCycles = form.getValues("billingCycle") ?? [];
-    const cycles = [];
-
-    for (let i = 0; i < totalCycles; i++) {
-      const cycleDate = start.clone().add(i * selectedPlan.totalBillingCycles, "month");
-
-      if (cycleDate.isAfter(end, "month")) break;
-
+    const cycles = generatedCycles.map((generatedCycle) => {
       const existingCycle = existingCycles.find((cycle) =>
-        Number(cycle?.month ?? -1) === cycleDate.month() &&
-        Number(cycle?.year ?? -1) === cycleDate.year()
+        Number(cycle?.month ?? -1) === generatedCycle.month &&
+        Number(cycle?.year ?? -1) === generatedCycle.year
       );
 
-      cycles.push({
+      return {
         id: existingCycle?.id,
-        month: cycleDate.month(),
-        year: cycleDate.year(),
+        month: generatedCycle.month,
+        year: generatedCycle.year,
         billedAmount: Number(existingCycle?.billedAmount ?? 0),
         fms: Number(existingCycle?.fms ?? 0),
         spare: Number(existingCycle?.spare ?? 0),
         billableAmount: Number(existingCycle?.billableAmount ?? amountPerCycle),
         resourceUsed: Number(existingCycle?.resourceUsed ?? 0),
         otherCost: normalizeOtherCost(existingCycle?.otherCost),
-      });
-    }
+      };
+    });
 
     form.setValue("billingCycle", cycles);
   }, [billingPlanId, startDate, endDate, poValue, form, billingPlans, update]);

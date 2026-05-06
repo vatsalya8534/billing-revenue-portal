@@ -23,6 +23,14 @@ function addMonths(date: Date, months: number) {
   return new Date(date.getFullYear(), date.getMonth() + months, 1);
 }
 
+function getEndOfMonth(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth() + 1, 0);
+}
+
+function startOfDay(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
 function getMonthSpan(startDate: Date, endDate?: Date | null) {
   if (!endDate) return 1;
 
@@ -36,20 +44,223 @@ function getMonthSpan(startDate: Date, endDate?: Date | null) {
   return Math.max(1, diff);
 }
 
-export function getBillingCycleOffsets(
-  startDate: Date,
-  totalCycles: number,
-  endDate?: Date | null,
-) {
-  const totalMonths = getMonthSpan(startDate, endDate);
-  const safeTotalCycles = Math.min(Math.max(1, totalCycles), totalMonths);
+function normalizePlanName(planName?: string | null) {
+  return planName?.trim().toLowerCase() ?? "";
+}
 
-  return Array.from({ length: safeTotalCycles }, (_, index) =>
-    Math.min(
-      totalMonths - 1,
-      Math.floor((index * totalMonths) / safeTotalCycles),
-    ),
+function getMidpointDate(startDate: Date, endDate: Date) {
+  const start = startOfDay(startDate);
+  const end = startOfDay(endDate);
+  const midpoint = start.getTime() + Math.floor((end.getTime() - start.getTime()) / 2);
+
+  return startOfDay(new Date(midpoint));
+}
+
+export function resolveBillingPlanInterval(
+  totalBillingCycles?: number | null,
+  planName?: string | null,
+) {
+  const normalizedPlanName = normalizePlanName(planName);
+
+  if (
+    normalizedPlanName.includes("milestone") ||
+    normalizedPlanName.includes("custom")
+  ) {
+    return {
+      autoGenerate: false,
+      singleCycle: false,
+      intervalMonths: 0,
+    };
+  }
+
+  if (
+    normalizedPlanName.includes("one-time") ||
+    normalizedPlanName.includes("one time") ||
+    normalizedPlanName.includes("onetime")
+  ) {
+    return {
+      autoGenerate: true,
+      singleCycle: true,
+      intervalMonths: 0,
+    };
+  }
+
+  if (normalizedPlanName.includes("monthly")) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 1,
+    };
+  }
+
+  if (normalizedPlanName.includes("quarter")) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 3,
+    };
+  }
+
+  if (
+    (normalizedPlanName.includes("half") &&
+      normalizedPlanName.includes("year")) ||
+    normalizedPlanName.includes("semi-annual") ||
+    normalizedPlanName.includes("semi annual")
+  ) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 6,
+    };
+  }
+
+  if (
+    normalizedPlanName.includes("year") ||
+    normalizedPlanName.includes("annual")
+  ) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 12,
+    };
+  }
+
+  const safeTotalBillingCycles = Math.max(
+    0,
+    Math.floor(Number(totalBillingCycles || 0)),
   );
+
+  if (safeTotalBillingCycles <= 0) {
+    return {
+      autoGenerate: false,
+      singleCycle: false,
+      intervalMonths: 0,
+    };
+  }
+
+  if (safeTotalBillingCycles === 1) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 12,
+    };
+  }
+
+  if (12 % safeTotalBillingCycles === 0) {
+    return {
+      autoGenerate: true,
+      singleCycle: false,
+      intervalMonths: 12 / safeTotalBillingCycles,
+    };
+  }
+
+  return {
+    autoGenerate: true,
+    singleCycle: false,
+    intervalMonths: safeTotalBillingCycles,
+  };
+}
+
+function getBillingCycleOffsets(
+  startDate: Date,
+  endDate: Date | null | undefined,
+  intervalMonths: number,
+  singleCycle: boolean,
+) {
+  if (singleCycle) return [0];
+
+  const totalMonths = getMonthSpan(startDate, endDate);
+  const safeIntervalMonths = Math.max(1, Math.floor(intervalMonths || 1));
+  const offsets: number[] = [];
+
+  for (let offset = 0; offset < totalMonths; offset += safeIntervalMonths) {
+    offsets.push(offset);
+  }
+
+  return offsets;
+}
+
+function getBillingCycleWindow(
+  startDate: Date,
+  endDate: Date | null | undefined,
+  offset: number,
+  intervalMonths: number,
+  singleCycle: boolean,
+) {
+  const cycleStartMonth = addMonths(startDate, offset);
+  const actualCycleStart =
+    offset === 0 ? startOfDay(startDate) : cycleStartMonth;
+  const theoreticalCycleEnd = singleCycle
+    ? endDate
+      ? startOfDay(endDate)
+      : getEndOfMonth(cycleStartMonth)
+    : getEndOfMonth(
+        addMonths(cycleStartMonth, Math.max(1, intervalMonths) - 1),
+      );
+  const actualCycleEnd =
+    endDate && theoreticalCycleEnd > startOfDay(endDate)
+      ? startOfDay(endDate)
+      : theoreticalCycleEnd;
+
+  return {
+    cycleStart: actualCycleStart,
+    cycleEnd: actualCycleEnd,
+  };
+}
+
+function getCycleAnchorDate(
+  cycleStart: Date,
+  cycleEnd: Date,
+  type: BillingCycleType | "START" | "MID" | "END",
+) {
+  if (type === "END") {
+    return cycleEnd;
+  }
+
+  if (type === "MID") {
+    return getMidpointDate(cycleStart, cycleEnd);
+  }
+
+  return cycleStart;
+}
+
+export function generateBillingCycleSchedule({
+  startDate,
+  endDate,
+  totalBillingCycles,
+  planName,
+  type,
+}: {
+  startDate: Date;
+  endDate?: Date | null;
+  totalBillingCycles: number;
+  planName?: string | null;
+  type: BillingCycleType | "START" | "MID" | "END";
+}) {
+  const planInterval = resolveBillingPlanInterval(totalBillingCycles, planName);
+
+  if (!planInterval.autoGenerate) return [];
+
+  return getBillingCycleOffsets(
+    startDate,
+    endDate,
+    planInterval.intervalMonths,
+    planInterval.singleCycle,
+  ).map((offset) => {
+    const { cycleStart, cycleEnd } = getBillingCycleWindow(
+      startDate,
+      endDate,
+      offset,
+      planInterval.intervalMonths,
+      planInterval.singleCycle,
+    );
+
+    return {
+      cycleStart,
+      cycleEnd,
+      scheduledDate: getCycleAnchorDate(cycleStart, cycleEnd, type),
+    };
+  });
 }
 
 export function getBillingCycleDate(
@@ -114,53 +325,59 @@ export function getPurchaseOrderCycleDates(
 export function generatePurchaseOrderBillingCycles({
   startDate,
   endDate,
-  intervalMonths,
+  totalBillingCycles,
+  planName,
   type,
 }: {
   startDate: Date;
   endDate?: Date | null;
-  intervalMonths: number;
+  totalBillingCycles: number;
+  planName?: string | null;
   type: BillingCycleType | "START" | "MID" | "END";
 }) {
-  const totalMonths = getMonthSpan(startDate, endDate);
-  const safeIntervalMonths = Math.max(1, Math.floor(intervalMonths || 1));
-  const cycles = [];
-
-  for (let offset = 0; offset < totalMonths; offset += safeIntervalMonths) {
-    const baseDate = addMonths(startDate, offset);
-    cycles.push(getPurchaseOrderCycleDates(baseDate, type));
-  }
-
-  return cycles;
+  return generateBillingCycleSchedule({
+    startDate,
+    endDate,
+    totalBillingCycles,
+    planName,
+    type,
+  }).map((cycle) => ({
+    invoiceDate: cycle.scheduledDate,
+    billingSubmittedDate: undefined,
+  }));
 }
 
 export function generateProjectBillingCycles({
   startDate,
   endDate,
-  totalCycles,
-  amountPerCycle,
+  totalBillingCycles,
+  planName,
+  type,
+  amountPerCycle = 0,
 }: {
   startDate: Date;
   endDate?: Date | null;
-  totalCycles: number;
-  amountPerCycle: number;
+  totalBillingCycles: number;
+  planName?: string | null;
+  type: BillingCycleType | "START" | "MID" | "END";
+  amountPerCycle?: number;
 }) {
-  return getBillingCycleOffsets(startDate, totalCycles, endDate).map(
-    (offset) => {
-      const cycleDate = addMonths(startDate, offset);
-
-      return {
-        month: cycleDate.getMonth(),
-        year: cycleDate.getFullYear(),
-        billedAmount: 0,
-        fms: 0,
-        spare: 0,
-        billableAmount: amountPerCycle,
-        resourceUsed: 0,
-        otherCost: [],
-      };
-    },
-  );
+  return generateBillingCycleSchedule({
+    startDate,
+    endDate,
+    totalBillingCycles,
+    planName,
+    type,
+  }).map((cycle) => ({
+    month: cycle.scheduledDate.getMonth(),
+    year: cycle.scheduledDate.getFullYear(),
+    billedAmount: 0,
+    fms: 0,
+    spare: 0,
+    billableAmount: amountPerCycle,
+    resourceUsed: 0,
+    otherCost: [],
+  }));
 }
 
 export function formatBillingCycleLabel(

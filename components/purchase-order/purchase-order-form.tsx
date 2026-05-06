@@ -206,7 +206,9 @@ const POForm = ({
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
     if (update) return;
-    if (!watchBillingPlan || !watchPOAmount || !startFrom || !endDate) return;
+    if (!watchBillingPlan || watchPOAmount == null || !startFrom || !endDate) {
+      return;
+    }
 
     const start = moment(startFrom);
     const end = moment(endDate);
@@ -221,14 +223,11 @@ const POForm = ({
 
     if (!selectedPlan) return;
 
-    const intervalMonths = Math.max(
-      Number(selectedPlan.totalBillingCycles || 1),
-      1,
-    );
     const generatedCycles = generatePurchaseOrderBillingCycles({
       startDate: start.toDate(),
       endDate: end.toDate(),
-      intervalMonths,
+      totalBillingCycles: Number(selectedPlan.totalBillingCycles || 0),
+      planName: selectedPlan.name,
       type: selectedPlan.billingCycleType,
     });
     const perCycleAmount =

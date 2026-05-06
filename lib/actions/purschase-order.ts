@@ -51,7 +51,8 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
         ? generatePurchaseOrderBillingCycles({
           startDate: new Date(validated.startFrom),
           endDate: validated.endDate ? new Date(validated.endDate) : null,
-          intervalMonths: billingPlan.totalBillingCycles,
+          totalBillingCycles: billingPlan.totalBillingCycles,
+          planName: billingPlan.name,
           type: billingPlan.billingCycleType as "START" | "MID" | "END",
         })
         : [];
