@@ -1,287 +1,367 @@
-"use client"
-import { cn } from '@/lib/utils';
-import { Button } from '../ui/button';
-import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '../ui/form';
-import { Input } from '../ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { CalendarIcon } from 'lucide-react';
-import { format } from 'date-fns';
-import { Calendar } from '../ui/calendar';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { PaymentReceived } from '@prisma/client';
-import { Textarea } from '../ui/textarea';
-import { useEffect, useState } from 'react';
-import { Spinner } from '../ui/spinner';
+"use client";
 
-const inputClassName =
-    "h-11 rounded-xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100";
+import { format } from "date-fns";
+import { CalendarIcon } from "lucide-react";
+import { PaymentReceived } from "@prisma/client";
+import { UseFormReturn } from "react-hook-form";
+import { z } from "zod";
 
-const selectTriggerClassName =
-    "h-11 w-full rounded-xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus:border-sky-400 focus:ring-4 focus:ring-sky-100";
+import { cn } from "@/lib/utils";
+import { purchaseOrderSchema } from "@/lib/validators";
+import { formatBillingCycleLabel } from "@/lib/billing-cycle-utils";
+import { Button } from "../ui/button";
+import { Calendar } from "../ui/calendar";
+import {
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import { Input } from "../ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Textarea } from "../ui/textarea";
+import {
+  themedFieldClassName,
+  themedInputClassName,
+  themedLabelClassName,
+  themedSelectTriggerClassName,
+  themedTextareaClassName,
+} from "../ui/form-theme";
+
+type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
+type BillingCycleField = PurchaseOrderFormValues["billingCycles"][number];
 
 const dateButtonClassName = (hasValue?: boolean) =>
-    cn(
-        "h-11 justify-start rounded-xl border-sky-200/90 bg-white/95 text-left font-normal shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100",
-        !hasValue && "text-muted-foreground"
-    );
+  cn(
+    themedSelectTriggerClassName,
+    "justify-start text-left font-normal",
+    !hasValue && "text-muted-foreground",
+  );
 
-const fieldItemClassName = "space-y-2.5";
-const fieldLabelClassName = "text-[0.95rem] font-medium text-slate-700";
+interface BillingCycleFormProps {
+  field: BillingCycleField;
+  index: number;
+  form: UseFormReturn<PurchaseOrderFormValues>;
+}
 
-const BillingCycleForm = ({ index, control }: { index: number; control: any }) => {
+const BillingCycleForm = ({
+  field,
+  index,
+  form,
+}: BillingCycleFormProps) => {
+  const invoiceDate =
+    form.watch(`billingCycles.${index}.invoiceDate`) ?? field?.invoiceDate;
+  const billingSubmittedDate =
+    form.watch(`billingCycles.${index}.billingSubmittedDate`) ??
+    field?.billingSubmittedDate;
+  const invoiceAmount = Number(
+    form.watch(`billingCycles.${index}.invoiceAmount`) || 0,
+  );
+  const collectedAmount = Number(
+    form.watch(`billingCycles.${index}.collectedAmount`) || 0,
+  );
+  const tdsAmount = Number(form.watch(`billingCycles.${index}.tds`) || 0);
+  const pendingAmount = invoiceAmount - collectedAmount;
 
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setLoading(false);
-        }, 2000);
-
-        return () => clearTimeout(timer); // cleanup
-    }, []);
-
-    if(loading) return <div className='h-full w-full flex justify-center items-center'><Spinner className='h-10 w-10' /></div> 
-
-    return (
-        <div className='p-4'>
-            <div className="grid grid-cols-2 gap-4">
-                {/* Billing Number / Invoice Number */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.invoiceNumber`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Invoice Number</FormLabel>
-                                <FormControl>
-                                    <Input className={inputClassName} placeholder="Enter Invoice Number" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Invoice Amount */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.invoiceAmount`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Invoice Amount</FormLabel>
-                                <FormControl>
-                                    <Input className={inputClassName} type='number' placeholder="Enter Invoice Amount" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Collected Amount */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.collectedAmount`}
-                        render={({ field }) => {
-                            
-                            return <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Collected Amount</FormLabel>
-                                <FormControl>
-                                    <Input className={inputClassName} type='number' placeholder="Enter Collected Amount" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        }}
-                    />
-                </div>
-
-                {/* Invoice Date */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.invoiceDate`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Invoice Date</FormLabel>
-                                <FormControl>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className={dateButtonClassName(!!field.value)}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Billing Submitted Date */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.billingSubmittedDate`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Billing Submitted Date</FormLabel>
-                                <FormControl>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className={dateButtonClassName(!!field.value)}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Payment Received */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.paymentReceived`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Payment Received</FormLabel>
-                                <FormControl>
-                                    <Select defaultValue={field.value} onValueChange={(v) => field.onChange(v)}>
-                                        <SelectTrigger className={selectTriggerClassName} {...field}>
-                                            <SelectValue placeholder="Payment Received" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectGroup>
-                                                {Object.values(PaymentReceived).map((status, idx) => (
-                                                    <SelectItem value={status} key={idx}>{status}</SelectItem>
-                                                ))}
-                                            </SelectGroup>
-                                        </SelectContent>
-                                    </Select>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Payment Received Date */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.paymentReceivedDate`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Payment Received Date</FormLabel>
-                                <FormControl>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className={dateButtonClassName(!!field.value)}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Payment Due Date */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.paymentDueDate`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Payment Due Date</FormLabel>
-                                <FormControl>
-                                    <Popover>
-                                        <PopoverTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                className={dateButtonClassName(!!field.value)}
-                                            >
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP") : "Pick a date"}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0">
-                                            <Calendar mode="single" selected={field.value as Date} onSelect={field.onChange} />
-                                        </PopoverContent>
-                                    </Popover>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* TDS */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.tds`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>TDS</FormLabel>
-                                <FormControl>
-                                    <Input className={inputClassName} type='number' placeholder="Enter TDS" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-                {/* Billing Remark */}
-                <div className='space-y-2'>
-                    <FormField
-                        control={control}
-                        name={`billingCycles.${index}.billingRemark`}
-                        render={({ field }) => (
-                            <FormItem className={fieldItemClassName}>
-                                <FormLabel className={fieldLabelClassName}>Remark</FormLabel>
-                                <FormControl>
-                                    <Textarea placeholder="Additional notes" className="h-32 rounded-2xl border-sky-200/90 bg-white/95 shadow-[0_14px_34px_-24px_rgba(14,165,233,0.5)] transition-all duration-200 hover:border-sky-300 hover:bg-sky-50/40 hover:shadow-[0_18px_42px_-22px_rgba(14,165,233,0.42)] focus-visible:border-sky-400 focus-visible:ring-4 focus-visible:ring-sky-100" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-
-            </div>
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col gap-3 border-b pb-3 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-xl font-bold">
+            {formatBillingCycleLabel(invoiceDate ?? billingSubmittedDate)}
+          </h2>
         </div>
-    );
+
+        <div className="flex flex-wrap gap-4 text-sm font-medium">
+          <span>Invoice: Rs.{invoiceAmount.toLocaleString()}</span>
+          <span>Collected: Rs.{collectedAmount.toLocaleString()}</span>
+          <span>Pending: Rs.{pendingAmount.toLocaleString()}</span>
+          <span>TDS: Rs.{tdsAmount.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.invoiceNumber`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Invoice Number
+              </FormLabel>
+              <FormControl>
+                <Input
+                  className={themedInputClassName}
+                  placeholder="Enter Invoice Number"
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.invoiceAmount`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Invoice Amount
+              </FormLabel>
+              <FormControl>
+                <Input
+                  className={themedInputClassName}
+                  type="number"
+                  placeholder="Enter Invoice Amount"
+                  {...field}
+                  onChange={(event) =>
+                    field.onChange(Number(event.target.value))
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.collectedAmount`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Collected Amount
+              </FormLabel>
+              <FormControl>
+                <Input
+                  className={themedInputClassName}
+                  type="number"
+                  placeholder="Enter Collected Amount"
+                  {...field}
+                  onChange={(event) =>
+                    field.onChange(Number(event.target.value))
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.tds`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>TDS</FormLabel>
+              <FormControl>
+                <Input
+                  className={themedInputClassName}
+                  type="number"
+                  placeholder="Enter TDS"
+                  {...field}
+                  onChange={(event) =>
+                    field.onChange(Number(event.target.value))
+                  }
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.invoiceDate`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>Invoice Date</FormLabel>
+              <FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={dateButtonClassName(!!field.value)}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value as Date}
+                      onSelect={field.onChange}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.billingSubmittedDate`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Billing Submitted Date
+              </FormLabel>
+              <FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={dateButtonClassName(!!field.value)}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value as Date}
+                      onSelect={field.onChange}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.paymentReceived`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Payment Received
+              </FormLabel>
+              <FormControl>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                >
+                  <SelectTrigger className={themedSelectTriggerClassName}>
+                    <SelectValue placeholder="Payment Received" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {Object.values(PaymentReceived).map((status) => (
+                        <SelectItem value={status} key={status}>
+                          {status}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.paymentReceivedDate`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Payment Received Date
+              </FormLabel>
+              <FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={dateButtonClassName(!!field.value)}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value as Date}
+                      onSelect={field.onChange}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.paymentDueDate`}
+          render={({ field }) => (
+            <FormItem className={themedFieldClassName}>
+              <FormLabel className={themedLabelClassName}>
+                Payment Due Date
+              </FormLabel>
+              <FormControl>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={dateButtonClassName(!!field.value)}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? format(field.value, "PPP") : "Pick a date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value as Date}
+                      onSelect={field.onChange}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name={`billingCycles.${index}.billingRemark`}
+          render={({ field }) => (
+            <FormItem className="md:col-span-2">
+              <FormLabel className={themedLabelClassName}>Remark</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Additional notes"
+                  className={themedTextareaClassName}
+                  {...field}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+      </div>
+    </div>
+  );
 };
 
 export default BillingCycleForm;

@@ -74,28 +74,64 @@ export function getBillingCycleDate(
   return date;
 }
 
+export function getPurchaseOrderCycleDates(
+  baseDate: Date,
+  type: BillingCycleType | "START" | "MID" | "END",
+) {
+  const monthStart = new Date(
+    baseDate.getFullYear(),
+    baseDate.getMonth(),
+    1,
+  );
+
+  if (type === "MID") {
+    const midDate = new Date(monthStart);
+    midDate.setDate(15);
+
+    return {
+      invoiceDate: midDate,
+      billingSubmittedDate: undefined,
+    };
+  }
+
+  if (type === "END") {
+    return {
+      invoiceDate: new Date(
+        monthStart.getFullYear(),
+        monthStart.getMonth() + 1,
+        0,
+      ),
+      billingSubmittedDate: undefined,
+    };
+  }
+
+  return {
+    invoiceDate: monthStart,
+    billingSubmittedDate: undefined,
+  };
+}
+
 export function generatePurchaseOrderBillingCycles({
   startDate,
   endDate,
-  totalCycles,
+  intervalMonths,
   type,
 }: {
   startDate: Date;
   endDate?: Date | null;
-  totalCycles: number;
+  intervalMonths: number;
   type: BillingCycleType | "START" | "MID" | "END";
 }) {
-  return getBillingCycleOffsets(startDate, totalCycles, endDate).map(
-    (offset) => {
-      const baseDate = addMonths(startDate, offset);
-      const cycleDate = getBillingCycleDate(baseDate, type);
+  const totalMonths = getMonthSpan(startDate, endDate);
+  const safeIntervalMonths = Math.max(1, Math.floor(intervalMonths || 1));
+  const cycles = [];
 
-      return {
-        invoiceDate: cycleDate,
-        billingSubmittedDate: cycleDate,
-      };
-    },
-  );
+  for (let offset = 0; offset < totalMonths; offset += safeIntervalMonths) {
+    const baseDate = addMonths(startDate, offset);
+    cycles.push(getPurchaseOrderCycleDates(baseDate, type));
+  }
+
+  return cycles;
 }
 
 export function generateProjectBillingCycles({

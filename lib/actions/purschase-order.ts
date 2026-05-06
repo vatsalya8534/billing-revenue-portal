@@ -5,56 +5,13 @@ import { purchaseOrderSchema } from "../validators";
 import { formatError } from "../utils";
 import { PurchaseOrder } from "@/types";
 import { PaymentReceived, Prisma } from "@prisma/client";
+import { generatePurchaseOrderBillingCycles } from "../billing-cycle-utils";
 
 // ================= DATE HELPER =================
 const toLocalDate = (date?: string | Date | null): Date | undefined => {
   if (!date) return undefined;
   return new Date(typeof date === "string" ? `${date}T00:00:00` : date);
 };
-
-// ================= BILLING CYCLE GENERATOR =================
-function generateBillingCycles({
-  startDate,
-  totalCycles,
-  type,
-}: {
-  startDate: Date;
-  totalCycles: number;
-  type: "START" | "MID" | "END";
-}) {
-  return Array.from({ length: totalCycles }, (_, i) => {
-    const base = new Date(startDate);
-    base.setDate(1);
-
-    const date = new Date(base);
-    date.setMonth(base.getMonth() + i);
-
-    let finalDate = new Date(date);
-
-    if (type === "START") finalDate.setDate(1);
-    if (type === "MID") finalDate.setDate(15);
-
-    if (type === "END") {
-      const temp = new Date(date);
-      temp.setMonth(temp.getMonth() + 1);
-      temp.setDate(0);
-      finalDate = temp;
-    }
-
-    return {
-      invoiceNumber: "",
-      invoiceAmount: 0,
-      collectedAmount: 0,
-      invoiceDate: null,
-      billingSubmittedDate: finalDate,
-      paymentReceivedDate: null,
-      paymentDueDate: null,
-      paymentReceived: PaymentReceived.NO,
-      billingRemark: "",
-      tds: new Prisma.Decimal(0),
-    };
-  });
-}
 
 // ================= GET ALL =================
 export async function getPurchaseOrders() {
@@ -89,13 +46,33 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
 
     if (!billingPlan) throw new Error("Billing Plan not found");
 
-    const billingCycles =
-      !validated.billingCycles?.length
-        ? generateBillingCycles({
-          startDate: new Date(validated.startFrom!),
-          totalCycles: billingPlan.totalBillingCycles,
+    const generatedCycles =
+      !validated.billingCycles?.length && validated.startFrom
+        ? generatePurchaseOrderBillingCycles({
+          startDate: new Date(validated.startFrom),
+          endDate: validated.endDate ? new Date(validated.endDate) : null,
+          intervalMonths: billingPlan.totalBillingCycles,
           type: billingPlan.billingCycleType as "START" | "MID" | "END",
         })
+        : [];
+    const generatedInvoiceAmount =
+      generatedCycles.length > 0
+        ? Math.round((validated.poAmount / generatedCycles.length) * 100) / 100
+        : 0;
+    const billingCycles =
+      generatedCycles.length > 0
+        ? generatedCycles.map((cycle) => ({
+          invoiceNumber: "",
+          invoiceAmount: generatedInvoiceAmount,
+          collectedAmount: 0,
+          invoiceDate: cycle.invoiceDate,
+          billingSubmittedDate: cycle.billingSubmittedDate,
+          paymentReceivedDate: null,
+          paymentDueDate: null,
+          paymentReceived: PaymentReceived.NO,
+          billingRemark: "",
+          tds: new Prisma.Decimal(0),
+        }))
         : validated.billingCycles.map((bc) => ({
           invoiceNumber: bc.invoiceNumber ?? "",
           invoiceAmount: bc.invoiceAmount ?? 0,

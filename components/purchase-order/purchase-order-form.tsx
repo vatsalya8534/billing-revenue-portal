@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray, SubmitHandler } from "react-hook-form";
+import { useForm, useFieldArray, SubmitHandler, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -60,16 +60,13 @@ import {
 } from "@/types";
 import z from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { Card, CardContent } from "../ui/card";
+import {
+  formatBillingCycleLabel,
+  generatePurchaseOrderBillingCycles,
+} from "@/lib/billing-cycle-utils";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
-
-interface Billing {
-  name: string;
-  totalBillingCycles: number;
-  gapInMonths: number; // dynamically define gap per cycle
-  billingCycleType: "START" | "MID" | "END"; // default for this plan
-}
 
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
@@ -80,6 +77,24 @@ const dateButtonClassName = (hasValue?: boolean) =>
 
 const formCardClassName =
   "overflow-hidden rounded-2xl border border-sky-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,252,255,0.95))] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_28px_74px_-36px_rgba(14,165,233,0.22)]";
+
+type PurchaseOrderBillingCycle =
+  PurchaseOrderFormValues["billingCycles"][number];
+
+const getCycleMonthYear = (cycle?: PurchaseOrderBillingCycle) => {
+  const cycleDate = cycle?.invoiceDate ?? cycle?.billingSubmittedDate;
+
+  if (!cycleDate) return null;
+
+  const value = new Date(cycleDate);
+
+  if (Number.isNaN(value.getTime())) return null;
+
+  return {
+    month: value.getMonth(),
+    year: value.getFullYear(),
+  };
+};
 
 const POForm = ({
   billingPlan,
@@ -135,62 +150,24 @@ const POForm = ({
     name: "billingCycles",
   });
 
-  const [monthGap, setMonthGap] = useState(0);
+  const [selectedCycleIndex, setSelectedCycleIndex] = useState(0);
 
   // ---------------- WATCHERS ----------------
   const watchBillingPlan = form.watch("billingPlanId");
   const watchPOAmount = form.watch("poAmount");
   const startFrom = form.watch("startFrom");
   const endDate = form.watch("endDate");
+  const watchedBillingCycles =
+    useWatch({
+      control: form.control,
+      name: "billingCycles",
+    }) ?? [];
+  const activeCycleIndex =
+    fields.length === 0
+      ? 0
+      : Math.min(selectedCycleIndex, fields.length - 1);
 
   const [isPending, startTransition] = React.useTransition();
-
-  const addBillingCycle = (
-    amount: number,
-    index: number,
-    plan: Billing | undefined,
-    monthGap: number,
-    startFrom: Date | string,
-    paymentDueInput?: Date | string, // optional
-  ) => {
-    if (!startFrom || !plan) return;
-
-    const start = moment(startFrom);
-    let invoiceDate = start.clone().add(monthGap * index, "months");
-
-    let billingSubmittedDate: moment.Moment;
-    switch (plan.billingCycleType) {
-      case "START":
-        billingSubmittedDate = invoiceDate.clone().startOf("month");
-        invoiceDate = invoiceDate.clone().startOf("month");
-        break;
-      case "MID":
-        billingSubmittedDate = invoiceDate.clone().date(15);
-        invoiceDate = invoiceDate.clone().date(15);
-        break;
-      case "END":
-        billingSubmittedDate = invoiceDate.clone().startOf("month");
-        invoiceDate = invoiceDate.clone().endOf("month");
-        break;
-      default:
-        billingSubmittedDate = invoiceDate.clone();
-    }
-
-    return {
-      invoiceDate: invoiceDate.toDate(),
-      billingSubmittedDate: billingSubmittedDate.toDate(),
-      paymentDueDate: paymentDueInput
-        ? moment(paymentDueInput).toDate()
-        : undefined,
-      invoiceAmount: Math.round(amount),
-      paymentReceived: PaymentReceived.NO,
-      paymentReceivedDate: null,
-      collectedAmount: 0,
-      tds: 0,
-      billingRemark: "",
-      invoiceNumber: "",
-    };
-  };
 
   useEffect(() => {
     if (!update) {
@@ -204,6 +181,12 @@ const POForm = ({
     }
   }, [startFrom, endDate, form]);
 
+  useEffect(() => {
+    if (selectedCycleIndex > fields.length - 1) {
+      setSelectedCycleIndex(Math.max(fields.length - 1, 0));
+    }
+  }, [fields.length, selectedCycleIndex]);
+
   // ---------------- SUBMIT ----------------
   const onSubmit: SubmitHandler<PurchaseOrderFormValues> = (values) => {
     startTransition(async () => {
@@ -211,8 +194,6 @@ const POForm = ({
         update && id
           ? await updatePurchaseOrder(values, id)
           : await createPurchaseOrder(values);
-
-      console.log(res);
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -224,38 +205,78 @@ const POForm = ({
 
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
-    if (!update) {
-      if (!watchBillingPlan || !watchPOAmount || !startFrom) return;
+    if (update) return;
+    if (!watchBillingPlan || !watchPOAmount || !startFrom || !endDate) return;
 
-      const start = moment(startFrom);
-      const end = moment(endDate);
+    const start = moment(startFrom);
+    const end = moment(endDate);
 
-      const months = Math.ceil(end.diff(start, "months", true));
-
-      if (!watchBillingPlan) return;
-
-      const bp: any = billingPlan.find(
-        (value) => value.id === watchBillingPlan,
-      );
-
-      const monthGap = months / (bp?.totalBillingCycles ?? 1);
-
-      setMonthGap(monthGap);
-
-      if (!bp) return;
-
-      const totalCycles = bp.totalBillingCycles || 1;
-
-      const perCycleAmount =
-        Math.round((Number(watchPOAmount) / totalCycles) * 100) / 100;
-
-      const cycles = Array.from({ length: totalCycles }, (_, i) =>
-        addBillingCycle(perCycleAmount, i, bp, monthGap, startFrom),
-      ).filter(Boolean) as NonNullable<ReturnType<typeof addBillingCycle>>[];
-
-      replace(cycles);
+    if (!start.isValid() || !end.isValid() || end.isBefore(start, "day")) {
+      return;
     }
-  }, [watchBillingPlan, watchPOAmount, startFrom, replace]);
+
+    const selectedPlan = billingPlan.find(
+      (value) => value.id === watchBillingPlan,
+    );
+
+    if (!selectedPlan) return;
+
+    const intervalMonths = Math.max(
+      Number(selectedPlan.totalBillingCycles || 1),
+      1,
+    );
+    const generatedCycles = generatePurchaseOrderBillingCycles({
+      startDate: start.toDate(),
+      endDate: end.toDate(),
+      intervalMonths,
+      type: selectedPlan.billingCycleType,
+    });
+    const perCycleAmount =
+      generatedCycles.length > 0
+        ? Math.round((Number(watchPOAmount) / generatedCycles.length) * 100) / 100
+        : 0;
+    const existingCycles = form.getValues("billingCycles") ?? [];
+
+    const cycles = generatedCycles.map((cycleDates) => {
+      const targetDate = cycleDates.invoiceDate ?? cycleDates.billingSubmittedDate;
+      const targetMonth = targetDate.getMonth();
+      const targetYear = targetDate.getFullYear();
+      const existingCycle = existingCycles.find((cycle) => {
+        const monthYear = getCycleMonthYear(cycle);
+
+        return (
+          monthYear?.month === targetMonth &&
+          monthYear?.year === targetYear
+        );
+      });
+
+      return {
+        id: existingCycle?.id,
+        invoiceNumber: existingCycle?.invoiceNumber ?? "",
+        invoiceAmount: Number(existingCycle?.invoiceAmount ?? perCycleAmount),
+        collectedAmount: Number(existingCycle?.collectedAmount ?? 0),
+        invoiceDate: existingCycle?.invoiceDate ?? cycleDates.invoiceDate,
+        billingSubmittedDate:
+          existingCycle?.billingSubmittedDate ?? cycleDates.billingSubmittedDate,
+        paymentReceived: existingCycle?.paymentReceived ?? PaymentReceived.NO,
+        paymentReceivedDate: existingCycle?.paymentReceivedDate ?? null,
+        paymentDueDate: existingCycle?.paymentDueDate ?? null,
+        billingRemark: existingCycle?.billingRemark ?? "",
+        tds: Number(existingCycle?.tds ?? 0),
+      };
+    });
+
+    replace(cycles);
+  }, [
+    billingPlan,
+    endDate,
+    form,
+    replace,
+    startFrom,
+    update,
+    watchBillingPlan,
+    watchPOAmount,
+  ]);
 
   // ---------------- UPDATE MODE ----------------
   useEffect(() => {
@@ -263,6 +284,7 @@ const POForm = ({
 
     const formattedCycles = (data.billingCycles ?? []).map((bc: any) => {
       return {
+        id: bc.id,
         invoiceNumber: bc.invoiceNumber ?? "",
         invoiceAmount: Number(bc.invoiceAmount ?? 0),
         collectedAmount: Number(bc.collectedAmount ?? 0),
@@ -323,8 +345,8 @@ const POForm = ({
         className="space-y-6"
       >
         <Tabs defaultValue="general" className="w-full">
-          <TabsList>
-            <TabsTrigger  value="general">
+          <TabsList className={themedTabsListClassName}>
+            <TabsTrigger className={themedTabTriggerClassName} value="general">
               General
             </TabsTrigger>
             <TabsTrigger className={themedTabTriggerClassName} value="billing-cycle">
@@ -764,34 +786,37 @@ const POForm = ({
           {/* ================= BILLING TAB ================= */}
           <TabsContent value="billing-cycle" className="mt-6">
             {fields.length > 0 ? (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                {fields.map((field, index) => (
-                  <Card key={field.id} className={formCardClassName}>
-                    <CardHeader className="space-y-3 bg-[radial-gradient(circle_at_top_right,_rgba(125,211,252,0.16),_transparent_34%),linear-gradient(180deg,rgba(255,255,255,1),rgba(240,249,255,0.72))]">
-                      <CardTitle className="text-xl font-bold text-slate-900">
-                        Billing Cycle {index + 1}
-                      </CardTitle>
+              <div className="space-y-6">
+                <div className="flex flex-wrap gap-3">
+                  {fields.map((field, index) => (
+                    <Button
+                      key={field.id}
+                      type="button"
+                      variant={activeCycleIndex === index ? "default" : "outline"}
+                      className="min-w-[120px] justify-start px-4"
+                      onClick={() => setSelectedCycleIndex(index)}
+                    >
+                      {formatBillingCycleLabel(
+                        watchedBillingCycles[index]?.invoiceDate ??
+                          watchedBillingCycles[index]?.billingSubmittedDate,
+                      )}
+                    </Button>
+                  ))}
+                </div>
 
-                      <div className="flex items-center justify-between rounded-2xl border border-sky-100 bg-white/80 p-4 shadow-[0_16px_38px_-30px_rgba(14,165,233,0.35)]">
-                        <div>
-                          <h2 className="text-2xl font-bold text-slate-900">
-                            {moment(
-                              form.watch(`billingCycles.${index}.invoiceDate`),
-                            ).format("MMMM YYYY")}
-                          </h2>
-
-                          <p className="text-sm text-sky-700/80">
-                            Billing Cycle #{index + 1}
-                          </p>
-                        </div>
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      <BillingCycleForm index={index} control={form.control} />
-                    </CardContent>
-                  </Card>
-                ))}
+                <Card className={formCardClassName}>
+                  <CardContent className="pt-6">
+                    <BillingCycleForm
+                      key={
+                        fields[activeCycleIndex]?.id ??
+                        `${activeCycleIndex}-${watchedBillingCycles[activeCycleIndex]?.invoiceDate}-${watchedBillingCycles[activeCycleIndex]?.billingSubmittedDate}`
+                      }
+                      field={fields[activeCycleIndex]}
+                      index={activeCycleIndex}
+                      form={form}
+                    />
+                  </CardContent>
+                </Card>
               </div>
             ) : (
               <Card className="border border-dashed border-sky-200 bg-gradient-to-b from-white to-sky-50/70 shadow-[0_20px_52px_-34px_rgba(14,165,233,0.32)]">
