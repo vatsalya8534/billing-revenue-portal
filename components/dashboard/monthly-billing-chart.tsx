@@ -207,6 +207,15 @@ function formatFinancialYearLabel(year: number) {
   return `FY ${year}-${String(year + 1).slice(-2)}`;
 }
 
+function formatFinancialMonthLabel(
+  month: string,
+  financialYear: number,
+) {
+  return `${month} / ${formatFinancialYearLabel(
+    financialYear,
+  )}`;
+}
+
 function getCalendarYearFromMonthIndex(
   financialYear: number,
   monthIndex: number,
@@ -323,7 +332,10 @@ function CustomTooltip({
   return (
     <div className="min-w-[200px] rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-xl">
       <p className="text-sm font-semibold tracking-tight text-slate-950">
-        {datum.month} {datum.calendarYear}
+        {formatFinancialMonthLabel(
+          datum.month,
+          datum.financialYear,
+        )}
       </p>
       <div className="mt-2 flex items-center justify-between gap-6">
         <span className="text-xs font-medium uppercase tracking-[0.16em] text-slate-400">
@@ -520,7 +532,10 @@ function TrendCard({
                     onMonthClick({
                       calendarYear: payload.calendarYear,
                       financialYear: payload.financialYear,
-                      label: `${payload.month} ${payload.calendarYear}`,
+                      label: formatFinancialMonthLabel(
+                        payload.month,
+                        payload.financialYear,
+                      ),
                       month: payload.monthIndex,
                       series,
                     });
@@ -681,16 +696,19 @@ function TrendCard({
             />
             <span className="text-slate-700">
               Drill-down loaded for{" "}
-              <span
-                className={cn(
-                  "font-semibold",
-                  indicatorTextClassName,
-                )}
-              >
-                {activePoint.month} {activePoint.calendarYear}
+                <span
+                  className={cn(
+                    "font-semibold",
+                    indicatorTextClassName,
+                  )}
+                >
+                  {formatFinancialMonthLabel(
+                    activePoint.month,
+                    activePoint.financialYear,
+                  )}
+                </span>
               </span>
-            </span>
-            <button
+              <button
               onClick={onClearSelection}
               className="ml-auto text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
             >
@@ -761,7 +779,12 @@ export function MonthlyBillingChartCard({
           },
         );
 
-        setChartData(safeData);
+        setChartData(
+          safeData.sort(
+            (left, right) =>
+              left.monthIndex - right.monthIndex,
+          ),
+        );
       } catch (error) {
         if (active) {
           console.error("Chart load error:", error);
