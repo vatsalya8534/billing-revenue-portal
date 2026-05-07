@@ -7,6 +7,7 @@ import {
   BarChart3,
   DollarSign,
   FileText,
+  IndianRupee,
   TrendingUp,
 } from "lucide-react";
 import Image from "next/image";
@@ -142,7 +143,7 @@ export default function HomePage({ configuration }: HomePageProps) {
         <section className="grid md:grid-cols-3 gap-6 mb-24">
           {[
             {
-              icon: DollarSign,
+              icon: IndianRupee,
               title: "Revenue Tracking",
               desc: "Track all financial activities in real time.",
             },
@@ -159,9 +160,8 @@ export default function HomePage({ configuration }: HomePageProps) {
           ].map((item, i) => (
             <Card
               key={i}
-              className={`rounded-3xl border-none shadow-md hover:shadow-xl transition-all ${
-                i === 1 ? "md:-mt-6" : ""
-              }`}
+              className={`rounded-3xl border-none shadow-md hover:shadow-xl transition-all ${i === 1 ? "md:-mt-6" : ""
+                }`}
             >
               <CardContent className="p-8">
                 <item.icon className="h-8 w-8 text-blue-600 mb-4" />
