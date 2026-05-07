@@ -84,7 +84,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
     redirect("/404");
   }
 
- return (
+  return (
     <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
 
       {/* HEADER */}
@@ -94,7 +94,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
         </h1>
 
         <Button asChild variant="outline">
-          <Link href="/admin/purchase-orders">Back</Link>
+          <Link href="/admin/revenue">Back</Link>
         </Button>
       </div>
 
@@ -195,6 +195,7 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
                   <th className="text-left p-4">Invoice</th>
                   <th className="text-right p-4">Amount</th>
                   <th className="text-right p-4">Collected</th>
+                  <th className="text-right p-4">Pending</th>
                   <th className="text-left p-4">Invoice Date</th>
                   <th className="text-left p-4">Due Date</th>
                   <th className="text-left p-4">Status</th>
@@ -202,42 +203,55 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
               </thead>
 
               <tbody>
-                {po.billingCycles.map((bc: any, i: number) => (
-                  <tr
-                    key={bc.id}
-                    className="border-b last:border-none hover:bg-gray-50 transition"
-                  >
-                    <td className="p-4">{i + 1}</td>
-                    <td className="p-4">{moment(bc.invoiceDate).format("MMMM")} {moment(bc.invoiceDate).format("YYYY")}</td>
-                    <td className="p-4">{bc.invoiceNumber}</td>
-                    <td className="p-4 text-right">
-                      ₹{bc.invoiceAmount}
-                    </td>
-                    <td className="p-4 text-right">
-                      ₹{bc.collectedAmount ?? 0}
-                    </td>
-                    <td className="p-4">
-                      {bc.invoiceDate
-                        ? format(
-                          new Date(bc.invoiceDate),
-                          "dd/MM/yyyy"
-                        )
-                        : "-"}
-                    </td>
-                    <td className="p-4">
-                      {bc.paymentDueDate
-                        ? format(
-                          new Date(bc.paymentDueDate),
-                          "dd/MM/yyyy"
-                        )
-                        : "-"
-                      }
-                    </td>
-                    <td className="p-4">
-                      <StatusBadge value={bc.paymentReceived} />
-                    </td>
-                  </tr>
-                ))}
+                {po.billingCycles.map((bc: any, i: number) => {
+
+                  const pendingAmount =
+                    (bc.invoiceAmount || 0) - (bc.collectedAmount || 0);
+
+                  return (
+                    <tr
+                      key={bc.id}
+                      className="border-b last:border-none hover:bg-gray-50 transition"
+                    >
+                      <td className="p-4">{i + 1}</td>
+
+                      <td className="p-4">
+                        {moment(bc.invoiceDate).format("MMMM")}{" "}
+                        {moment(bc.invoiceDate).format("YYYY")}
+                      </td>
+
+                      <td className="p-4">{bc.invoiceNumber}</td>
+
+                      <td className="p-4 text-right">
+                        ₹{bc.invoiceAmount?.toLocaleString("en-IN")}
+                      </td>
+
+                      <td className="p-4 text-right">
+                        ₹{(bc.collectedAmount ?? 0).toLocaleString("en-IN")}
+                      </td>
+
+                      <td className="p-4 text-right">
+                        ₹{pendingAmount.toLocaleString("en-IN")}
+                      </td>
+
+                      <td className="p-4">
+                        {bc.invoiceDate
+                          ? format(new Date(bc.invoiceDate), "dd/MM/yyyy")
+                          : "-"}
+                      </td>
+
+                      <td className="p-4">
+                        {bc.paymentDueDate
+                          ? format(new Date(bc.paymentDueDate), "dd/MM/yyyy")
+                          : "-"}
+                      </td>
+
+                      <td className="p-4">
+                        <StatusBadge value={bc.paymentReceived} />
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
 
             </table>

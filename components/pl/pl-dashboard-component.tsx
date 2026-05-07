@@ -9,6 +9,7 @@ import {
   CalendarIcon,
   ChevronDown,
   DollarSign,
+  IndianRupee,
   Layers3,
   Minus,
   SlidersHorizontal,
@@ -535,7 +536,7 @@ export function PLDashboardComponent({
       label: "Purchase Order Value",
       description: "Combined PO value across the current selection",
       value: formatCurrency(totalValues.totalPOValue),
-      icon: DollarSign,
+      icon: IndianRupee,
       tone: "bg-violet-500",
     },
     {
