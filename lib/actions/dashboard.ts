@@ -409,6 +409,8 @@ export async function getBillingStatusDetails(
   year: number,
   filters?: BillingStatusFilters,
 ) {
+  const { start, end } = getFinancialYearRange(year);
+
   const cycles = await prisma.billingCycle.findMany({
     include: {
       purchaseOrder: {
@@ -416,13 +418,11 @@ export async function getBillingStatusDetails(
           ServiceType: true,
           billingPlan: true,
           company: true,
-          customer: true,
+          customer: true, // ✅ required for customerName
         },
       },
     },
   });
-
-  const { start, end } = getFinancialYearRange(year);
 
   return cycles
     .filter((cycle) => {
@@ -431,14 +431,17 @@ export async function getBillingStatusDetails(
 
       const normalizedDate = normalizeDate(new Date(date));
 
+      // FY filter
       if (normalizedDate < start || normalizedDate > end) {
         return false;
       }
 
+      // Company filter
       if (!matchesCompanyFilter(cycle, filters)) {
         return false;
       }
 
+      // Date range filter
       if (
         !isWithinFilterDateRange(
           normalizedDate,
@@ -448,23 +451,25 @@ export async function getBillingStatusDetails(
         return false;
       }
 
+      // Month filter
       return matchesFilterMonth(normalizedDate, filters);
     })
     .map((cycle) => {
       const orderStart = cycle.purchaseOrder?.startFrom
         ? new Date(cycle.purchaseOrder.startFrom)
         : null;
+
       const orderEnd = cycle.purchaseOrder?.endDate
         ? new Date(cycle.purchaseOrder.endDate)
         : null;
 
+      // Contract duration
       let contractDuration = "-";
       if (orderStart && orderEnd) {
         const months =
-          (orderEnd.getFullYear() -
-            orderStart.getFullYear()) *
-            12 +
+          (orderEnd.getFullYear() - orderStart.getFullYear()) * 12 +
           (orderEnd.getMonth() - orderStart.getMonth());
+
         contractDuration = `${months + 1} months`;
       }
 
@@ -473,29 +478,47 @@ export async function getBillingStatusDetails(
       const overdue = Math.max(billed - collected, 0);
 
       return {
-        amount: billed,
-        billingPlan:
-          cycle.purchaseOrder?.billingPlan?.name || "-",
-        collectedAmount: collected,
+        id: cycle.id,
+
+        // 🔥 IMPORTANT FIX
+        customerName: getCustomerDisplayName(
+          cycle.purchaseOrder?.customer
+        ),
+
         companyId:
           cycle.purchaseOrder?.company?.id || null,
+
         companyName:
           cycle.purchaseOrder?.company?.name || "-",
-        contractDuration,
-        endDate: orderEnd
-          ? format(orderEnd, "dd/MM/yyyy")
-          : "-",
-        id: cycle.id,
-        invoiceNumber: cycle.invoiceNumber || "-",
-        overdueAmount: overdue,
+
         poNumber:
           cycle.purchaseOrder?.customerPONumber || "-",
+
+        invoiceNumber:
+          cycle.invoiceNumber || "-",
+
+        amount: billed,
+        collectedAmount: collected,
+        overdueAmount: overdue,
+
         serviceType:
           cycle.purchaseOrder?.ServiceType?.name || "-",
+
+        billingPlan:
+          cycle.purchaseOrder?.billingPlan?.name || "-",
+
+        contractDuration,
+
         startDate: orderStart
           ? format(orderStart, "dd/MM/yyyy")
           : "-",
-        status: cycle.purchaseOrder?.status || "-",
+
+        endDate: orderEnd
+          ? format(orderEnd, "dd/MM/yyyy")
+          : "-",
+
+        status:
+          cycle.purchaseOrder?.status || "-",
       };
     });
 }
