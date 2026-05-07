@@ -696,19 +696,19 @@ function TrendCard({
             />
             <span className="text-slate-700">
               Drill-down loaded for{" "}
-                <span
-                  className={cn(
-                    "font-semibold",
-                    indicatorTextClassName,
-                  )}
-                >
-                  {formatFinancialMonthLabel(
-                    activePoint.month,
-                    activePoint.financialYear,
-                  )}
-                </span>
+              <span
+                className={cn(
+                  "font-semibold",
+                  indicatorTextClassName,
+                )}
+              >
+                {formatFinancialMonthLabel(
+                  activePoint.month,
+                  activePoint.financialYear,
+                )}
               </span>
-              <button
+            </span>
+            <button
               onClick={onClearSelection}
               className="ml-auto text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
             >
@@ -931,8 +931,8 @@ export function MonthlyBillingChartCard({
                   {[
                     "Month",
                     "Year",
-                    "Company",
                     "Customer",
+                    "Company",
                     "PO Number",
                     "Invoice Number",
                     "Bill Generated",
@@ -980,11 +980,11 @@ export function MonthlyBillingChartCard({
                       <td className="px-5 py-4 font-mono text-sm text-slate-500 tabular-nums">
                         {item.year}
                       </td>
-                      <td className="px-5 py-4 text-sm font-medium text-slate-700">
-                        {item.companyName}
-                      </td>
                       <td className="px-5 py-4 text-sm text-slate-700">
                         {item.customerName}
+                      </td>
+                      <td className="px-5 py-4 text-sm font-medium text-slate-700">
+                        {item.companyName}
                       </td>
                       <td className="px-5 py-4 text-sm font-semibold text-slate-950">
                         {item.poNumber}
@@ -1012,3 +1012,4 @@ export function MonthlyBillingChartCard({
     </div>
   );
 }
+

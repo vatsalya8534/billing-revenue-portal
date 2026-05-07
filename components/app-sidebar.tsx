@@ -37,7 +37,6 @@ import { userLoginRequest } from "@/store/actions/user-actions";
 const data = {
   navMain: [
     { title: "Home", url: "/admin/home", icon: IconHome },
-    { title: "Dashboard", url: "/admin/dashboard", icon: IconDashboard },
     { title: "Revenue", url: "/admin/revenue", icon: IconTrendingUp },
     { title: "P&L", url: "/admin/pl", icon: IconBriefcase },
     { title: "Contract Type", url: "/admin/contract-type", icon: IconContract },
