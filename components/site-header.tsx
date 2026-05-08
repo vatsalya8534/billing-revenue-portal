@@ -1,5 +1,6 @@
 "use client";
 
+import * as React from "react";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
@@ -26,6 +27,11 @@ export function SiteHeader() {
   const router = useRouter();
   const user = useSelector((state: RootState) => state.user.user as HeaderUser | undefined);
   const dispatch = useDispatch();
+  const isMounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   const handleLogout = async () => {
     dispatch(userLogoutRequest());
@@ -49,19 +55,30 @@ export function SiteHeader() {
           </p>
         </div>
 
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="h-10 rounded-xl border-sky-100 bg-white/90 shadow-sm hover:bg-sky-50">
-              <span>{user?.name || "User"}</span>
-              <ChevronDown className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="rounded-xl border-sky-100">
-            <DropdownMenuGroup>
-              <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
-            </DropdownMenuGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {isMounted ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 rounded-xl border-sky-100 bg-white/90 shadow-sm hover:bg-sky-50">
+                <span>{user?.name || "User"}</span>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="rounded-xl border-sky-100">
+              <DropdownMenuGroup>
+                <DropdownMenuItem onClick={handleLogout}>Logout</DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button
+            variant="outline"
+            className="h-10 rounded-xl border-sky-100 bg-white/90 shadow-sm hover:bg-sky-50"
+            type="button"
+          >
+            <span>{user?.name || "User"}</span>
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        )}
       </div>
     </header>
   );

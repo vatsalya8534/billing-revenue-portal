@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
-import { useForm, SubmitHandler, useFieldArray, useWatch } from "react-hook-form";
+import {
+  useForm,
+  SubmitHandler,
+  useFieldArray,
+  useWatch,
+  type Resolver,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -41,6 +47,7 @@ import {
   themedSelectTriggerClassName,
   themedSubmitButtonClassName,
 } from "../ui/form-theme";
+import { FormHydrationFallback } from "../ui/form-hydration-fallback";
 import { cn } from "@/lib/utils";
 import { projectSchema } from "@/lib/validators";
 import { plDefaultValues } from "@/lib/constants";
@@ -51,6 +58,9 @@ import {
   formatBillingCycleLabel,
   generateProjectBillingCycles,
 } from "@/lib/billing-cycle-utils";
+import { useHydrated } from "@/hooks/use-hydrated";
+
+type ProjectFormValues = z.output<typeof projectSchema>;
 
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
@@ -101,6 +111,7 @@ const PLForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   delete data?.createdAt;
   delete data?.updatedAt;
@@ -119,9 +130,9 @@ const PLForm = ({
     }));
   }
 
-  const form = useForm<z.infer<typeof projectSchema>>({
-    resolver: zodResolver(projectSchema) as any,
-    defaultValues: data || plDefaultValues,
+  const form = useForm<ProjectFormValues>({
+    resolver: zodResolver(projectSchema) as Resolver<ProjectFormValues>,
+    defaultValues: (data ?? plDefaultValues) as ProjectFormValues,
   });
 
   const [isPending, startTransition] = useTransition();
@@ -136,7 +147,7 @@ const PLForm = ({
     name: "billingCycle",
   });
 
-  const onSubmit: SubmitHandler<z.infer<typeof projectSchema>> = (values) => {
+  const onSubmit: SubmitHandler<ProjectFormValues> = (values) => {
     startTransition(async () => {
       const res = update && id
         ? await updateProject(values, id)
@@ -216,6 +227,10 @@ const PLForm = ({
       setSelectedCycleIndex(Math.max(fields.length - 1, 0));
     }
   }, [fields.length, selectedCycleIndex]);
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={6} sections={1} hasTabs={true} submitWidthClassName="w-40" />;
+  }
 
   return (
     <Form {...form}>

@@ -1,14 +1,12 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
 import UserForm from "@/components/user/user-form"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { getUserById } from "@/lib/actions/users"
 import { User } from "@/types"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { UserRound } from "lucide-react"
 
 export default async function Page({ params }: { params: Promise<{ id: string }> }) {
 
@@ -26,20 +24,13 @@ export default async function Page({ params }: { params: Promise<{ id: string }>
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Edit User</CardTitle>
-            <Button className="bg-blue-500 hover:bg-blue-600">
-              <Link href="/admin/users">Back</Link>
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <UserForm data={user.data as User} update={true} />
-        </CardContent>
-      </Card>
-    </div>
+    <EditPageShell
+      title="Edit User"
+      backHref="/admin/users"
+      eyebrow="User Record"
+      icon={UserRound}
+    >
+      <UserForm data={user.data as User} update={true} />
+    </EditPageShell>
   )
 }

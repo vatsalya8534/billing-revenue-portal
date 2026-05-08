@@ -39,6 +39,8 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "../ui/form-theme";
+import { FormHydrationFallback } from "../ui/form-hydration-fallback";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type Props = {
   data?: Module;
@@ -48,6 +50,7 @@ type Props = {
 const ModuleForm = ({ data, update = false }: Props) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<z.infer<typeof moduleSchema>>({
     resolver: zodResolver(moduleSchema),
@@ -67,6 +70,10 @@ const ModuleForm = ({ data, update = false }: Props) => {
   });
 
   const [isPending, startTransition] = React.useTransition();
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={3} sections={2} submitWidthClassName="w-44" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof moduleSchema>> = async (values) => {
     startTransition(async () => {

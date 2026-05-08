@@ -1,10 +1,9 @@
 import BillingPlanForm from "@/components/billing-plan/billing-plan-form"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getBillingPlanById } from "@/lib/actions/billing-plan"
 import { canAccess } from "@/lib/rbac"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { ReceiptText } from "lucide-react"
 
 const BillingPlanEditPage = async ({
     params,
@@ -28,20 +27,14 @@ const BillingPlanEditPage = async ({
 
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Billing Plan</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/billing-plan">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
+        <EditPageShell
+            title="Edit Billing Plan"
+            backHref="/admin/billing-plan"
+            eyebrow="Billing Record"
+            icon={ReceiptText}
+        >
                 <BillingPlanForm update={true} data={billingPlan.data} />
-            </CardContent>
-        </Card>
+        </EditPageShell>
     )
 }
 

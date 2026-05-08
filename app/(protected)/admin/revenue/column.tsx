@@ -189,7 +189,7 @@ export const getUsersColumns = ({
               <span>{ratio}% realized</span>
               <span>{formatCurrency(pending)} pending</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-sky-100">
+            <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
               <div
                 className={`h-full rounded-full ${
                   ratio >= 85
@@ -215,7 +215,7 @@ export const getUsersColumns = ({
       cell: ({ row }) => (
         <Badge
           variant="outline"
-          className="border-cyan-200 bg-cyan-50 text-cyan-700 hover:bg-cyan-50"
+          className="border-teal-200 bg-teal-50 text-teal-700 hover:bg-teal-50"
         >
           {row.original.billingPlan?.name || "-"}
         </Badge>
@@ -231,7 +231,7 @@ export const getUsersColumns = ({
       cell: ({ row }) => (
         <Badge
           variant="outline"
-          className="border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-50"
+          className="border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-50"
         >
           {row.original.ServiceType?.name || "-"}
         </Badge>
@@ -257,7 +257,7 @@ export const getUsersColumns = ({
 
         if (status === "COMPLETED") {
           return (
-            <Badge className="bg-sky-500 text-white hover:bg-sky-600">
+            <Badge className="bg-teal-500 text-white hover:bg-teal-600">
               COMPLETED
             </Badge>
           );

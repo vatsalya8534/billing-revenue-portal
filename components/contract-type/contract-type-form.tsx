@@ -41,6 +41,8 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "../ui/form-theme";
+import { FormHydrationFallback } from "../ui/form-hydration-fallback";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 const ContractTypeForm = ({
   data,
@@ -51,6 +53,7 @@ const ContractTypeForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<z.infer<typeof contractTypeSchema>>({
     resolver: zodResolver(contractTypeSchema),
@@ -58,6 +61,10 @@ const ContractTypeForm = ({
   });
 
   const [isPending, startTransition] = React.useTransition();
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={2} sections={2} submitWidthClassName="w-52" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof contractTypeSchema>> = (values) => {
     startTransition(async () => {

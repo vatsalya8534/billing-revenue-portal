@@ -1,7 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import POForm from "@/components/purchase-order/purchase-order-form";
-import Link from "next/link";
 import { getPurchaseOrderById } from "@/lib/actions/purschase-order";
 import { getBillingPlans } from "@/lib/actions/billing-plan";
 import { getContractTypes } from "@/lib/actions/contract-type";
@@ -12,6 +9,8 @@ import { getContractDurations } from "@/lib/actions/contract-duration";
 import { getCompanys } from "@/lib/actions/company";
 import { canAccess } from "@/lib/rbac";
 import { redirect } from "next/navigation";
+import { EditPageShell } from "@/components/ui/edit-page-shell";
+import { IndianRupee } from "lucide-react";
 
 interface EditPOPageProps {
   params: Promise<{ id: string }>; // params is now a Promise
@@ -36,25 +35,23 @@ const EditPOPage = async ({ params }: EditPOPageProps) => {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex justify-between items-center">
-        <CardTitle>Edit Revenue</CardTitle>
-        <Button className="bg-blue-500 hover:bg-blue-600">
-          <Link href="/admin/revenue">Back</Link>
-        </Button>
-      </CardHeader>
-      <CardContent>
-        <POForm
-          data={JSON.parse(JSON.stringify(po.data))}
-          update={true}
-          companies={companies as Company[]}
-          billingPlan={billingPlan as BillingPlan[]}
-          contractType={contractType}
-          serviceType={serviceType}
-          customers={customers as Customer[]}
-          contractDurations={contractDurations} />
-      </CardContent>
-    </Card>
+    <EditPageShell
+      title="Edit Revenue"
+      backHref="/admin/revenue"
+      eyebrow="Revenue Record"
+      icon={IndianRupee}
+    >
+      <POForm
+        data={JSON.parse(JSON.stringify(po.data))}
+        update={true}
+        companies={companies as Company[]}
+        billingPlan={billingPlan as BillingPlan[]}
+        contractType={contractType}
+        serviceType={serviceType}
+        customers={customers as Customer[]}
+        contractDurations={contractDurations}
+      />
+    </EditPageShell>
   );
 };
 

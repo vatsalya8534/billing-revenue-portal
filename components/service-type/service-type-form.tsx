@@ -41,6 +41,8 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "../ui/form-theme";
+import { FormHydrationFallback } from "../ui/form-hydration-fallback";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 const ServiceTypeForm = ({
   data,
@@ -51,6 +53,7 @@ const ServiceTypeForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<z.infer<typeof serviceTypeSchema>>({
     resolver: zodResolver(serviceTypeSchema),
@@ -58,6 +61,10 @@ const ServiceTypeForm = ({
   });
 
   const [isPending, startTransition] = React.useTransition();
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={2} sections={2} submitWidthClassName="w-48" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof serviceTypeSchema>> = (values) => {
     startTransition(async () => {

@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
@@ -37,10 +38,39 @@ export function NavUser({
 }) {
   const router = useRouter()
   const { isMobile } = useSidebar()
+  const isMounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
 
   const handleLogout = async () => {
     await logoutUser()
     router.push("/login")
+  }
+
+  if (!isMounted) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="lg"
+            className="h-auto rounded-2xl bg-white/6 px-3 py-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-white/10 hover:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-full"
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/8 text-sky-200">
+              <IconUserCircle className="size-5" />
+            </div>
+            <div className="grid min-w-0 flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+              <span className="truncate font-medium">{user?.name || "Admin User"}</span>
+              <span className="truncate text-xs text-slate-400">
+                {user?.email || "No email available"}
+              </span>
+            </div>
+            <IconChevronUp className="ml-auto size-4 text-slate-400 group-data-[collapsible=icon]:hidden" />
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
   }
 
   return (

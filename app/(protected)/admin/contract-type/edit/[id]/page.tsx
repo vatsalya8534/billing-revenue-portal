@@ -1,13 +1,9 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import RoleForm from "@/components/role/role-form"
-import Link from "next/link"
-import { getRoleById } from "@/lib/actions/role"
 import { notFound, redirect } from "next/navigation"
-import { Role } from "@/types"
 import { getContractTypeById } from "@/lib/actions/contract-type"
 import ContractTypeForm from "@/components/contract-type/contract-type-form"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { FileSignature } from "lucide-react"
 
 const ContractTypeEditPage = async ({
     params,
@@ -31,20 +27,14 @@ const ContractTypeEditPage = async ({
 
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Contract Type</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/contract-type">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
+        <EditPageShell
+            title="Edit Contract Type"
+            backHref="/admin/contract-type"
+            eyebrow="Contract Record"
+            icon={FileSignature}
+        >
                 <ContractTypeForm update={true} data={contractType.data} />
-            </CardContent>
-        </Card>
+        </EditPageShell>
     )
 }
 

@@ -67,6 +67,7 @@ import {
 import z from "zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { Card, CardContent } from "../ui/card";
+import { Skeleton } from "../ui/skeleton";
 import {
   formatBillingCycleLabel,
   generatePurchaseOrderBillingCycles,
@@ -161,13 +162,16 @@ const POForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isMounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   // ---------------- FORM ----------------
   const form = useForm<PurchaseOrderFormValues>({
-    resolver: zodResolver(
-      purchaseOrderSchema,
-    ) as Resolver<PurchaseOrderFormValues>,
-    defaultValues: data || defaultPurchaseOrderValues,
+    resolver: zodResolver(purchaseOrderSchema) as Resolver<PurchaseOrderFormValues>,
+    defaultValues: (data ?? defaultPurchaseOrderValues) as PurchaseOrderFormValues,
   });
 
   const { fields, replace } = useFieldArray({
@@ -178,21 +182,9 @@ const POForm = ({
   const [selectedCycleIndex, setSelectedCycleIndex] = useState(0);
 
   // ---------------- WATCHERS ----------------
-  const watchBillingPlan = useWatch({
+  const [watchBillingPlan, watchPOAmount, startFrom, endDate] = useWatch({
     control: form.control,
-    name: "billingPlanId",
-  });
-  const watchPOAmount = useWatch({
-    control: form.control,
-    name: "poAmount",
-  });
-  const startFrom = useWatch({
-    control: form.control,
-    name: "startFrom",
-  });
-  const endDate = useWatch({
-    control: form.control,
-    name: "endDate",
+    name: ["billingPlanId", "poAmount", "startFrom", "endDate"],
   });
   const watchedBillingCycles =
     useWatch({
@@ -376,6 +368,30 @@ const POForm = ({
 
     replace(formattedCycles);
   }, [data, update, form, replace]);
+
+  if (!isMounted) {
+    return (
+      <div className="space-y-6">
+        <div className={themedTabsListClassName}>
+          <Skeleton className="h-11 flex-1 rounded-xl md:w-32" />
+          <Skeleton className="h-11 flex-1 rounded-xl md:w-36" />
+        </div>
+        <div className={cn(themedSectionClassName, "grid grid-cols-1 gap-6 md:grid-cols-2")}>
+          {Array.from({ length: 8 }).map((_, index) => (
+            <div key={index} className="space-y-2.5">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-11 w-full rounded-xl" />
+            </div>
+          ))}
+          <div className="space-y-2.5 md:col-span-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-32 w-full rounded-2xl" />
+          </div>
+        </div>
+        <Skeleton className="h-11 w-36 rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <Form {...form}>

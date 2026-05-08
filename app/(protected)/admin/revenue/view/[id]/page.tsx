@@ -1,58 +1,106 @@
+import type { ReactNode } from "react";
+
 import { getPurchaseOrderById } from "@/lib/actions/purschase-order";
 import { format } from "date-fns";
 import Link from "next/link";
+import moment from "moment";
+import { ArrowLeft, Clock3, IndianRupee, ReceiptText } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
-import moment from "moment";
 import { canAccess } from "@/lib/rbac";
-import { redirect } from "next/navigation";
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
-/* 🔹 Status Badge */
-const StatusBadge = ({ value }: { value?: string }) => {
+type BillingCycleView = {
+  id: string;
+  invoiceAmount?: number | null;
+  collectedAmount?: number | null;
+  invoiceDate?: Date | string | null;
+  paymentDueDate?: Date | string | null;
+  invoiceNumber?: string | null;
+  paymentReceived?: string | null;
+};
+
+const rupee = "\u20B9";
+
+const formatCurrency = (value?: number | null) =>
+  new Intl.NumberFormat("en-IN", {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  }).format(Number(value ?? 0));
+
+const surfaceClassName =
+  "rounded-xl border border-zinc-200/90 bg-white p-5 shadow-[0_18px_42px_-34px_rgba(39,39,42,0.28)]";
+
+const metricTone = {
+  teal: {
+    border: "border-teal-200",
+    bg: "bg-teal-50",
+    text: "text-teal-700",
+    bar: "bg-teal-500",
+  },
+  emerald: {
+    border: "border-emerald-200",
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    bar: "bg-emerald-500",
+  },
+  rose: {
+    border: "border-rose-200",
+    bg: "bg-rose-50",
+    text: "text-rose-700",
+    bar: "bg-rose-500",
+  },
+};
+
+const StatusBadge = ({ value }: { value?: string | null }) => {
+  const normalized = value?.toLowerCase();
+
+  const tone =
+    normalized === "yes" || normalized === "received" || normalized === "live"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : normalized === "partial" || normalized === "pending"
+        ? "border-amber-200 bg-amber-50 text-amber-700"
+        : "border-zinc-200 bg-zinc-100 text-zinc-700";
+
   return (
-    <span className="text-xs font-medium border border-gray-300 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-md">
+    <span
+      className={`inline-flex rounded-md border px-2.5 py-1 text-xs font-semibold ${tone}`}
+    >
       {value || "-"}
     </span>
   );
 };
 
-/* 🔹 Detail Row */
-const Detail = ({
-  label,
-  value,
-}: {
-  label: string;
-  value?: any;
-}) => {
+const Detail = ({ label, value }: { label: string; value?: ReactNode }) => {
   return (
-    <div className="flex justify-between items-center py-2 text-sm md:text-base border-b border-gray-100 last:border-none">
-      <span className="font-medium text-gray-600">{label}</span>
-      <span className="text-gray-900 text-right">{value || "-"}</span>
+    <div className="grid grid-cols-[minmax(110px,0.55fr)_1fr] gap-4 border-b border-zinc-100 py-3 text-sm last:border-none">
+      <span className="font-medium text-zinc-500">{label}</span>
+      <span className="text-right font-medium text-zinc-900">{value || "-"}</span>
     </div>
   );
 };
 
-/* 🔹 Reusable Card */
-const Card = ({
+const Panel = ({
   title,
   children,
 }: {
   title?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) => {
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6">
-      {title && (
-        <h2 className="text-lg font-semibold mb-4 text-gray-800">
-          {title}
-        </h2>
-      )}
+    <section className={surfaceClassName}>
+      {title ? (
+        <div className="mb-4 flex items-center gap-3 border-b border-zinc-100 pb-3">
+          <span className="h-5 w-1 rounded-full bg-teal-500" />
+          <h2 className="text-base font-semibold text-zinc-900">{title}</h2>
+        </div>
+      ) : null}
       {children}
-    </div>
+    </section>
   );
 };
 
@@ -61,113 +109,134 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
   const res = await getPurchaseOrderById(id);
 
   if (!res.success || !res.data) {
-    return (
-      <p className="p-6 text-red-600 font-semibold">
-        Purchase Order not found.
-      </p>
-    );
+    return <p className="p-6 font-semibold text-red-600">Purchase Order not found.</p>;
   }
 
-  const po = res.data;
-
-  const totalCollected =
-    po.billingCycles?.reduce(
-      (sum: number, b: any) => sum + (b.collectedAmount || 0),
-      0
-    ) || 0;
-
-  const pending = po.poAmount - totalCollected;
-
   const route = "/admin/module";
-  const canView = await canAccess(route, "view")
+  const canView = await canAccess(route, "view");
   if (!canView) {
     redirect("/404");
   }
 
+  const po = res.data;
+  const billingCycles = (po.billingCycles ?? []) as BillingCycleView[];
+
+  const totalCollected = billingCycles.reduce(
+    (sum, cycle) => sum + Number(cycle.collectedAmount || 0),
+    0,
+  );
+  const totalRevenue = Number(po.poAmount || 0);
+  const pending = totalRevenue - totalCollected;
+
   return (
-    <div className="min-h-screen bg-gray-50 px-10 py-8 space-y-8">
+    <div className="space-y-6">
+      <section className="overflow-hidden rounded-xl border border-zinc-200 bg-[linear-gradient(135deg,#ffffff,#f8fafc_55%,#fff7ed)] shadow-[0_20px_56px_-42px_rgba(39,39,42,0.45)]">
+        <div className="h-1.5 bg-gradient-to-r from-teal-500 via-amber-400 to-rose-500" />
+        <div className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0 space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
+              Revenue Record
+            </p>
+            <h1 className="text-2xl font-semibold text-zinc-950 md:text-3xl">
+              Revenue Details
+            </h1>
+            <p className="text-sm text-zinc-500">
+              PO {po.customerPONumber || "-"} - {po.customer?.companyName || "Company not set"}
+            </p>
+          </div>
 
-      {/* HEADER */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">
-          Revenue Details
-        </h1>
+          <Button
+            asChild
+            variant="outline"
+            className="h-10 rounded-lg border-zinc-300 bg-white text-zinc-700 hover:border-teal-300 hover:bg-teal-50 hover:text-teal-700"
+          >
+            <Link href="/admin/revenue">
+              <ArrowLeft className="size-4" />
+              Back
+            </Link>
+          </Button>
+        </div>
+      </section>
 
-        <Button asChild variant="outline">
-          <Link href="/admin/revenue">Back</Link>
-        </Button>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        {[
+          {
+            label: "Total Revenue",
+            value: totalRevenue,
+            icon: ReceiptText,
+            tone: metricTone.teal,
+          },
+          {
+            label: "Collected",
+            value: totalCollected,
+            icon: IndianRupee,
+            tone: metricTone.emerald,
+          },
+          {
+            label: "Pending",
+            value: pending,
+            icon: Clock3,
+            tone: metricTone.rose,
+          },
+        ].map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <div
+              key={item.label}
+              className={`overflow-hidden rounded-xl border ${item.tone.border} bg-white shadow-[0_16px_38px_-32px_rgba(39,39,42,0.34)]`}
+            >
+              <div className={`h-1 ${item.tone.bar}`} />
+              <div className="flex items-start justify-between gap-4 p-5">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-zinc-500">{item.label}</p>
+                  <p className="mt-2 text-2xl font-semibold text-zinc-950">
+                    {rupee}
+                    {formatCurrency(item.value)}
+                  </p>
+                </div>
+                <div
+                  className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${item.tone.bg} ${item.tone.text}`}
+                >
+                  <Icon className="size-5" />
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <p className="text-sm text-gray-500">Total Revenue</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">
-            ₹{po.poAmount}
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-sm text-gray-500">Collected</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">
-            ₹{totalCollected}
-          </p>
-        </Card>
-
-        <Card>
-          <p className="text-sm text-gray-500">Pending</p>
-          <p className="text-2xl font-bold mt-1 text-gray-900">
-            ₹{pending}
-          </p>
-        </Card>
-      </div>
-
-      {/* BASIC + RELATIONS */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-        <Card title="Basic Details">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <Panel title="Basic Details">
           <Detail label="PO Number" value={po.customerPONumber} />
           <Detail label="Status" value={<StatusBadge value={po.status} />} />
           <Detail label="Owner" value={po.poOwner} />
           <Detail label="Payment Terms" value={po.paymentTerms} />
           <Detail label="Remark" value={po.remark} />
-
           <Detail
             label="Start Date"
-            value={
-              po.startFrom
-                ? format(new Date(po.startFrom), "dd/MM/yyyy")
-                : "-"
-            }
+            value={po.startFrom ? format(new Date(po.startFrom), "dd/MM/yyyy") : "-"}
           />
-
           <Detail
             label="End Date"
-            value={
-              po.endDate
-                ? format(new Date(po.endDate), "dd/MM/yyyy")
-                : "-"
-            }
+            value={po.endDate ? format(new Date(po.endDate), "dd/MM/yyyy") : "-"}
           />
-        </Card>
+        </Panel>
 
-        <Card title="Relations">
+        <Panel title="Relations">
           <Detail label="Service Type" value={po.ServiceType?.name} />
           <Detail label="Billing Plan" value={po.billingPlan?.name} />
           <Detail
             label="Duration"
-            value={`${po.contractDuration?.totalNumberOfMonths || "-"
-              } months`}
+            value={`${po.contractDuration?.totalNumberOfMonths || "-"} months`}
           />
           <Detail label="Contract" value={po.contract?.name} />
-        </Card>
+        </Panel>
       </div>
 
-      {/* CUSTOMER */}
-      <Card title="Company">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2">
+      <Panel title="Company">
+        <div className="grid grid-cols-1 gap-x-10 md:grid-cols-2">
           <Detail label="Company" value={po.customer?.companyName} />
-
           <Detail
             label="Name"
             value={
@@ -176,92 +245,81 @@ export default async function PurchaseOrderViewPage({ params }: Props) {
                 : "-"
             }
           />
-
           <Detail label="Email" value={po.customer?.email} />
           <Detail label="Phone" value={po.customer?.phone} />
         </div>
-      </Card>
+      </Panel>
 
-      {/* BILLING TABLE */}
-      <Card title="Billing Cycles">
-        {po.billingCycles?.length ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm md:text-base">
+      <Panel title="Billing Cycles">
+        {billingCycles.length ? (
+          <div className="overflow-hidden rounded-xl border border-zinc-200">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[920px] text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50 text-zinc-600">
+                    <th className="p-3 text-left font-semibold">#</th>
+                    <th className="p-3 text-left font-semibold">Month</th>
+                    <th className="p-3 text-left font-semibold">Invoice</th>
+                    <th className="p-3 text-right font-semibold">Amount</th>
+                    <th className="p-3 text-right font-semibold">Collected</th>
+                    <th className="p-3 text-right font-semibold">Pending</th>
+                    <th className="p-3 text-left font-semibold">Invoice Date</th>
+                    <th className="p-3 text-left font-semibold">Due Date</th>
+                    <th className="p-3 text-left font-semibold">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-100 bg-white">
+                  {billingCycles.map((bc, index) => {
+                    const pendingAmount =
+                      Number(bc.invoiceAmount || 0) - Number(bc.collectedAmount || 0);
 
-              <thead>
-                <tr className="bg-gray-100 text-gray-700">
-                  <th className="text-left p-4">#</th>
-                  <th className="text-left p-4">Month</th>
-                  <th className="text-left p-4">Invoice</th>
-                  <th className="text-right p-4">Amount</th>
-                  <th className="text-right p-4">Collected</th>
-                  <th className="text-right p-4">Pending</th>
-                  <th className="text-left p-4">Invoice Date</th>
-                  <th className="text-left p-4">Due Date</th>
-                  <th className="text-left p-4">Status</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {po.billingCycles.map((bc: any, i: number) => {
-
-                  const pendingAmount =
-                    (bc.invoiceAmount || 0) - (bc.collectedAmount || 0);
-
-                  return (
-                    <tr
-                      key={bc.id}
-                      className="border-b last:border-none hover:bg-gray-50 transition"
-                    >
-                      <td className="p-4">{i + 1}</td>
-
-                      <td className="p-4">
-                        {moment(bc.invoiceDate).format("MMMM")}{" "}
-                        {moment(bc.invoiceDate).format("YYYY")}
-                      </td>
-
-                      <td className="p-4">{bc.invoiceNumber}</td>
-
-                      <td className="p-4 text-right">
-                        ₹{bc.invoiceAmount?.toLocaleString("en-IN")}
-                      </td>
-
-                      <td className="p-4 text-right">
-                        ₹{(bc.collectedAmount ?? 0).toLocaleString("en-IN")}
-                      </td>
-
-                      <td className="p-4 text-right">
-                        ₹{pendingAmount.toLocaleString("en-IN")}
-                      </td>
-
-                      <td className="p-4">
-                        {bc.invoiceDate
-                          ? format(new Date(bc.invoiceDate), "dd/MM/yyyy")
-                          : "-"}
-                      </td>
-
-                      <td className="p-4">
-                        {bc.paymentDueDate
-                          ? format(new Date(bc.paymentDueDate), "dd/MM/yyyy")
-                          : "-"}
-                      </td>
-
-                      <td className="p-4">
-                        <StatusBadge value={bc.paymentReceived} />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-
-            </table>
+                    return (
+                      <tr key={bc.id} className="transition-colors hover:bg-teal-50/45">
+                        <td className="p-3 text-zinc-500">{index + 1}</td>
+                        <td className="p-3 font-medium text-zinc-900">
+                          {bc.invoiceDate
+                            ? moment(bc.invoiceDate).format("MMMM YYYY")
+                            : "-"}
+                        </td>
+                        <td className="p-3 text-zinc-700">{bc.invoiceNumber || "-"}</td>
+                        <td className="p-3 text-right font-medium text-zinc-900">
+                          {rupee}
+                          {formatCurrency(bc.invoiceAmount)}
+                        </td>
+                        <td className="p-3 text-right font-medium text-emerald-700">
+                          {rupee}
+                          {formatCurrency(bc.collectedAmount)}
+                        </td>
+                        <td className="p-3 text-right font-medium text-rose-700">
+                          {rupee}
+                          {formatCurrency(pendingAmount)}
+                        </td>
+                        <td className="p-3 text-zinc-700">
+                          {bc.invoiceDate
+                            ? format(new Date(bc.invoiceDate), "dd/MM/yyyy")
+                            : "-"}
+                        </td>
+                        <td className="p-3 text-zinc-700">
+                          {bc.paymentDueDate
+                            ? format(new Date(bc.paymentDueDate), "dd/MM/yyyy")
+                            : "-"}
+                        </td>
+                        <td className="p-3">
+                          <StatusBadge value={bc.paymentReceived} />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
-          <p className="text-sm text-gray-500">
+          <div className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
             No billing cycles found.
-          </p>
+          </div>
         )}
-      </Card>
+      </Panel>
     </div>
   );
 }

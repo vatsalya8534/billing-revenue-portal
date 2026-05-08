@@ -33,11 +33,14 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "../ui/form-theme"
+import { FormHydrationFallback } from "../ui/form-hydration-fallback"
+import { useHydrated } from "@/hooks/use-hydrated"
 
 export default function CustomerForm({ data, update = false }: { data?: Customer, update: boolean }) {
 
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<z.infer<typeof customerSchema>>({
     resolver: zodResolver(customerSchema),
@@ -45,6 +48,10 @@ export default function CustomerForm({ data, update = false }: { data?: Customer
   });
 
   const [isPending, startTransition] = React.useTransition();
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={8} sections={2} submitWidthClassName="w-44" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof customerSchema>> = (values) => {
     startTransition(async () => {

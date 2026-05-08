@@ -1,14 +1,10 @@
-import { prisma } from "@/lib/prisma"
 import { notFound, redirect } from "next/navigation"
-import CustomerForm from "../../../../../../components/customer/customer-form"
-import { getCustomerById } from "@/lib/actions/customer"
-import { Company, Customer } from "@/types"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
+import { Company } from "@/types"
 import { getcompanyById } from "@/lib/actions/company"
 import CompanyForm from "@/components/company/company-form"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { Building2 } from "lucide-react"
 
 export default async function EditCompanyPage({
   params,
@@ -36,20 +32,14 @@ export default async function EditCompanyPage({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Edit Company</CardTitle>
-          <Button className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/company">Back</Link>
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
+    <EditPageShell
+      title="Edit Company"
+      backHref="/admin/company"
+      eyebrow="Company Record"
+      icon={Building2}
+    >
         <CompanyForm data={company.data as Company} update={true} />
-      </CardContent>
-    </Card>
+    </EditPageShell>
 
   )
 }

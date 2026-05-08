@@ -41,6 +41,8 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "../ui/form-theme";
+import { FormHydrationFallback } from "../ui/form-hydration-fallback";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type BillingCycleFormValues = z.infer<typeof billingPlanSchema>;
 
@@ -53,6 +55,7 @@ const BillingPlanForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<BillingCycleFormValues>({
     resolver: zodResolver(billingPlanSchema),
@@ -65,6 +68,10 @@ const BillingPlanForm = ({
   });
 
   const [isPending, startTransition] = React.useTransition();
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={4} sections={2} submitWidthClassName="w-48" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof billingPlanSchema>> = (values) => {
     startTransition(async () => {

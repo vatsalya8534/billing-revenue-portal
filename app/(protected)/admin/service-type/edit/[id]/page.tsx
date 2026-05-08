@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 import { getServiceTypeById } from "@/lib/actions/service-type"
 import ServiceTypeForm from "@/components/service-type/service-type-form"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { Wrench } from "lucide-react"
 
 const ServiceTypeEditPage = async ({
     params,
@@ -28,20 +27,14 @@ const ServiceTypeEditPage = async ({
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Service Type</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/service-type">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
+        <EditPageShell
+            title="Edit Service Type"
+            backHref="/admin/service-type"
+            eyebrow="Service Record"
+            icon={Wrench}
+        >
                 <ServiceTypeForm update={true} data={serviceType.data} />
-            </CardContent>
-        </Card>
+        </EditPageShell>
     )
 }
 

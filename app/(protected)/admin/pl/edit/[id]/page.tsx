@@ -1,16 +1,12 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import RoleForm from "@/components/role/role-form"
-import Link from "next/link"
-import { getRoleById } from "@/lib/actions/role"
 import { notFound, redirect } from "next/navigation"
-import { BillingPlan, Project, Role } from "@/types"
+import { BillingPlan, Company } from "@/types"
 import { getBillingCyclesByPOID, getprojectById } from "@/lib/actions/project"
 import PLForm from "@/components/pl/pl-form"
 import { getCompanys } from "@/lib/actions/company"
 import { getBillingPlans } from "@/lib/actions/billing-plan"
-import { Company } from "@prisma/client"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { BriefcaseBusiness } from "lucide-react"
 
 const ProjectEditPage = async ({
     params,
@@ -18,20 +14,18 @@ const ProjectEditPage = async ({
     params: Promise<{ id: string }>
 }) => {
 
-    let companies = await getCompanys()
-    let billingPlans = await getBillingPlans()
+    const companies = await getCompanys()
+    const billingPlans = await getBillingPlans()
 
     const { id } = await params
 
     if (!id) return notFound()
 
-    let project = await getprojectById(id)
+    const project = await getprojectById(id)
 
     if (!project) return notFound()
 
     const billingCycles = await getBillingCyclesByPOID(id);
-
-    project = JSON.parse(JSON.stringify(project))
 
     const route = "/admin/pl";
     const canEdit = await canAccess(route, "edit")
@@ -40,22 +34,24 @@ const ProjectEditPage = async ({
         redirect("/404");
     }
 
+    const projectData = JSON.parse(JSON.stringify(project.data));
+    const billingCycleData = JSON.parse(JSON.stringify(billingCycles.data ?? []));
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Project</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/pl">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
-                <PLForm billingCycles={JSON.parse(JSON.stringify(billingCycles.data))} update={true} data={JSON.parse(JSON.stringify(project.data)) as any} companies={companies as any} billingPlans={billingPlans as BillingPlan[]} />
-            </CardContent>
-        </Card>
+        <EditPageShell
+            title="Edit Project"
+            backHref="/admin/pl"
+            eyebrow="Project Record"
+            icon={BriefcaseBusiness}
+        >
+            <PLForm
+                billingCycles={billingCycleData}
+                update={true}
+                data={projectData}
+                companies={companies as Company[]}
+                billingPlans={billingPlans as BillingPlan[]}
+            />
+        </EditPageShell>
     )
 }
 

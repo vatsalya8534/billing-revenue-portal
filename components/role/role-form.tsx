@@ -42,6 +42,8 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "@/components/ui/form-theme";
+import { FormHydrationFallback } from "@/components/ui/form-hydration-fallback";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type RoleModulePermission = {
   moduleId: string;
@@ -69,6 +71,7 @@ const RoleForm = ({
 }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const form = useForm<z.infer<typeof roleSchema>>({
     resolver: zodResolver(roleSchema),
@@ -79,6 +82,10 @@ const RoleForm = ({
   const [selectedModules, setSelectedModules] = React.useState<RoleModulePermission[]>(
     update ? (data?.roleModules ?? []) : [],
   );
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={3} sections={3} submitWidthClassName="w-36" />;
+  }
 
   const onSubmit: SubmitHandler<z.infer<typeof roleSchema>> = (values) => {
     startTransition(async () => {

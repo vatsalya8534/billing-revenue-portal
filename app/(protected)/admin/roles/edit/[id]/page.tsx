@@ -1,12 +1,10 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import RoleForm from "@/components/role/role-form"
-import Link from "next/link"
 import { getRoleById } from "@/lib/actions/role"
 import { notFound, redirect } from "next/navigation"
-import { Role } from "@/types"
 import { getModules } from "@/lib/actions/module-action"
 import { canAccess } from "@/lib/rbac"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { ShieldCheck } from "lucide-react"
 
 const RoleEditPage = async ({
     params,
@@ -33,20 +31,14 @@ const RoleEditPage = async ({
     }    
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Role</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/roles">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
+        <EditPageShell
+            title="Edit Role"
+            backHref="/admin/roles"
+            eyebrow="Role Record"
+            icon={ShieldCheck}
+        >
                 <RoleForm update={true} data={role.data} modules={modules} />
-            </CardContent>
-        </Card>
+        </EditPageShell>
     )
 }
 

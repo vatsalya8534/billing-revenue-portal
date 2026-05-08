@@ -1,10 +1,9 @@
 import ContractDurationForm from "@/components/contract-duration/contract-duration-form"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { getContractDurationById } from "@/lib/actions/contract-duration"
 import { canAccess } from "@/lib/rbac"
-import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
+import { EditPageShell } from "@/components/ui/edit-page-shell"
+import { CalendarRange } from "lucide-react"
 
 const ContractDurationEditPage = async ({
     params,
@@ -29,20 +28,14 @@ const ContractDurationEditPage = async ({
 
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <CardTitle>Edit Contract Duration</CardTitle>
-                    <Button className="bg-blue-500 hover:bg-blue-600">
-                        <Link href="/admin/contract-duration">Back</Link>
-                    </Button>
-                </div>
-            </CardHeader>
-
-            <CardContent>
+        <EditPageShell
+            title="Edit Contract Duration"
+            backHref="/admin/contract-duration"
+            eyebrow="Duration Record"
+            icon={CalendarRange}
+        >
                 <ContractDurationForm update={true} data={contractDuration.data} />
-            </CardContent>
-        </Card>
+        </EditPageShell>
     )
 }
 

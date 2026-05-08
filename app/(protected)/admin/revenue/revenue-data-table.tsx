@@ -102,6 +102,8 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
+const rupee = "\u20B9";
+
 function StatCard({
   label,
   value,
@@ -116,19 +118,19 @@ function StatCard({
   accent: string
 }) {
   return (
-    <div className="rounded-3xl border border-sky-100/80 bg-white/90 p-5 shadow-[0_12px_40px_rgba(14,116,144,0.10)] backdrop-blur">
+    <div className="rounded-xl border border-zinc-200/80 bg-white p-5 shadow-[0_14px_36px_-30px_rgba(39,39,42,0.35)]">
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-slate-500">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-500">
             {label}
           </p>
-          <p className="text-2xl font-semibold tracking-tight text-slate-900">
+          <p className="text-2xl font-semibold tracking-tight text-zinc-950">
             {value}
           </p>
-          <p className="text-sm text-slate-500">{helper}</p>
+          <p className="text-sm text-zinc-500">{helper}</p>
         </div>
 
-        <div className={`rounded-2xl border p-3 ${accent}`}>
+        <div className={`rounded-lg border p-3 ${accent}`}>
           <Icon className="h-5 w-5" />
         </div>
       </div>

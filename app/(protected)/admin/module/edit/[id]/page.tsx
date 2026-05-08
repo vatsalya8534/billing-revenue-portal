@@ -1,10 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ModuleForm from "@/components/user/module-form";
 import { getModuleById } from "@/lib/actions/module-action";
 import { canAccess } from "@/lib/rbac";
-import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EditPageShell } from "@/components/ui/edit-page-shell";
+import { Blocks } from "lucide-react";
 
 const ModuleEditPage = async ({ params }: { params: Promise<{ id: string }> }) => {
 
@@ -23,21 +22,14 @@ const ModuleEditPage = async ({ params }: { params: Promise<{ id: string }> }) =
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <h1>Edit Module</h1>
-
-          <Button asChild className="bg-blue-500 hover:bg-blue-600">
-            <Link href="/admin/module">Back</Link>
-          </Button>
-        </div>
-      </CardHeader>
-
-      <CardContent>
+    <EditPageShell
+      title="Edit Module"
+      backHref="/admin/module"
+      eyebrow="Module Record"
+      icon={Blocks}
+    >
         <ModuleForm update={true} data={res.data} />
-      </CardContent>
-    </Card>
+    </EditPageShell>
   );
 };
 

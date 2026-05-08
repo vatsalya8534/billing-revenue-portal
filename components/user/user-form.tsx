@@ -37,11 +37,13 @@ import {
   themedSubmitButtonClassName,
   themedTextareaClassName,
 } from "@/components/ui/form-theme";
+import { FormHydrationFallback } from "@/components/ui/form-hydration-fallback";
 import { createUserSchema, userSchema } from "@/lib/validators";
 import { createUser, updateUser } from "@/lib/actions/users";
 import { getRoles } from "@/lib/actions/role";
 import { User } from "@/types";
 import { userDefaultValues } from "@/lib/constants";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type RoleOption = {
   id: string;
@@ -51,6 +53,7 @@ type RoleOption = {
 const UserForm = ({ data, update = false }: { data?: User; update: boolean }) => {
   const router = useRouter();
   const id = data?.id;
+  const isHydrated = useHydrated();
 
   const currentSchema = update ? userSchema : createUserSchema;
   const currentData = update
@@ -95,6 +98,10 @@ const UserForm = ({ data, update = false }: { data?: User; update: boolean }) =>
       setAllRole(res);
     });
   }, []);
+
+  if (!isHydrated) {
+    return <FormHydrationFallback fields={4} sections={2} submitWidthClassName="w-36" />;
+  }
 
   return (
     <Form {...form}>
