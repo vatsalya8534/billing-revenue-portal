@@ -4,6 +4,7 @@ import { ColumnDef } from "@tanstack/react-table"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { DeleteDialog } from "@/components/ui/delete-dailog"
 import { EditIcon, Trash } from "lucide-react"
 
 export const getUsersColumns = ({
@@ -79,13 +80,18 @@ export const getUsersColumns = ({
             )}
 
             {canDelete && (
-              <Button
-                size="icon"
-                variant="destructive"
-                onClick={() => onDelete(id)}
+              <DeleteDialog
+                onConfirm={() => onDelete(id)}
+                title="Delete Customer?"
+                description="Are you sure you want to delete this customer? This action cannot be undone."
               >
-                <Trash size={16} />
-              </Button>
+                <Button
+                  size="icon"
+                  variant="destructive"
+                >
+                  <Trash size={16} />
+                </Button>
+              </DeleteDialog>
             )}
           </div>
         );

@@ -13,7 +13,7 @@ import {
 } from "./dialog"
 
 type DeleteDialogProps = {
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   children?: React.ReactNode
   title?: string
   description?: string
@@ -30,10 +30,16 @@ export function DeleteDialog({
   cancelText = "Cancel",
 }: DeleteDialogProps) {
   const [open, setOpen] = React.useState(false)
+  const [isPending, setIsPending] = React.useState(false)
 
-  const handleConfirm = () => {
-    onConfirm()
-    setOpen(false)
+  const handleConfirm = async () => {
+    try {
+      setIsPending(true)
+      await onConfirm()
+      setOpen(false)
+    } finally {
+      setIsPending(false)
+    }
   }
 
   return (
@@ -45,10 +51,18 @@ export function DeleteDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => setOpen(false)}>
+          <Button
+            variant="outline"
+            onClick={() => setOpen(false)}
+            disabled={isPending}
+          >
             {cancelText}
           </Button>
-          <Button variant="destructive" onClick={handleConfirm}>
+          <Button
+            variant="destructive"
+            onClick={handleConfirm}
+            disabled={isPending}
+          >
             {confirmText}
           </Button>
         </DialogFooter>

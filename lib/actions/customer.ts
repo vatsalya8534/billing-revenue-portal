@@ -123,8 +123,34 @@ export async function updateCustomer(data: Customer, id: string) {
   }
 }
 
-export async function deleteCustomer(id: any) {
+export async function deleteCustomer(id: string) {
   try {
+    const customer = await prisma.customer.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        _count: {
+          select: {
+            purchaseOrders: true
+          }
+        }
+      }
+    })
+
+    if (!customer) {
+      return {
+        success: false,
+        message: "Customer not found"
+      }
+    }
+
+    if (customer._count.purchaseOrders > 0) {
+      return {
+        success: false,
+        message: "Customer cannot be deleted because it is linked to purchase orders."
+      }
+    }
+
     await prisma.customer.delete({
       where: { id }
     })

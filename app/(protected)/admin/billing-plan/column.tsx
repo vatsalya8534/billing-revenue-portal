@@ -5,6 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { EditIcon, Trash } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { DeleteDialog } from "@/components/ui/delete-dailog"
 
 export const getUsersColumns = ({
   canEdit,
@@ -77,13 +78,18 @@ export const getUsersColumns = ({
             )}
 
             {canDelete && (
-              <Button
-                size="icon"
-                variant="destructive"
-                onClick={() => onDelete(id)}
+              <DeleteDialog
+                onConfirm={() => onDelete(id)}
+                title="Delete Billing Plan?"
+                description="Are you sure you want to delete this billing plan? This action cannot be undone."
               >
-                <Trash size={16} />
-              </Button>
+                <Button
+                  size="icon"
+                  variant="destructive"
+                >
+                  <Trash size={16} />
+                </Button>
+              </DeleteDialog>
             )}
           </div>
         );
