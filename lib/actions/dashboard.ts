@@ -406,10 +406,15 @@ export async function getMonthlyBillingData(
 }
 
 export async function getBillingStatusDetails(
-  year: number,
+  year?: number,
   filters?: BillingStatusFilters,
 ) {
-  const { start, end } = getFinancialYearRange(year);
+  const hasYearFilter =
+    typeof year === "number" &&
+    Number.isFinite(year);
+  const financialYearRange = hasYearFilter
+    ? getFinancialYearRange(year)
+    : null;
 
   const cycles = await prisma.billingCycle.findMany({
     include: {
@@ -432,7 +437,11 @@ export async function getBillingStatusDetails(
       const normalizedDate = normalizeDate(new Date(date));
 
       // FY filter
-      if (normalizedDate < start || normalizedDate > end) {
+      if (
+        financialYearRange &&
+        (normalizedDate < financialYearRange.start ||
+          normalizedDate > financialYearRange.end)
+      ) {
         return false;
       }
 

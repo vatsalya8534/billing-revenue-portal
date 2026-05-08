@@ -1,18 +1,76 @@
 "use server";
 
+import { getFinancialYearRange } from "@/lib/date-utils";
 import { prisma } from "@/lib/prisma";
 
+function getCurrentFinancialYear() {
+  const now = new Date();
+
+  return now.getMonth() < 3
+    ? now.getFullYear() - 1
+    : now.getFullYear();
+}
+
+function getInvoiceDate(cycle: {
+  invoiceDate?: Date | null;
+  billingSubmittedDate?: Date | null;
+  paymentDueDate?: Date | null;
+}) {
+  return (
+    cycle.invoiceDate ??
+    cycle.billingSubmittedDate ??
+    cycle.paymentDueDate ??
+    null
+  );
+}
 
 // ================= REVENUE SUMMARY =================
-export async function getRevenueSummary() {
+export async function getRevenueSummary(
+  year = getCurrentFinancialYear(),
+) {
+  const { start, end } = getFinancialYearRange(year);
+
   const cycles = await prisma.billingCycle.findMany({
-    select: { invoiceAmount: true, collectedAmount: true, paymentDueDate: true },
+    where: {
+      OR: [
+        {
+          invoiceDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          billingSubmittedDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          paymentDueDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      ],
+    },
+    select: {
+      invoiceAmount: true,
+      collectedAmount: true,
+      invoiceDate: true,
+      billingSubmittedDate: true,
+      paymentDueDate: true,
+    },
   });
 
   const today = new Date();
   let billed = 0, collected = 0, overdue = 0;
 
   cycles.forEach(c => {
+    const invoiceDate = getInvoiceDate(c);
+    if (!invoiceDate || invoiceDate < start || invoiceDate > end) {
+      return;
+    }
+
     const inv = Number(c.invoiceAmount ?? 0);
     const col = Number(c.collectedAmount ?? 0);
     billed += inv;
@@ -29,11 +87,40 @@ export async function getRevenueSummary() {
 }
 
 // ================= REVENUE BY COMPANY =================
-export async function getRevenueByCompany() {
+export async function getRevenueByCompany(
+  year = getCurrentFinancialYear(),
+) {
+  const { start, end } = getFinancialYearRange(year);
+
   const cycles = await prisma.billingCycle.findMany({
+    where: {
+      OR: [
+        {
+          invoiceDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          billingSubmittedDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          paymentDueDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      ],
+    },
     select: {
       invoiceAmount: true,
       collectedAmount: true,
+      invoiceDate: true,
+      billingSubmittedDate: true,
+      paymentDueDate: true,
       purchaseOrder: {
         select: {
           customer: {
@@ -49,6 +136,11 @@ export async function getRevenueByCompany() {
   const map = new Map<string, { billed: number; collected: number }>();
 
   cycles.forEach((c) => {
+    const invoiceDate = getInvoiceDate(c);
+    if (!invoiceDate || invoiceDate < start || invoiceDate > end) {
+      return;
+    }
+
     const name = c.purchaseOrder?.customer?.companyName || "Unknown";
 
     if (!map.has(name)) {
@@ -70,13 +162,53 @@ export async function getRevenueByCompany() {
 }
 
 // ================= REVENUE BY CUSTOMER =================
-export async function getRevenueByCustomer() {
+export async function getRevenueByCustomer(
+  year = getCurrentFinancialYear(),
+) {
+  const { start, end } = getFinancialYearRange(year);
+
   const data = await prisma.billingCycle.findMany({
-    select: { invoiceAmount: true, collectedAmount: true, purchaseOrder: { select: { customerId: true } } },
+    where: {
+      OR: [
+        {
+          invoiceDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          billingSubmittedDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+        {
+          paymentDueDate: {
+            gte: start,
+            lte: end,
+          },
+        },
+      ],
+    },
+    select: {
+      invoiceAmount: true,
+      collectedAmount: true,
+      invoiceDate: true,
+      billingSubmittedDate: true,
+      paymentDueDate: true,
+      purchaseOrder: {
+        select: { customerId: true },
+      },
+    },
   });
 
   const map = new Map<string, { billed: number; collected: number }>();
   data.forEach(item => {
+    const invoiceDate = getInvoiceDate(item);
+    if (!invoiceDate || invoiceDate < start || invoiceDate > end) {
+      return;
+    }
+
     const cid = item.purchaseOrder?.customerId;
     if (!cid) return;
 

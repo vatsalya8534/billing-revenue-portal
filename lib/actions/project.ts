@@ -690,6 +690,9 @@ export async function fetchPLPageData(projectId: string) {
 export async function filterProjectData(filters: any) {
   const where = buildFilters(filters);
   const monthlyPLWhere = buildMonthlyPLFilters(filters);
+  const hasFinancialPeriodFilter =
+    (filters?.year && filters.year !== "all") ||
+    (filters?.month && filters.month !== "all");
 
   let totalPOValue = 0;
   let totalBilledValue = 0;
@@ -717,11 +720,51 @@ export async function filterProjectData(filters: any) {
     },
   });
 
+  const totalBillableByProject = hasFinancialPeriodFilter &&
+    projects.length > 0
+    ? await prisma.projectMonthlyPL.groupBy({
+      by: ["projectId"],
+      where: {
+        projectId: {
+          in: projects.map((project) => project.id),
+        },
+      },
+      _sum: {
+        billableAmount: true,
+      },
+    })
+    : [];
+
+  const totalBillableByProjectMap = new Map(
+    totalBillableByProject.map((item) => [
+      item.projectId,
+      Number(item._sum.billableAmount || 0),
+    ]),
+  );
+
   if (projects.length > 0) {
     for (const project of projects) {
       const res = getDetailsByProject(project);
+      const projectPOValue = Number(project.poValue || 0);
+      const filteredBillableAmount = (project.monthlyPLs || []).reduce(
+        (sum, cycle) => sum + Number(cycle.billableAmount || 0),
+        0,
+      );
+      const totalProjectBillableAmount =
+        totalBillableByProjectMap.get(project.id) ??
+        filteredBillableAmount;
+      const adjustedPOValue =
+        hasFinancialPeriodFilter &&
+        totalProjectBillableAmount > 0
+          ? projectPOValue *
+            Math.min(
+              filteredBillableAmount /
+                totalProjectBillableAmount,
+              1,
+            )
+          : projectPOValue;
 
-      totalPOValue += Number(project.poValue || 0);
+      totalPOValue += adjustedPOValue;
       totalBilledValue += res.totalBilledValue;
       totalCostValue += res.totalCostValue;
       totalFMSValue += res.totalFmsValue;

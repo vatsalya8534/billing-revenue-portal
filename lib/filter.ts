@@ -10,6 +10,12 @@ type Filters = {
   year?: string;
 };
 
+function getCalendarMonthFromFinancialMonth(
+  month: number,
+) {
+  return month <= 8 ? month + 3 : month - 9;
+}
+
 export function buildMonthlyPLFilters(
   filters: Pick<Filters, "month" | "year">
 ): Prisma.ProjectMonthlyPLWhereInput {
@@ -42,8 +48,12 @@ export function buildMonthlyPLFilters(
   }
 
   if (filters.month && filters.month !== "all") {
+    const financialMonth = Number(filters.month);
+
     andConditions.push({
-      month: Number(filters.month),
+      month: getCalendarMonthFromFinancialMonth(
+        financialMonth,
+      ),
     });
   }
 

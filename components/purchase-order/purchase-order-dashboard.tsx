@@ -320,8 +320,13 @@ const PurchaseOrderDashboard = ({
       setLoading(true);
 
       try {
+        const selectedYear =
+          filters.year === "all"
+            ? undefined
+            : Number(filters.year);
+
         const data = await getBillingStatusDetails(
-          Number(filters.year),
+          selectedYear,
           filters,
         );
 
@@ -648,6 +653,9 @@ const PurchaseOrderDashboard = ({
                       <SelectValue placeholder="Select Year" />
                     </SelectTrigger>
                     <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">
+                        All Years
+                      </SelectItem>
                       {years.map((year) => (
                         <SelectItem
                           key={year}
