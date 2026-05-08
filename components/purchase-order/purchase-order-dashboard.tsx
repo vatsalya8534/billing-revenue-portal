@@ -565,7 +565,13 @@ const PurchaseOrderDashboard = ({
                           : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto rounded-2xl p-0">
+                    <PopoverContent
+                      align="start"
+                      avoidCollisions={false}
+                      className="w-auto rounded-2xl p-0"
+                      side="bottom"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={filters.startDate}
@@ -596,7 +602,13 @@ const PurchaseOrderDashboard = ({
                           : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto rounded-2xl p-0">
+                    <PopoverContent
+                      align="start"
+                      avoidCollisions={false}
+                      className="w-auto rounded-2xl p-0"
+                      side="bottom"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={filters.endDate}

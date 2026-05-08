@@ -293,7 +293,13 @@ const PLForm = ({
                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
+                          <PopoverContent
+                            align="start"
+                            avoidCollisions={false}
+                            className="w-auto p-0"
+                            side="bottom"
+                            sideOffset={8}
+                          >
                             <Calendar
                               mode="single"
                               selected={field.value as Date}
@@ -322,7 +328,13 @@ const PLForm = ({
                               {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0">
+                          <PopoverContent
+                            align="start"
+                            avoidCollisions={false}
+                            className="w-auto p-0"
+                            side="bottom"
+                            sideOffset={8}
+                          >
                             <Calendar
                               mode="single"
                               selected={field.value as Date}

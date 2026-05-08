@@ -744,7 +744,13 @@ export function PLDashboardComponent({
                           : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto rounded-2xl p-0">
+                    <PopoverContent
+                      align="start"
+                      avoidCollisions={false}
+                      className="w-auto rounded-2xl p-0"
+                      side="bottom"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={filters.startDate}
@@ -770,7 +776,13 @@ export function PLDashboardComponent({
                           : "Select date"}
                       </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto rounded-2xl p-0">
+                    <PopoverContent
+                      align="start"
+                      avoidCollisions={false}
+                      className="w-auto rounded-2xl p-0"
+                      side="bottom"
+                      sideOffset={8}
+                    >
                       <Calendar
                         mode="single"
                         selected={filters.endDate}
