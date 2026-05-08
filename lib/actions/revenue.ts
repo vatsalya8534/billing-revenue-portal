@@ -1,5 +1,6 @@
 "use server";
 
+import { PaymentReceived } from "@prisma/client";
 import {
   getCurrentFinancialYear,
   getFinancialYearRangeToDate,
@@ -17,6 +18,24 @@ function getInvoiceDate(cycle: {
     cycle.paymentDueDate ??
     null
   );
+}
+
+function getEffectiveCollectedAmount(cycle: {
+  collectedAmount?: number | null;
+  invoiceAmount?: number | null;
+  paymentReceived?: PaymentReceived | null;
+}) {
+  const billed = Number(cycle.invoiceAmount ?? 0);
+  const collected = Number(cycle.collectedAmount ?? 0);
+
+  if (
+    cycle.paymentReceived === PaymentReceived.YES &&
+    collected <= 0
+  ) {
+    return billed;
+  }
+
+  return collected;
 }
 
 // ================= REVENUE SUMMARY =================
@@ -54,6 +73,7 @@ export async function getRevenueSummary(
       invoiceDate: true,
       billingSubmittedDate: true,
       paymentDueDate: true,
+      paymentReceived: true,
     },
   });
 
@@ -67,7 +87,7 @@ export async function getRevenueSummary(
     }
 
     const inv = Number(c.invoiceAmount ?? 0);
-    const col = Number(c.collectedAmount ?? 0);
+    const col = getEffectiveCollectedAmount(c);
     billed += inv;
     collected += col;
 
@@ -116,6 +136,7 @@ export async function getRevenueByCompany(
       invoiceDate: true,
       billingSubmittedDate: true,
       paymentDueDate: true,
+      paymentReceived: true,
       purchaseOrder: {
         select: {
           customer: {
@@ -145,7 +166,7 @@ export async function getRevenueByCompany(
     const entry = map.get(name)!;
 
     entry.billed += Number(c.invoiceAmount || 0);
-    entry.collected += Number(c.collectedAmount || 0);
+    entry.collected += getEffectiveCollectedAmount(c);
   });
 
   return Array.from(map.entries()).map(([companyName, rev]) => ({
@@ -191,6 +212,7 @@ export async function getRevenueByCustomer(
       invoiceDate: true,
       billingSubmittedDate: true,
       paymentDueDate: true,
+      paymentReceived: true,
       purchaseOrder: {
         select: { customerId: true },
       },
@@ -210,7 +232,7 @@ export async function getRevenueByCustomer(
     if (!map.has(cid)) map.set(cid, { billed: 0, collected: 0 });
     const existing = map.get(cid)!;
     existing.billed += Number(item.invoiceAmount ?? 0);
-    existing.collected += Number(item.collectedAmount ?? 0);
+    existing.collected += getEffectiveCollectedAmount(item);
   });
 
   return Array.from(map.entries()).map(([customerId, rev]) => ({

@@ -13,6 +13,18 @@ const toLocalDate = (date?: string | Date | null): Date | undefined => {
   return new Date(typeof date === "string" ? `${date}T00:00:00` : date);
 };
 
+const resolvePaymentDueDate = (billingCycle?: {
+  billingSubmittedDate?: string | Date | null;
+  invoiceDate?: string | Date | null;
+  paymentDueDate?: string | Date | null;
+}) => {
+  return toLocalDate(
+    billingCycle?.paymentDueDate ??
+      billingCycle?.invoiceDate ??
+      billingCycle?.billingSubmittedDate,
+  );
+};
+
 // ================= GET ALL =================
 export async function getPurchaseOrders() {
   try {
@@ -69,7 +81,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
           invoiceDate: cycle.invoiceDate,
           billingSubmittedDate: cycle.billingSubmittedDate,
           paymentReceivedDate: null,
-          paymentDueDate: null,
+          paymentDueDate: resolvePaymentDueDate(cycle),
           paymentReceived: PaymentReceived.NO,
           billingRemark: "",
           tds: new Prisma.Decimal(0),
@@ -81,7 +93,7 @@ export async function createPurchaseOrder(data: PurchaseOrder) {
           invoiceDate: toLocalDate(bc.invoiceDate),
           billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
           paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
-          paymentDueDate: toLocalDate(bc.paymentDueDate),
+          paymentDueDate: resolvePaymentDueDate(bc),
           paymentReceived: bc.paymentReceived,
           billingRemark: bc.billingRemark ?? "",
           tds: new Prisma.Decimal(bc.tds ?? 0),
@@ -179,7 +191,7 @@ export async function updatePurchaseOrder(
               invoiceDate: toLocalDate(bc.invoiceDate),
               billingSubmittedDate: toLocalDate(bc.billingSubmittedDate),
               paymentReceivedDate: toLocalDate(bc.paymentReceivedDate),
-              paymentDueDate: toLocalDate(bc.paymentDueDate),
+              paymentDueDate: resolvePaymentDueDate(bc),
               paymentReceived: bc.paymentReceived,
               billingRemark: bc.billingRemark ?? "",
               tds: new Prisma.Decimal(bc.tds ?? 0),

@@ -67,6 +67,14 @@ import {
 } from "@/lib/billing-cycle-utils";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
+type PurchaseOrderFormData = Partial<PurchaseOrderFormValues> & {
+  billingCycles?: Array<
+    Partial<PurchaseOrderFormValues["billingCycles"][number]>
+  >;
+  companyId?: string | null;
+  id?: string;
+  status?: POStatus;
+};
 
 const dateButtonClassName = (hasValue?: boolean) =>
   cn(
@@ -77,6 +85,25 @@ const dateButtonClassName = (hasValue?: boolean) =>
 
 const formCardClassName =
   "overflow-hidden rounded-2xl border border-sky-100/90 bg-[linear-gradient(180deg,rgba(255,255,255,1),rgba(248,252,255,0.95))] shadow-[0_24px_70px_-40px_rgba(15,23,42,0.24)] transition-all duration-200 hover:shadow-[0_28px_74px_-36px_rgba(14,165,233,0.22)]";
+
+const defaultPurchaseOrderValues: PurchaseOrderFormValues = {
+  customerPONumber: "",
+  poAmount: 0,
+  serviceTypeId: "",
+  contractDurationId: "",
+  contractId: "",
+  paymentTerms: "",
+  billingPlanId: "",
+  customerId: "",
+  poOwner: "",
+  status: POStatus.LIVE,
+  startFrom: undefined,
+  endDate: undefined,
+  ageingDays: 0,
+  remark: "",
+  scope: "",
+  billingCycles: [],
+};
 
 type PurchaseOrderBillingCycle =
   PurchaseOrderFormValues["billingCycles"][number];
@@ -96,6 +123,17 @@ const getCycleMonthYear = (cycle?: PurchaseOrderBillingCycle) => {
   };
 };
 
+const getDefaultPaymentDueDate = (
+  cycle?: Partial<PurchaseOrderBillingCycle> | null,
+) => {
+  return (
+    cycle?.paymentDueDate ??
+    cycle?.invoiceDate ??
+    cycle?.billingSubmittedDate ??
+    null
+  );
+};
+
 const POForm = ({
   billingPlan,
   serviceType,
@@ -111,38 +149,17 @@ const POForm = ({
   contractType: ContractType[];
   customers: Customer[];
   companies: Company[];
-  data?: any;
+  data?: PurchaseOrderFormData;
   update: boolean;
   contractDurations: ContractDuration[];
 }) => {
   const router = useRouter();
   const id = data?.id;
 
-  // ---------------- DEFAULT VALUES ----------------
-  const defaultValues: PurchaseOrderFormValues = {
-    customerPONumber: "",
-    poAmount: 0,
-    serviceTypeId: "",
-    contractDurationId: "",
-    contractId: "",
-    paymentTerms: "",
-    billingPlanId: "",
-    customerId: "",
-    poOwner: "",
-    status: POStatus.LIVE,
-    startFrom: undefined,
-    endDate: undefined,
-    ageingDays: 0,
-
-    remark: "",
-    scope: "",
-    billingCycles: [],
-  };
-
   // ---------------- FORM ----------------
   const form = useForm<PurchaseOrderFormValues>({
-    resolver: zodResolver(purchaseOrderSchema) as any,
-    defaultValues: data || defaultValues,
+    resolver: zodResolver(purchaseOrderSchema),
+    defaultValues: data || defaultPurchaseOrderValues,
   });
 
   const { fields, replace } = useFieldArray({
@@ -153,10 +170,22 @@ const POForm = ({
   const [selectedCycleIndex, setSelectedCycleIndex] = useState(0);
 
   // ---------------- WATCHERS ----------------
-  const watchBillingPlan = form.watch("billingPlanId");
-  const watchPOAmount = form.watch("poAmount");
-  const startFrom = form.watch("startFrom");
-  const endDate = form.watch("endDate");
+  const watchBillingPlan = useWatch({
+    control: form.control,
+    name: "billingPlanId",
+  });
+  const watchPOAmount = useWatch({
+    control: form.control,
+    name: "poAmount",
+  });
+  const startFrom = useWatch({
+    control: form.control,
+    name: "startFrom",
+  });
+  const endDate = useWatch({
+    control: form.control,
+    name: "endDate",
+  });
   const watchedBillingCycles =
     useWatch({
       control: form.control,
@@ -179,13 +208,7 @@ const POForm = ({
         form.setValue("ageingDays", 0);
       }
     }
-  }, [startFrom, endDate, form]);
-
-  useEffect(() => {
-    if (selectedCycleIndex > fields.length - 1) {
-      setSelectedCycleIndex(Math.max(fields.length - 1, 0));
-    }
-  }, [fields.length, selectedCycleIndex]);
+  }, [endDate, form, startFrom, update]);
 
   // ---------------- SUBMIT ----------------
   const onSubmit: SubmitHandler<PurchaseOrderFormValues> = (values) => {
@@ -259,7 +282,11 @@ const POForm = ({
           existingCycle?.billingSubmittedDate ?? cycleDates.billingSubmittedDate,
         paymentReceived: existingCycle?.paymentReceived ?? PaymentReceived.NO,
         paymentReceivedDate: existingCycle?.paymentReceivedDate ?? null,
-        paymentDueDate: existingCycle?.paymentDueDate ?? null,
+        paymentDueDate:
+          getDefaultPaymentDueDate(existingCycle) ??
+          cycleDates.invoiceDate ??
+          cycleDates.billingSubmittedDate ??
+          null,
         billingRemark: existingCycle?.billingRemark ?? "",
         tds: Number(existingCycle?.tds ?? 0),
       };
@@ -281,7 +308,7 @@ const POForm = ({
   useEffect(() => {
     if (!update || !data) return;
 
-    const formattedCycles = (data.billingCycles ?? []).map((bc: any) => {
+    const formattedCycles = (data.billingCycles ?? []).map((bc) => {
       return {
         id: bc.id,
         invoiceNumber: bc.invoiceNumber ?? "",
@@ -295,9 +322,17 @@ const POForm = ({
         paymentReceivedDate: bc.paymentReceivedDate
           ? new Date(bc.paymentReceivedDate)
           : undefined,
-        paymentDueDate: bc.paymentDueDate
-          ? new Date(bc.paymentDueDate)
-          : undefined,
+        paymentDueDate: getDefaultPaymentDueDate({
+          billingSubmittedDate: bc.billingSubmittedDate
+            ? new Date(bc.billingSubmittedDate)
+            : undefined,
+          invoiceDate: bc.invoiceDate
+            ? new Date(bc.invoiceDate)
+            : undefined,
+          paymentDueDate: bc.paymentDueDate
+            ? new Date(bc.paymentDueDate)
+            : undefined,
+        }) ?? undefined,
         paymentReceived: bc.paymentReceived,
         billingRemark: bc.billingRemark ?? "",
         tds: bc.tds ?? "",
@@ -305,7 +340,7 @@ const POForm = ({
     });
 
     form.reset({
-      ...defaultValues,
+      ...defaultPurchaseOrderValues,
 
       customerPONumber: data.customerPONumber ?? "",
       poAmount: Number(data.poAmount ?? 0),

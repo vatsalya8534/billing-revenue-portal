@@ -1,6 +1,7 @@
 "use server";
 
 import { format } from "date-fns";
+import { PaymentReceived } from "@prisma/client";
 
 import {
   getCurrentFinancialYear,
@@ -70,12 +71,30 @@ type BillingCycleLike = {
   invoiceAmount?: number | null;
   invoiceDate?: Date | null;
   paymentDueDate?: Date | null;
+  paymentReceived?: PaymentReceived | null;
   paymentReceivedDate?: Date | null;
   purchaseOrder?: CyclePurchaseOrder | null;
 };
 
+function getEffectiveCollectedAmount(
+  cycle: BillingCycleLike,
+) {
+  const billed = Number(cycle.invoiceAmount || 0);
+  const collected = Number(cycle.collectedAmount || 0);
+
+  if (
+    cycle.paymentReceived === PaymentReceived.YES &&
+    collected <= 0
+  ) {
+    return billed;
+  }
+
+  return collected;
+}
+
 function normalizeAmount(billed: number, collected: number) {
-  const safeCollected = Math.min(collected, billed);
+  const safeCollected =
+    billed > 0 ? Math.min(collected, billed) : collected;
   const pending = billed - safeCollected;
   return { billed, collected: safeCollected, pending };
 }
@@ -207,6 +226,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
       invoiceAmount: true,
       invoiceDate: true,
       paymentDueDate: true,
+      paymentReceived: true,
     },
   });
 
@@ -230,7 +250,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     }
 
     const billed = Number(cycle.invoiceAmount || 0);
-    const rawCollected = Number(cycle.collectedAmount || 0);
+    const rawCollected = getEffectiveCollectedAmount(cycle);
     const { collected, pending } = normalizeAmount(
       billed,
       rawCollected,
@@ -352,7 +372,7 @@ export async function getMonthlyBillingData(
 
   for (const cycle of cycles) {
     const billed = Number(cycle.invoiceAmount || 0);
-    const paid = Number(cycle.collectedAmount || 0);
+    const paid = getEffectiveCollectedAmount(cycle);
 
     const billingDate = getInvoiceDate(cycle);
     if (billingDate) {
@@ -656,7 +676,7 @@ export async function getRevenueDetailsByMonth(
 
       if (
         params.series === "payment" &&
-        Number(cycle.collectedAmount || 0) <= 0
+        getEffectiveCollectedAmount(cycle) <= 0
       ) {
         return false;
       }
@@ -667,9 +687,8 @@ export async function getRevenueDetailsByMonth(
       const billedAmount = Number(
         cycle.invoiceAmount || 0,
       );
-      const paymentReceived = Number(
-        cycle.collectedAmount || 0,
-      );
+      const paymentReceived =
+        getEffectiveCollectedAmount(cycle);
       const pendingAmount = Math.max(
         billedAmount - paymentReceived,
         0,

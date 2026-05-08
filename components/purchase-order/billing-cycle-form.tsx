@@ -207,7 +207,18 @@ const BillingCycleForm = ({
                     <Calendar
                       mode="single"
                       selected={field.value as Date}
-                      onSelect={field.onChange}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        form.setValue(
+                          `billingCycles.${index}.paymentDueDate`,
+                          date ?? null,
+                          {
+                            shouldDirty: true,
+                            shouldTouch: true,
+                            shouldValidate: true,
+                          },
+                        );
+                      }}
                     />
                   </PopoverContent>
                 </Popover>
