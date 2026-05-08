@@ -1,15 +1,10 @@
 "use server";
 
-import { getFinancialYearRange } from "@/lib/date-utils";
+import {
+  getCurrentFinancialYear,
+  getFinancialYearRangeToDate,
+} from "@/lib/date-utils";
 import { prisma } from "@/lib/prisma";
-
-function getCurrentFinancialYear() {
-  const now = new Date();
-
-  return now.getMonth() < 3
-    ? now.getFullYear() - 1
-    : now.getFullYear();
-}
 
 function getInvoiceDate(cycle: {
   invoiceDate?: Date | null;
@@ -28,7 +23,7 @@ function getInvoiceDate(cycle: {
 export async function getRevenueSummary(
   year = getCurrentFinancialYear(),
 ) {
-  const { start, end } = getFinancialYearRange(year);
+  const { start, end } = getFinancialYearRangeToDate(year);
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
@@ -90,7 +85,7 @@ export async function getRevenueSummary(
 export async function getRevenueByCompany(
   year = getCurrentFinancialYear(),
 ) {
-  const { start, end } = getFinancialYearRange(year);
+  const { start, end } = getFinancialYearRangeToDate(year);
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
@@ -165,7 +160,7 @@ export async function getRevenueByCompany(
 export async function getRevenueByCustomer(
   year = getCurrentFinancialYear(),
 ) {
-  const { start, end } = getFinancialYearRange(year);
+  const { start, end } = getFinancialYearRangeToDate(year);
 
   const data = await prisma.billingCycle.findMany({
     where: {

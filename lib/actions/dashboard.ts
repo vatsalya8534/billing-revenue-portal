@@ -2,7 +2,10 @@
 
 import { format } from "date-fns";
 
-import { getFinancialYearRange } from "@/lib/date-utils";
+import {
+  getCurrentFinancialYear,
+  getFinancialYearRangeToDate,
+} from "@/lib/date-utils";
 import { prisma } from "@/lib/prisma";
 
 export interface DashboardStats {
@@ -43,6 +46,34 @@ export type RevenueMonthDetail = {
   pendingAmount: number;
 };
 
+type CycleCustomer = {
+  companyName?: string | null;
+  customerCode?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+};
+
+type CycleCompany = {
+  id?: string | null;
+  name?: string | null;
+};
+
+type CyclePurchaseOrder = {
+  company?: CycleCompany | null;
+  customer?: CycleCustomer | null;
+  customerPONumber?: string | null;
+};
+
+type BillingCycleLike = {
+  billingSubmittedDate?: Date | null;
+  collectedAmount?: number | null;
+  invoiceAmount?: number | null;
+  invoiceDate?: Date | null;
+  paymentDueDate?: Date | null;
+  paymentReceivedDate?: Date | null;
+  purchaseOrder?: CyclePurchaseOrder | null;
+};
+
 function normalizeAmount(billed: number, collected: number) {
   const safeCollected = Math.min(collected, billed);
   const pending = billed - safeCollected;
@@ -55,7 +86,9 @@ function normalizeDate(date: Date) {
   return next;
 }
 
-function getInvoiceDate(cycle: any): Date | null {
+function getInvoiceDate(
+  cycle: BillingCycleLike,
+): Date | null {
   return (
     cycle.invoiceDate ??
     cycle.billingSubmittedDate ??
@@ -64,7 +97,9 @@ function getInvoiceDate(cycle: any): Date | null {
   );
 }
 
-function getPaymentDate(cycle: any): Date | null {
+function getPaymentDate(
+  cycle: BillingCycleLike,
+): Date | null {
   return (
     cycle.paymentReceivedDate ??
     cycle.invoiceDate ??
@@ -75,7 +110,7 @@ function getPaymentDate(cycle: any): Date | null {
 }
 
 function getSeriesDate(
-  cycle: any,
+  cycle: BillingCycleLike,
   series: RevenueSeries,
 ) {
   return series === "payment"
@@ -129,7 +164,7 @@ function matchesFilterMonth(
 }
 
 function matchesCompanyFilter(
-  cycle: any,
+  cycle: BillingCycleLike,
   filters?: BillingStatusFilters,
 ) {
   if (!filters?.company || filters.company === "all") {
@@ -143,12 +178,7 @@ function matchesCompanyFilter(
 }
 
 function getCustomerDisplayName(
-  customer?: {
-    companyName?: string | null;
-    customerCode?: string | null;
-    firstName?: string | null;
-    lastName?: string | null;
-  } | null,
+  customer?: CycleCustomer | null,
 ) {
   if (!customer) return "-";
 
@@ -168,13 +198,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   const now = new Date();
   const today = normalizeDate(new Date());
   const currentMonth = now.getMonth();
-  const currentYear =
-    now.getMonth() < 3
-      ? now.getFullYear() - 1
-      : now.getFullYear();
-  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
-  const lastMonthYear =
-    currentMonth === 0 ? currentYear - 1 : currentYear;
+  const currentYear = getCurrentFinancialYear(now);
 
   const cycles = await prisma.billingCycle.findMany({
     select: {
@@ -189,13 +213,22 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   let totalBilled = 0;
   let totalCollected = 0;
   let totalOverdue = 0;
+  let billCount = 0;
   let billedThisMonth = 0;
   let collectedThisMonth = 0;
-  let billedLastMonth = 0;
 
-  const { start, end } = getFinancialYearRange(currentYear);
+  const { start, end } =
+    getFinancialYearRangeToDate(currentYear, now);
 
   for (const cycle of cycles) {
+    const date = getInvoiceDate(cycle);
+    if (!date) continue;
+
+    const normalizedDate = normalizeDate(new Date(date));
+    if (normalizedDate < start || normalizedDate > end) {
+      continue;
+    }
+
     const billed = Number(cycle.invoiceAmount || 0);
     const rawCollected = Number(cycle.collectedAmount || 0);
     const { collected, pending } = normalizeAmount(
@@ -205,28 +238,15 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
     totalBilled += billed;
     totalCollected += collected;
+    billCount += 1;
 
-    const date = getInvoiceDate(cycle);
-    if (!date) continue;
+    const currentFYMonth = (currentMonth + 9) % 12;
+    const dataFYMonth =
+      (normalizedDate.getMonth() + 9) % 12;
 
-    const normalizedDate = normalizeDate(new Date(date));
-
-    if (normalizedDate >= start && normalizedDate <= end) {
-      const currentFYMonth = (currentMonth + 9) % 12;
-      const dataFYMonth =
-        (normalizedDate.getMonth() + 9) % 12;
-
-      if (dataFYMonth === currentFYMonth) {
-        billedThisMonth += billed;
-        collectedThisMonth += collected;
-      }
-    }
-
-    if (
-      normalizedDate.getMonth() === lastMonth &&
-      normalizedDate.getFullYear() === lastMonthYear
-    ) {
-      billedLastMonth += billed;
+    if (dataFYMonth === currentFYMonth) {
+      billedThisMonth += billed;
+      collectedThisMonth += collected;
     }
 
     if (cycle.paymentDueDate) {
@@ -250,7 +270,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     : 0;
 
   return {
-    billCount: cycles.length,
+    billCount,
     billingThisMonth: billedThisMonth,
     totalBilledAmount: totalBilled,
     totalCollectedAmount: totalCollected,
@@ -266,7 +286,8 @@ export async function getMonthlyBillingData(
   year: number,
   filters?: BillingStatusFilters,
 ) {
-  const { start, end } = getFinancialYearRange(year);
+  const { start, end } =
+    getFinancialYearRangeToDate(year);
   const today = normalizeDate(new Date());
 
   const cycles = await prisma.billingCycle.findMany({
@@ -413,7 +434,7 @@ export async function getBillingStatusDetails(
     typeof year === "number" &&
     Number.isFinite(year);
   const financialYearRange = hasYearFilter
-    ? getFinancialYearRange(year)
+    ? getFinancialYearRangeToDate(year)
     : null;
 
   const cycles = await prisma.billingCycle.findMany({
@@ -540,6 +561,12 @@ export async function getRevenueDetailsByMonth(
     params.year,
     params.month,
   );
+  const activeFinancialYearRange =
+    getFinancialYearRangeToDate(params.year);
+  const effectiveEnd =
+    end > activeFinancialYearRange.end
+      ? activeFinancialYearRange.end
+      : end;
 
   const cycles = await prisma.billingCycle.findMany({
     where: {
@@ -547,25 +574,25 @@ export async function getRevenueDetailsByMonth(
         {
           invoiceDate: {
             gte: start,
-            lte: end,
+            lte: effectiveEnd,
           },
         },
         {
           billingSubmittedDate: {
             gte: start,
-            lte: end,
+            lte: effectiveEnd,
           },
         },
         {
           paymentDueDate: {
             gte: start,
-            lte: end,
+            lte: effectiveEnd,
           },
         },
         {
           paymentReceivedDate: {
             gte: start,
-            lte: end,
+            lte: effectiveEnd,
           },
         },
       ],
@@ -604,7 +631,7 @@ export async function getRevenueDetailsByMonth(
 
       if (
         normalizedSeriesDate < start ||
-        normalizedSeriesDate > end
+        normalizedSeriesDate > effectiveEnd
       ) {
         return false;
       }

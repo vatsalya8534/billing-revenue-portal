@@ -1,12 +1,21 @@
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DeleteDialog } from "@/components/ui/delete-dailog";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditIcon, Eye, Trash } from "lucide-react";
 import Link from "next/link";
 
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { DeleteDialog } from "@/components/ui/delete-dailog";
+import {
+  getCurrentFinancialYear,
+  getFinancialYearRangeToDate,
+} from "@/lib/date-utils";
+
 type BillingCycleRow = {
+  invoiceAmount?: number | null;
   collectedAmount?: number | null;
+  invoiceDate?: string | Date | null;
+  billingSubmittedDate?: string | Date | null;
+  paymentDueDate?: string | Date | null;
 };
 
 type RevenueRow = {
@@ -21,6 +30,61 @@ type RevenueRow = {
   ServiceType?: { name?: string | null } | null;
   status?: string | null;
 };
+
+const currentFinancialYear = getCurrentFinancialYear();
+const financialYearRange =
+  getFinancialYearRangeToDate(currentFinancialYear);
+
+function getCycleFinancialDate(cycle: BillingCycleRow) {
+  return (
+    cycle.invoiceDate ??
+    cycle.billingSubmittedDate ??
+    cycle.paymentDueDate ??
+    null
+  );
+}
+
+function isWithinRange(
+  value: string | Date | null | undefined,
+  start: Date,
+  end: Date,
+) {
+  if (!value) return false;
+
+  const date = new Date(value);
+
+  return !Number.isNaN(date.getTime()) && date >= start && date <= end;
+}
+
+function getFinancialYearTotals(
+  cycles: BillingCycleRow[] | null | undefined,
+) {
+  return (cycles || []).reduce(
+    (sum, cycle) => {
+      if (
+        !isWithinRange(
+          getCycleFinancialDate(cycle),
+          financialYearRange.start,
+          financialYearRange.end,
+        )
+      ) {
+        return sum;
+      }
+
+      const billedAmount = Number(cycle.invoiceAmount || 0);
+      const collectedAmount = Math.min(
+        Number(cycle.collectedAmount || 0),
+        billedAmount,
+      );
+
+      return {
+        billed: sum.billed + billedAmount,
+        collected: sum.collected + collectedAmount,
+      };
+    },
+    { billed: 0, collected: 0 },
+  );
+}
 
 function formatCurrency(value: number) {
   return `₹ ${Math.round(value || 0).toLocaleString("en-IN")}`;
@@ -49,7 +113,8 @@ export const getUsersColumns = ({
             {row.original.company?.name || "-"}
           </p>
           <p className="text-xs text-slate-500">
-            {row.original.customer?.companyName || "No mapped customer"}
+            {row.original.customer?.companyName ||
+              "No mapped customer"}
           </p>
         </div>
       ),
@@ -76,22 +141,21 @@ export const getUsersColumns = ({
       accessorKey: "poAmount",
       header: () => (
         <span className="text-xs font-semibold uppercase tracking-wider text-white">
-          Contract Value
+          FY Billed
         </span>
       ),
       cell: ({ row }) => {
-        const billed = Number(row.original.poAmount || 0);
-        const collected = (row.original.billingCycles || []).reduce((sum, cycle) => {
-          return sum + Number(cycle.collectedAmount || 0);
-        }, 0);
+        const totals = getFinancialYearTotals(
+          row.original.billingCycles,
+        );
 
         return (
           <div className="space-y-1">
             <p className="font-semibold text-emerald-600">
-              {formatCurrency(billed)}
+              {formatCurrency(totals.billed)}
             </p>
             <p className="text-xs text-slate-500">
-              Collected {formatCurrency(collected)}
+              Collected {formatCurrency(totals.collected)}
             </p>
           </div>
         );
@@ -105,12 +169,19 @@ export const getUsersColumns = ({
         </span>
       ),
       cell: ({ row }) => {
-        const billed = Number(row.original.poAmount || 0);
-        const collected = (row.original.billingCycles || []).reduce((sum, cycle) => {
-          return sum + Number(cycle.collectedAmount || 0);
-        }, 0);
-        const pending = Math.max(billed - collected, 0);
-        const ratio = billed > 0 ? Math.round((collected / billed) * 100) : 0;
+        const totals = getFinancialYearTotals(
+          row.original.billingCycles,
+        );
+        const pending = Math.max(
+          totals.billed - totals.collected,
+          0,
+        );
+        const ratio =
+          totals.billed > 0
+            ? Math.round(
+                (totals.collected / totals.billed) * 100,
+              )
+            : 0;
 
         return (
           <div className="min-w-[160px] space-y-2">
