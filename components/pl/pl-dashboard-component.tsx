@@ -8,7 +8,6 @@ import {
   BarChart3,
   CalendarIcon,
   ChevronDown,
-  DollarSign,
   IndianRupee,
   Layers3,
   Minus,
@@ -1059,6 +1058,9 @@ export function PLDashboardComponent({
               </div>
               <div className="p-5">
                 <TotalBilledChart
+                  activeSelection={
+                    activeTable === "billing" ? selectedMonth : null
+                  }
                   filters={filters}
                   onMonthClick={(data: SelectedMonth) => {
                     setSelectedMonth(data);
@@ -1083,6 +1085,9 @@ export function PLDashboardComponent({
               </div>
               <div className="p-5">
                 <TotalCostChart
+                  activeSelection={
+                    activeTable === "cost" ? selectedMonth : null
+                  }
                   filters={filters}
                   onMonthClick={(data: SelectedMonth) => {
                     setSelectedMonth(data);
@@ -1110,7 +1115,7 @@ export function PLDashboardComponent({
                 </div>
               </div>
               <button
-                onClick={() => setActiveTable(null)}
+                onClick={clearDrillDown}
                 className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 <X className="h-4 w-4" />
@@ -1188,7 +1193,7 @@ export function PLDashboardComponent({
                 </div>
               </div>
               <button
-                onClick={() => setActiveTable(null)}
+                onClick={clearDrillDown}
                 className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
               >
                 <X className="h-4 w-4" />

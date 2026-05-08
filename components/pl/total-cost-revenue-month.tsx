@@ -37,6 +37,7 @@ type SelectedMonth = {
 };
 
 type Props = {
+  activeSelection?: SelectedMonth | null;
   onMonthClick?: (data: SelectedMonth) => void;
   filters: Record<string, unknown>;
   onClear?: () => void;
@@ -191,7 +192,12 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export function TotalCostChart({ onMonthClick, onClear, filters }: Props) {
+export function TotalCostChart({
+  activeSelection = null,
+  onMonthClick,
+  onClear,
+  filters,
+}: Props) {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -245,8 +251,19 @@ export function TotalCostChart({ onMonthClick, onClear, filters }: Props) {
   }, [filters, selectedYear]);
 
   useEffect(() => {
-    setActiveIndex(null);
-  }, [selectedYear]);
+    if (!activeSelection) {
+      setActiveIndex(null);
+      return;
+    }
+
+    const nextIndex = data.findIndex(
+      (entry) =>
+        entry.monthNumber === activeSelection.month &&
+        entry.year === activeSelection.year,
+    );
+
+    setActiveIndex(nextIndex >= 0 ? nextIndex : null);
+  }, [activeSelection, data, selectedYear]);
 
   const chartStats = useMemo(() => {
     const values = data.map((item) => item.value).filter((value) => value > 0);
@@ -468,7 +485,6 @@ export function TotalCostChart({ onMonthClick, onClear, filters }: Props) {
           </span>
           <button
             onClick={() => {
-              setActiveIndex(null);
               onClear?.(); // 👈 call parent clear
             }}
             className="ml-auto text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
