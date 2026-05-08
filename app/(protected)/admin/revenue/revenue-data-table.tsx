@@ -6,7 +6,7 @@ import { toast } from "sonner"
 import { getUsersColumns } from "./column";
 import { DataTable } from "@/components/datatable/DataTable";
 import { deletePurchaseOrder } from "@/lib/actions/purschase-order";
-import { BadgeIndianRupee, BriefcaseBusiness, CircleDollarSign, ReceiptText, TrendingUp } from "lucide-react";
+import { BadgeIndianRupee, CircleDollarSign, ReceiptText, TrendingUp } from "lucide-react";
 
 type BillingCycleRow = {
   collectedAmount?: number | null;

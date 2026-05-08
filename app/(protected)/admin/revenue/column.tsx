@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DeleteDialog } from "@/components/ui/delete-dailog";
 import { ColumnDef } from "@tanstack/react-table";
 import { EditIcon, Eye, Trash } from "lucide-react";
 import Link from "next/link";
@@ -235,14 +236,20 @@ export const getUsersColumns = ({
           )}
 
           {canDelete && (
-            <Button
-              size="icon"
-              variant="destructive"
-              className="cursor-pointer rounded-xl shadow-sm"
-              onClick={() => onDelete(id)}
+            <DeleteDialog
+              onConfirm={() => onDelete(id)}
+              title="Delete Revenue Record?"
+              description="Are you sure you want to delete this revenue record? This action cannot be undone."
+              confirmText="OK"
             >
-              <Trash size={16} />
-            </Button>
+              <Button
+                size="icon"
+                variant="destructive"
+                className="cursor-pointer rounded-xl shadow-sm"
+              >
+                <Trash size={16} />
+              </Button>
+            </DeleteDialog>
           )}
         </div>
       );
