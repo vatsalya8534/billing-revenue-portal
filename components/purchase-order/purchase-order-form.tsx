@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm, useFieldArray, SubmitHandler, useWatch } from "react-hook-form";
+import {
+  useForm,
+  useFieldArray,
+  SubmitHandler,
+  useWatch,
+  type Resolver,
+} from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -158,7 +164,9 @@ const POForm = ({
 
   // ---------------- FORM ----------------
   const form = useForm<PurchaseOrderFormValues>({
-    resolver: zodResolver(purchaseOrderSchema),
+    resolver: zodResolver(
+      purchaseOrderSchema,
+    ) as Resolver<PurchaseOrderFormValues>,
     defaultValues: data || defaultPurchaseOrderValues,
   });
 
