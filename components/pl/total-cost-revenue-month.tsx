@@ -39,6 +39,7 @@ type SelectedMonth = {
 type Props = {
   onMonthClick?: (data: SelectedMonth) => void;
   filters: Record<string, unknown>;
+  onClear?: () => void;
 };
 
 type MonthlyCostResponse = {
@@ -190,7 +191,7 @@ function CustomTooltip({ active, payload }: TooltipProps) {
   );
 }
 
-export function TotalCostChart({ onMonthClick, filters }: Props) {
+export function TotalCostChart({ onMonthClick, onClear, filters }: Props) {
   const [data, setData] = useState<DataPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
@@ -287,7 +288,7 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
             <h3 className="text-lg font-semibold tracking-tight text-slate-950">
               Monthly Operating Cost
             </h3>
-           
+
           </div>
         </div>
 
@@ -466,7 +467,10 @@ export function TotalCostChart({ onMonthClick, filters }: Props) {
             </span>
           </span>
           <button
-            onClick={() => setActiveIndex(null)}
+            onClick={() => {
+              setActiveIndex(null);
+              onClear?.(); // 👈 call parent clear
+            }}
             className="ml-auto text-sm font-semibold text-slate-400 transition-colors hover:text-slate-700"
           >
             Clear
