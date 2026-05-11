@@ -5,10 +5,6 @@ import * as React from "react"
 import { toast } from "sonner"
 
 import { DataTable } from "@/components/datatable/DataTable"
-import {
-  getCurrentFinancialYear,
-  getFinancialYearRangeToDate,
-} from "@/lib/date-utils"
 import { deletePurchaseOrder } from "@/lib/actions/purschase-order"
 
 import { getUsersColumns } from "./column"
@@ -24,6 +20,7 @@ type BillingCycleRow = {
 type RevenueRow = {
   id: string
   poAmount?: number | null
+  scope?: string | null
   status?: string | null
   company?: { name?: string | null } | null
   billingCycles?: BillingCycleRow[] | null
@@ -37,44 +34,11 @@ type RevenueDataTableProps = {
   actions?: React.ReactNode
 }
 
-function getCycleFinancialDate(cycle: BillingCycleRow) {
-  return (
-    cycle.invoiceDate ??
-    cycle.billingSubmittedDate ??
-    cycle.paymentDueDate ??
-    null
-  )
-}
-
-function isWithinRange(
-  value: string | Date | null | undefined,
-  start: Date,
-  end: Date,
-) {
-  if (!value) return false
-
-  const date = new Date(value)
-
-  return !Number.isNaN(date.getTime()) && date >= start && date <= end
-}
-
-function getFinancialYearTotals(
+function getRevenueTotals(
   cycles: BillingCycleRow[] | null | undefined,
-  start: Date,
-  end: Date,
 ) {
   return (cycles || []).reduce(
     (sum, cycle) => {
-      if (
-        !isWithinRange(
-          getCycleFinancialDate(cycle),
-          start,
-          end,
-        )
-      ) {
-        return sum
-      }
-
       const billedAmount = Number(cycle.invoiceAmount || 0)
       const collectedAmount = Math.min(
         Number(cycle.collectedAmount || 0),
@@ -98,14 +62,6 @@ export default function RevenueDataTable({
   actions,
 }: RevenueDataTableProps) {
   const [tableData, setTableData] = React.useState(data)
-  const currentFinancialYear = React.useMemo(
-    () => getCurrentFinancialYear(),
-    [],
-  )
-  const financialYearRange = React.useMemo(
-    () => getFinancialYearRangeToDate(currentFinancialYear),
-    [currentFinancialYear],
-  )
 
   const deleteHandler = async (id: string) => {
     const res = await deletePurchaseOrder(id)
@@ -143,11 +99,7 @@ export default function RevenueDataTable({
         title={title}
         actions={actions}
         rowClassName={(row) => {
-          const totals = getFinancialYearTotals(
-            row.billingCycles,
-            financialYearRange.start,
-            financialYearRange.end,
-          )
+          const totals = getRevenueTotals(row.billingCycles)
           const realization =
             totals.billed > 0
               ? (totals.collected / totals.billed) * 100

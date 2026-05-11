@@ -5,10 +5,6 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DeleteDialog } from "@/components/ui/delete-dailog";
-import {
-  getCurrentFinancialYear,
-  getFinancialYearRangeToDate,
-} from "@/lib/date-utils";
 
 type BillingCycleRow = {
   invoiceAmount?: number | null;
@@ -23,6 +19,7 @@ type RevenueRow = {
   company?: { name?: string | null } | null;
   customer?: { companyName?: string | null } | null;
   customerPONumber?: string | null;
+  scope?: string | null;
   poOwner?: string | null;
   poAmount?: number | null;
   billingCycles?: BillingCycleRow[] | null;
@@ -31,46 +28,11 @@ type RevenueRow = {
   status?: string | null;
 };
 
-const currentFinancialYear = getCurrentFinancialYear();
-const financialYearRange =
-  getFinancialYearRangeToDate(currentFinancialYear);
-
-function getCycleFinancialDate(cycle: BillingCycleRow) {
-  return (
-    cycle.invoiceDate ??
-    cycle.billingSubmittedDate ??
-    cycle.paymentDueDate ??
-    null
-  );
-}
-
-function isWithinRange(
-  value: string | Date | null | undefined,
-  start: Date,
-  end: Date,
-) {
-  if (!value) return false;
-
-  const date = new Date(value);
-
-  return !Number.isNaN(date.getTime()) && date >= start && date <= end;
-}
-
-function getFinancialYearTotals(
+function getRevenueTotals(
   cycles: BillingCycleRow[] | null | undefined,
 ) {
   return (cycles || []).reduce(
     (sum, cycle) => {
-      if (
-        !isWithinRange(
-          getCycleFinancialDate(cycle),
-          financialYearRange.start,
-          financialYearRange.end,
-        )
-      ) {
-        return sum;
-      }
-
       const billedAmount = Number(cycle.invoiceAmount || 0);
       const collectedAmount = Math.min(
         Number(cycle.collectedAmount || 0),
@@ -138,16 +100,29 @@ export const getUsersColumns = ({
       ),
     },
     {
+      accessorKey: "scope",
+      header: () => (
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+          Scope Of Work
+        </span>
+      ),
+      cell: ({ row }) => (
+        <div className="max-w-[220px]">
+          <p className="line-clamp-2 text-sm font-medium text-slate-900">
+            {row.original.scope || "-"}
+          </p>
+        </div>
+      ),
+    },
+    {
       accessorKey: "poAmount",
       header: () => (
         <span className="text-xs font-semibold uppercase tracking-wider text-white">
-          FY Billed
+          Billed
         </span>
       ),
       cell: ({ row }) => {
-        const totals = getFinancialYearTotals(
-          row.original.billingCycles,
-        );
+        const totals = getRevenueTotals(row.original.billingCycles);
 
         return (
           <div className="space-y-1">
@@ -169,9 +144,7 @@ export const getUsersColumns = ({
         </span>
       ),
       cell: ({ row }) => {
-        const totals = getFinancialYearTotals(
-          row.original.billingCycles,
-        );
+        const totals = getRevenueTotals(row.original.billingCycles);
         const pending = Math.max(
           totals.billed - totals.collected,
           0,
