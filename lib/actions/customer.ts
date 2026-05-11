@@ -5,6 +5,45 @@ import { prisma } from "../prisma";
 import { customerSchema } from "../validators";
 import { formatError } from "../utils";
 
+function normalizeCustomerPayload(customer: Customer) {
+  const customerCode = customer.customerCode?.trim();
+  const firstName = customer.firstName?.trim();
+  const phone = customer.phone?.trim();
+
+  if (!customerCode) {
+    throw new Error("Customer code is required");
+  }
+
+  if (!firstName) {
+    throw new Error("Customer first name is required");
+  }
+
+  if (!phone) {
+    throw new Error("Customer phone is required");
+  }
+
+  return {
+    customerCode,
+    phone,
+    email: customer.email?.trim() || null,
+    firstName,
+    lastName: customer.lastName?.trim() || null,
+    companyName: customer.companyName?.trim() || null,
+    alternatePhone: customer.alternatePhone?.trim() || null,
+    addressLine1: customer.addressLine1?.trim() || null,
+    addressLine2: customer.addressLine2?.trim() || null,
+    city: customer.city?.trim() || null,
+    state: customer.state?.trim() || null,
+    country: customer.country?.trim() || null,
+    postalCode: customer.postalCode?.trim() || null,
+    gstNumber: customer.gstNumber?.trim() || null,
+    panNumber: customer.panNumber?.trim() || null,
+    website: customer.website?.trim() || null,
+    remark: customer.remark ?? null,
+    status: customer.status ?? "ACTIVE",
+  } as const;
+}
+
 export async function getCustomers() {
   return await prisma.customer.findMany({
     orderBy: {
@@ -17,28 +56,10 @@ export async function createCustomer(data: Customer) {
 
   try {
     const customer = customerSchema.parse(data)
+    const payload = normalizeCustomerPayload(customer)
 
     await prisma.customer.create({
-      data: {
-        customerCode: customer.customerCode || "",
-        phone: customer.phone,
-        email: customer.email,
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        companyName: customer.companyName,
-        alternatePhone: customer.alternatePhone,
-        addressLine1: customer.addressLine1,
-        addressLine2: customer.addressLine2,
-        city: customer.city,
-        state: customer.state,
-        country: customer.country,
-        postalCode: customer.postalCode,
-        gstNumber: customer.gstNumber,
-        panNumber: customer.panNumber,
-        website: customer.website,
-        remark: customer.remark,
-        status: customer.status
-      }
+      data: payload
     })
 
     return {
@@ -85,29 +106,11 @@ export async function updateCustomer(data: Customer, id: string) {
   try {
 
     const customer = customerSchema.parse(data)
+    const payload = normalizeCustomerPayload(customer)
 
     await prisma.customer.update({
       where: { id },
-      data: {
-        customerCode: customer.customerCode,
-        phone: customer.phone,
-        email: customer.email,
-        firstName: customer.firstName,
-        lastName: customer.lastName,
-        companyName: customer.companyName,
-        alternatePhone: customer.alternatePhone,
-        addressLine1: customer.addressLine1,
-        addressLine2: customer.addressLine2,
-        city: customer.city,
-        state: customer.state,
-        country: customer.country,
-        postalCode: customer.postalCode,
-        gstNumber: customer.gstNumber,
-        panNumber: customer.panNumber,
-        website: customer.website,
-        remark: customer.remark,
-        status: customer.status
-      }
+      data: payload
     })
 
     return {

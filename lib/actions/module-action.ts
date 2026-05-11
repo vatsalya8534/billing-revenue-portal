@@ -24,6 +24,26 @@ function mapModule(m: NonNullable<PrismaModule>): Module {
   };
 }
 
+function normalizeModulePayload(module: Module) {
+  const name = module.name?.trim();
+  const description = module.description?.trim();
+
+  if (!name) {
+    throw new Error("Module name is required");
+  }
+
+  if (!description) {
+    throw new Error("Module description is required");
+  }
+
+  return {
+    name,
+    description,
+    route: `/admin/${name.toLowerCase().replace(/\s+/g, "-").replace("&", "")}`,
+    status: module.status ?? "ACTIVE",
+  } as const;
+}
+
 export async function getModules(): Promise<Module[]> {
   const modules = await prisma.module.findMany({
     orderBy: { createdAt: "desc" },
@@ -35,16 +55,10 @@ export async function getModules(): Promise<Module[]> {
 export async function createModule(data: any): Promise<ActionResponse> {
   try {
     const module = moduleSchema.parse(data);
-
-    const route = `/admin/${module.name.toLowerCase().replace(/\s+/g, "-").replace("&", "")}`;
+    const payload = normalizeModulePayload(module);
 
     await prisma.module.create({
-      data: {
-        name: module.name,
-        description: module.description,
-        route,
-        status: module.status,
-      },
+      data: payload,
     });
 
     return {
@@ -91,17 +105,11 @@ export async function updateModule(
 ): Promise<ActionResponse> {
   try {
     const module = moduleSchema.parse(data);
-
-    const route = `/admin/${module.name.toLowerCase().replace(/\s+/g, "-").replace("&", "")}`;
+    const payload = normalizeModulePayload(module);
 
     await prisma.module.update({
       where: { id },
-      data: {
-        name: module.name,
-        description: module.description,
-        route,
-        status: module.status,
-      },
+      data: payload,
     });
 
     return {

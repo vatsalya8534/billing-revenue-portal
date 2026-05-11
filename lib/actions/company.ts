@@ -5,6 +5,31 @@ import { prisma } from "../prisma";
 import { companySchema } from "../validators";
 import { formatError, incrementCode } from "../utils";
 
+function normalizeCompanyPayload(company: Company) {
+  const name = company.name?.trim();
+
+  if (!name) {
+    throw new Error("Company name is required");
+  }
+
+  return {
+    name,
+    email: company.email?.trim() || null,
+    phone: company.phone?.trim() || null,
+    alternatePhone: company.alternatePhone?.trim() || null,
+    addressLine1: company.addressLine1?.trim() || null,
+    addressLine2: company.addressLine2?.trim() || null,
+    city: company.city?.trim() || null,
+    state: company.state?.trim() || null,
+    country: company.country?.trim() || null,
+    pincode: company.pincode?.trim() || null,
+    gstNumber: company.gstNumber?.trim() || null,
+    panNumber: company.panNumber?.trim() || null,
+    cinNumber: company.cinNumber?.trim() || null,
+    status: company.status ?? "ACTIVE",
+  } as const;
+}
+
 export async function getCompanys() {
   return await prisma.company.findMany({
     orderBy: {
@@ -21,24 +46,12 @@ export async function createCompany(data: Company) {
     const companyCode = "COMP-" + incrementCode(String(totalCompanies.length)) 
 
     const company = companySchema.parse(data)
+    const payload = normalizeCompanyPayload(company)
 
     await prisma.company.create({
       data: {
-        name: company.name,
+        ...payload,
         companyCode: companyCode,
-        email: company.email,
-        phone: company.phone,
-        alternatePhone: company.alternatePhone,
-        addressLine1: company.addressLine1,
-        addressLine2: company.addressLine2,
-        city: company.city,
-        state: company.state,
-        country: company.country,
-        pincode: company.pincode,
-        gstNumber: company.gstNumber,
-        panNumber: company.panNumber,
-        cinNumber: company.cinNumber,
-        status: company.status,
       }
     })
 
@@ -86,25 +99,11 @@ export async function updateCompany(data: Company, id: string) {
   try {
 
     const company = companySchema.parse(data)
+    const payload = normalizeCompanyPayload(company)
 
     await prisma.company.update({
       where: { id },
-      data: {
-        name: company.name,
-        email: company.email,
-        phone: company.phone,
-        alternatePhone: company.alternatePhone,
-        addressLine1: company.addressLine1,
-        addressLine2: company.addressLine2,
-        city: company.city,
-        state: company.state,
-        country: company.country,
-        pincode: company.pincode,
-        gstNumber: company.gstNumber,
-        panNumber: company.panNumber,
-        cinNumber: company.cinNumber,
-        status: company.status,
-      }
+      data: payload
     })
 
     return {

@@ -5,6 +5,24 @@ import { prisma } from "../prisma";
 import { contractTypeSchema } from "../validators";
 import { formatError } from "../utils";
 
+function normalizeContractTypePayload(contractType: {
+  name?: string;
+  remark?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+}) {
+  const name = contractType.name?.trim();
+
+  if (!name) {
+    throw new Error("Contract type name is required");
+  }
+
+  return {
+    name,
+    remark: contractType.remark ?? null,
+    status: contractType.status ?? "ACTIVE",
+  } as const;
+}
+
 export async function getContractTypes() {
   return await prisma.contractType.findMany({
     orderBy: {
@@ -17,13 +35,10 @@ export async function createContractType(data: Role) {
 
   try {
     const contractType = contractTypeSchema.parse(data)
+    const payload = normalizeContractTypePayload(contractType)
 
     await prisma.contractType.create({
-      data: {
-        name: contractType.name,
-        remark: contractType.remark,
-        status: contractType.status
-      }
+      data: payload
     })
 
     return {
@@ -70,14 +85,11 @@ export async function updateContractType(data: Role, id: string) {
   try {
 
     const contractType = contractTypeSchema.parse(data)
+    const payload = normalizeContractTypePayload(contractType)
 
     await prisma.contractType.update({
       where: { id },
-      data: {
-        name: contractType.name,
-        remark: contractType.remark,
-        status: contractType.status
-      }
+      data: payload
     })
 
     return {

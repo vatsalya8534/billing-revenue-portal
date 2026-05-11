@@ -7,6 +7,22 @@ import { z } from "zod";
 
 type BillingPlanInput = z.infer<typeof billingPlanSchema>;
 
+function normalizeBillingPlanPayload(billingPlan: BillingPlanInput) {
+  const name = billingPlan.name?.trim();
+
+  if (!name) {
+    throw new Error("Billing plan name is required");
+  }
+
+  return {
+    name,
+    totalBillingCycles: Number(billingPlan.totalBillingCycles ?? 0),
+    remark: billingPlan.remark ?? null,
+    status: billingPlan.status ?? "ACTIVE",
+    billingCycleType: billingPlan.billingCycleType ?? "START",
+  } as const;
+}
+
 // ---------------- GET ALL ----------------
 export async function getBillingPlans() {
   try {
@@ -30,15 +46,10 @@ export async function getBillingPlans() {
 export async function createBillingPlan(data: BillingPlanInput) {
   try {
     const billingPlan = billingPlanSchema.parse(data);
+    const payload = normalizeBillingPlanPayload(billingPlan);
 
     await prisma.billingPlan.create({
-      data: {
-        name: billingPlan.name,
-        totalBillingCycles: billingPlan.totalBillingCycles,
-        remark: billingPlan.remark,
-        status: billingPlan.status,
-        billingCycleType: billingPlan.billingCycleType,
-      },
+      data: payload,
     });
 
     return {
@@ -86,16 +97,11 @@ export async function updateBillingPlan(
 ) {
   try {
     const billingPlan = billingPlanSchema.parse(data);
+    const payload = normalizeBillingPlanPayload(billingPlan);
 
     await prisma.billingPlan.update({
       where: { id },
-      data: {
-        name: billingPlan.name,
-        totalBillingCycles: billingPlan.totalBillingCycles,
-        remark: billingPlan.remark,
-        status: billingPlan.status,
-        billingCycleType: billingPlan.billingCycleType,
-      },
+      data: payload,
     });
 
     return {

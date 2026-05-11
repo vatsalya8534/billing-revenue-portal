@@ -2,8 +2,23 @@
 
 import { ContractDuration } from "@/types";
 import { prisma } from "../prisma";
-import { billingPlanSchema, contractDurationSchema } from "../validators";
+import { contractDurationSchema } from "../validators";
 import { formatError } from "../utils";
+
+function normalizeContractDurationPayload(contractDuration: ContractDuration) {
+  const name = contractDuration.name?.trim();
+
+  if (!name) {
+    throw new Error("Contract Duration name is required");
+  }
+
+  return {
+    name,
+    totalNumberOfMonths: Number(contractDuration.totalNumberOfMonths ?? 0),
+    remark: contractDuration.remark ?? null,
+    status: contractDuration.status ?? "ACTIVE",
+  } as const;
+}
 
 export async function getContractDurations() {
   return await prisma.contractDuration.findMany({
@@ -17,14 +32,10 @@ export async function createContractDuration(data: ContractDuration) {
 
   try {
     const contractDuration = contractDurationSchema.parse(data)
+    const payload = normalizeContractDurationPayload(contractDuration)
 
     await prisma.contractDuration.create({
-      data: {
-        name: contractDuration.name,
-        totalNumberOfMonths: contractDuration.totalNumberOfMonths,
-        remark: contractDuration.remark,
-        status: contractDuration.status
-      }
+      data: payload
     })
 
     return {
@@ -71,15 +82,11 @@ export async function updateContractDuration(data: ContractDuration, id: string)
   try {
 
   const contractDuration = contractDurationSchema.parse(data)
+  const payload = normalizeContractDurationPayload(contractDuration)
 
     await prisma.contractDuration.update({
       where: { id },
-      data: {
-        name: contractDuration.name,
-        totalNumberOfMonths: contractDuration.totalNumberOfMonths,
-        remark: contractDuration.remark,
-        status: contractDuration.status
-      }
+      data: payload
     })
 
     return {

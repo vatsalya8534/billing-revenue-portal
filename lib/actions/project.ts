@@ -7,6 +7,47 @@ import { formatError } from "../utils";
 import { buildFilters, buildMonthlyPLFilters } from "../filter";
 import { getFinancialYearRange } from "../date-utils";
 
+function normalizeProjectPayload(project: Project, amount: {
+  totalRevenue: number;
+  totalCost: number;
+}) {
+  const companyId = project.companyId?.trim();
+  const projectName = project.projectName?.trim();
+  const billingPlanId = project.billingPlanId?.trim();
+  const orderType = project.orderType;
+
+  if (!companyId) {
+    throw new Error("Company is required");
+  }
+
+  if (!projectName) {
+    throw new Error("Project name is required");
+  }
+
+  if (!billingPlanId) {
+    throw new Error("Billing plan is required");
+  }
+
+  if (!orderType) {
+    throw new Error("Order type is required");
+  }
+
+  return {
+    companyId,
+    projectName,
+    startDate: project.startDate ?? null,
+    endDate: project.endDate ?? null,
+    poValue: project.poValue ?? 0,
+    resourceCount: project.resourceCount ?? 0,
+    billingPlanId,
+    orderType,
+    totalRevenue: amount.totalRevenue,
+    totalCost: amount.totalCost,
+    projectedProfit: project.projectedProfit ?? 0,
+    status: project.status ?? "ACTIVE",
+  } as const;
+}
+
 export interface PLMonthlyData {
   month: string;
   revenue: number;
@@ -71,22 +112,10 @@ export async function createProject(data: Project) {
     const project = projectSchema.parse(data);
 
     let amount = getTotalAmount(data.billingCycle);
+    const payload = normalizeProjectPayload(project, amount);
 
     let result = await prisma.project.create({
-      data: {
-        companyId: project.companyId,
-        projectName: project.projectName,
-        startDate: project.startDate,
-        endDate: project.endDate,
-        poValue: project.poValue || "",
-        resourceCount: project.resourceCount ?? 0,
-        billingPlanId: project.billingPlanId,
-        orderType: project.orderType,
-        totalRevenue: amount.totalRevenue,
-        totalCost: amount.totalCost,
-        projectedProfit: project.projectedProfit,
-        status: project.status,
-      },
+      data: payload,
     });
 
     createBillingCycle(data.billingCycle, result.id);
@@ -140,23 +169,11 @@ export async function updateProject(data: Project, id: string) {
     const project = projectSchema.parse(data);
 
     let amount = getTotalAmount(data.billingCycle);
+    const payload = normalizeProjectPayload(project, amount);
 
     await prisma.project.update({
       where: { id },
-      data: {
-        companyId: project.companyId,
-        projectName: project.projectName,
-        startDate: project.startDate,
-        endDate: project.endDate,
-        poValue: project.poValue,
-        resourceCount: project.resourceCount ?? 0,
-        billingPlanId: project.billingPlanId,
-        orderType: project.orderType,
-        totalRevenue: amount.totalRevenue,
-        totalCost: amount.totalCost,
-        projectedProfit: project.projectedProfit,
-        status: project.status,
-      },
+      data: payload,
     });
 
     createBillingCycle(data.billingCycle, id);

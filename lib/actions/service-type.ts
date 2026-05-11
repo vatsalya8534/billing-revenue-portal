@@ -5,6 +5,24 @@ import { prisma } from "../prisma";
 import { serviceTypeSchema } from "../validators";
 import { formatError } from "../utils";
 
+function normalizeServiceTypePayload(serviceType: {
+  name?: string;
+  remark?: string | null;
+  status?: "ACTIVE" | "INACTIVE";
+}) {
+  const name = serviceType.name?.trim();
+
+  if (!name) {
+    throw new Error("Service type name is required");
+  }
+
+  return {
+    name,
+    remark: serviceType.remark ?? null,
+    status: serviceType.status ?? "ACTIVE",
+  } as const;
+}
+
 export async function getServiceTypes() {
   return await prisma.serviceType.findMany({
     orderBy: {
@@ -17,13 +35,10 @@ export async function createServiceType(data: Role) {
 
   try {
     const serviceType = serviceTypeSchema.parse(data)
+    const payload = normalizeServiceTypePayload(serviceType)
 
     await prisma.serviceType.create({
-      data: {
-        name: serviceType.name,
-        remark: serviceType.remark,
-        status: serviceType.status
-      }
+      data: payload
     })
 
     return {
@@ -70,14 +85,11 @@ export async function updateServiceType(data: Role, id: string) {
   try {
 
     const serviceType = serviceTypeSchema.parse(data)
+    const payload = normalizeServiceTypePayload(serviceType)
 
     await prisma.serviceType.update({
       where: { id },
-      data: {
-        name: serviceType.name,
-        remark: serviceType.remark,
-        status: serviceType.status
-      }
+      data: payload
     })
 
     return {

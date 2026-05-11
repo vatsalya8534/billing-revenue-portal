@@ -7,21 +7,21 @@ import Link from "next/link";
 
 type ProjectRow = {
   id: string;
+
   company: {
     name?: string | null;
   };
-  billingPlan: {
-    name?: string | null;
-  };
+
   projectName?: string | null;
-  startDate?: string | Date | null;
-  endDate?: string | Date | null;
+
   poValue?: number | string | null;
-  orderType?: string | null;
-  resourceCount?: number | null;
+
   totalRevenue?: number | string | null;
+
   totalCost?: number | string | null;
+
   projectedProfit?: number | string | null;
+
   status?: string | null;
 };
 
@@ -32,6 +32,12 @@ type ProjectColumnsProps = {
   onDelete: (id: string) => void;
 };
 
+function formatCurrency(
+  value: number | string | null | undefined,
+) {
+  return `₹ ${Number(value || 0).toLocaleString("en-IN")}`;
+}
+
 export const getUsersColumns = ({
   canEdit,
   canDelete,
@@ -40,161 +46,118 @@ export const getUsersColumns = ({
   const columns: ColumnDef<ProjectRow>[] = [
     {
       accessorKey: "companyId",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Company Name
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+          Company
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-semibold  text-black dark:text-slate-4000">
-          {row.original.company.name ?? ""}
-        </span>
+        <div className="space-y-1">
+          <p className="font-semibold text-slate-900">
+            {row.original.company?.name || "-"}
+          </p>
+        </div>
       ),
     },
+
     {
       accessorKey: "projectName",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
           Project Name
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-medium text-indigo-600 dark:text-indigo-400">
-          {row.original.projectName}
-        </span>
+        <p className="font-medium text-indigo-600">
+          {row.original.projectName || "-"}
+        </p>
       ),
     },
-    {
-      accessorKey: "startDate",
-      header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Start Date
-        </span>
-      ),
-      cell: ({ row }) => (
-        <span className="text-slate-700 dark:text-slate-300">
-          {row.original.startDate
-            ? new Date(row.original.startDate).toLocaleDateString("en-GB")
-            : "-"}
-        </span>
-      ),
-    },
-    {
-      accessorKey: "endDate",
-      header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          End Date
-        </span>
-      ),
-      cell: ({ row }) => (
-        <span className="text-slate-700 dark:text-slate-300">
-          {row.original.endDate
-            ? new Date(row.original.endDate).toLocaleDateString("en-GB")
-            : "-"}
-        </span>
-      ),
-    },
+
     {
       accessorKey: "poValue",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
           PO Value
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-semibold text-emerald-600">
-          ₹ {row.original.poValue}
-        </span>
+        <p className="font-semibold text-emerald-600">
+          {formatCurrency(row.original.poValue)}
+        </p>
       ),
     },
-    {
-      accessorKey: "orderType",
-      header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Order Type
-        </span>
-      ),
-      cell: ({ row }) => (
-        <Badge
-          variant="outline"
-          className="border-blue-400 text-blue-600 dark:text-blue-400"
-        >
-          {row.original.orderType}
-        </Badge>
-      ),
-    },
-    {
-      accessorKey: "resourceCount",
-      header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Resources
-        </span>
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.resourceCount}</span>
-      ),
-    },
-    {
-      accessorKey: "billingPlanId",
-      header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Bill Plan
-        </span>
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium text-cyan-600">
-          {row.original.billingPlan.name ?? ""}
-        </span>
-      ),
-    },
+
     {
       accessorKey: "totalRevenue",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Billing Cost
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+          Revenue
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-semibold text-green-600">
-          ₹ {row.original.totalRevenue}
-        </span>
+        <p className="font-semibold text-green-600">
+          {formatCurrency(row.original.totalRevenue)}
+        </p>
       ),
     },
+
     {
       accessorKey: "totalCost",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Other Cost
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+          Cost
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-semibold text-rose-600">
-          ₹ {row.original.totalCost}
-        </span>
+        <p className="font-semibold text-rose-600">
+          {formatCurrency(row.original.totalCost)}
+        </p>
       ),
     },
+
     {
       accessorKey: "currentGM",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
-          Current GM%
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
+          GM %
         </span>
       ),
+
       cell: ({ row }) => {
-        const revenue = Number(row.original.totalRevenue) || 0;
-        const cost = Number(row.original.totalCost) || 0;
+        const revenue =
+          Number(row.original.totalRevenue) || 0;
+
+        const cost =
+          Number(row.original.totalCost) || 0;
 
         const gm =
           revenue === 0
             ? 0
-            : Number((((revenue - cost) / revenue) * 100).toFixed(2));
+            : Number(
+                (
+                  ((revenue - cost) / revenue) *
+                  100
+                ).toFixed(2),
+              );
 
         return (
           <Badge
             className={
               gm >= 20
                 ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                : "bg-rose-100 text-rose-700 hover:bg-rose-200"
+                : "bg-rose-100 text-rose-700 hover:bg-rose-100"
             }
           >
             {gm} %
@@ -205,34 +168,40 @@ export const getUsersColumns = ({
 
     {
       accessorKey: "projectedProfit",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
           Projected Profit %
         </span>
       ),
+
       cell: ({ row }) => (
-        <span className="font-semibold text-blue-600 dark:text-blue-400">
-          {row.original.projectedProfit ?? 0} %
-        </span>
+        <p className="font-semibold text-blue-600">
+          {row.original.projectedProfit || 0} %
+        </p>
       ),
     },
 
     {
       accessorKey: "status",
+
       header: () => (
-        <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
+        <span className="text-xs font-semibold uppercase tracking-wider text-white">
           Status
         </span>
       ),
+
       cell: ({ row }) => {
         const status = row.original.status;
 
         return status === "ACTIVE" ? (
-          <Badge className="bg-green-500 hover:bg-green-600 text-white">
+          <Badge className="bg-emerald-500 text-white hover:bg-emerald-600">
             ACTIVE
           </Badge>
         ) : (
-          <Badge variant="destructive">INACTIVE</Badge>
+          <Badge variant="destructive">
+            INACTIVE
+          </Badge>
         );
       },
     },
@@ -240,33 +209,35 @@ export const getUsersColumns = ({
 
   columns.push({
     id: "actions",
+
     header: () => (
-      <span className="text-xs font-semibold uppercase tracking-wider text-white dark:text-slate-4000">
+      <span className="text-xs font-semibold uppercase tracking-wider text-white">
         Action
       </span>
     ),
+
     cell: ({ row }) => {
-      const id = row.original.id as string;
+      const id = row.original.id;
 
       return (
         <div className="flex gap-2">
-          {/* 👁 View */}
+          {/* View */}
           <Button
             size="icon"
             asChild
-            className="cursor-pointer rounded-xl bg-blue-500 hover:bg-blue-600 shadow-sm"
+            className="cursor-pointer rounded-xl bg-blue-500 shadow-sm hover:bg-blue-600"
           >
             <Link href={`/admin/pl/view/${id}`}>
               <Eye size={16} />
             </Link>
           </Button>
 
-          {/* ✏️ Edit */}
+          {/* Edit */}
           {canEdit && (
             <Button
               asChild
               size="icon"
-              className="cursor-pointer rounded-xl bg-orange-500 hover:bg-orange-600 shadow-sm"
+              className="cursor-pointer rounded-xl bg-orange-500 shadow-sm hover:bg-orange-600"
             >
               <Link href={`/admin/pl/edit/${id}`}>
                 <EditIcon size={16} />
@@ -274,12 +245,12 @@ export const getUsersColumns = ({
             </Button>
           )}
 
-          {/* 🗑 Delete */}
+          {/* Delete */}
           {canDelete && (
             <DeleteDialog
               onConfirm={() => onDelete(id)}
               title="Delete Project?"
-              description="Are you sure you want to delete this project? This action cannot be undone."
+              description="Are you sure you want to delete this project?"
               confirmText="OK"
             >
               <Button

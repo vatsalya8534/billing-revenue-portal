@@ -8,6 +8,39 @@ import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { auth, signIn, signOut } from "@/auth";
 import bcrypt from "bcrypt";
 
+function normalizeUserPayload(user: User) {
+  const username = user.username?.trim();
+  const firstName = user.firstName?.trim();
+  const email = user.email?.trim();
+  const roleId = user.roleId?.trim();
+
+  if (!username) {
+    throw new Error("Username is required");
+  }
+
+  if (!firstName) {
+    throw new Error("First name is required");
+  }
+
+  if (!email) {
+    throw new Error("Email is required");
+  }
+
+  if (!roleId) {
+    throw new Error("Role is required");
+  }
+
+  return {
+    username,
+    firstName,
+    lastName: user.lastName?.trim() || "",
+    email,
+    status: user.status ?? "ACTIVE",
+    roleId,
+    remark: user.remark?.trim() || null,
+  } as const;
+}
+
 export async function getUsers() {
   return await prisma.user.findMany({
     orderBy: {
@@ -21,19 +54,19 @@ export async function createUser(data: User) {
 
   try {
     const user = createUserSchema.parse(data)
+    const password = user.password?.trim();
 
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    if (!password) {
+      throw new Error("Password is required");
+    }
+    const payload = normalizeUserPayload(user);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await prisma.user.create({
       data: {
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
+        ...payload,
         password: hashedPassword,
-        status: user.status,
-        roleId: user.roleId,
-        remark: user.remark,
       }
     })
 
@@ -82,18 +115,11 @@ export async function updateUser(data: User, id: string) {
   try {
 
     const user = userSchema.parse(data)
+    const payload = normalizeUserPayload(user)
 
     await prisma.user.update({
       where: { id },
-      data: {
-        username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        status: user.status,
-        roleId: user.roleId,
-        remark: user.remark,
-      }
+      data: payload
     })
 
     return {

@@ -98,30 +98,30 @@ model RoleModule {
 
 model PurchaseOrder {
   id                 String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  customerPONumber   String
-  poAmount           Float
-  serviceTypeId      String           @db.Uuid
-  contractId         String           @db.Uuid
+  customerPONumber   String?
+  poAmount           Float?
+  serviceTypeId      String?          @db.Uuid
+  contractId         String?          @db.Uuid
   startFrom          DateTime?
   endDate            DateTime?
-  paymentTerms       String
-  customerId         String           @db.Uuid
-  billingPlanId      String           @db.Uuid
+  paymentTerms       String?
+  customerId         String?          @db.Uuid
+  billingPlanId      String?          @db.Uuid
   companyId          String?          @db.Uuid
-  poOwner            String
+  poOwner            String?
   remark             String?
   status             POStatus         @default(LIVE)
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
-  contractDurationId String           @db.Uuid
+  contractDurationId String?          @db.Uuid
   ageingDays         String?
-  scope              String
+  scope              String?
   billingCycles      BillingCycle[]
-  billingPlan        BillingPlan      @relation(fields: [billingPlanId], references: [id])
-  contractDuration   ContractDuration @relation(fields: [contractDurationId], references: [id])
-  contract           ContractType     @relation(fields: [contractId], references: [id])
-  customer           Customer         @relation(fields: [customerId], references: [id])
-  ServiceType        ServiceType      @relation(fields: [serviceTypeId], references: [id])
+  billingPlan        BillingPlan?     @relation(fields: [billingPlanId], references: [id])
+  contractDuration   ContractDuration? @relation(fields: [contractDurationId], references: [id])
+  contract           ContractType?    @relation(fields: [contractId], references: [id])
+  customer           Customer?        @relation(fields: [customerId], references: [id])
+  ServiceType        ServiceType?     @relation(fields: [serviceTypeId], references: [id])
   company            Company?         @relation(fields: [companyId], references: [id])
 }
 

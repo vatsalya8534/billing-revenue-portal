@@ -71,6 +71,7 @@ import { Skeleton } from "../ui/skeleton";
 import {
   formatBillingCycleLabel,
   generatePurchaseOrderBillingCycles,
+  resolveBillingPlanInterval,
 } from "@/lib/billing-cycle-utils";
 
 type PurchaseOrderFormValues = z.infer<typeof purchaseOrderSchema>;
@@ -141,6 +142,18 @@ const getDefaultPaymentDueDate = (
   );
 };
 
+const isOTSContractType = (name?: string | null) => {
+  const normalizedName = name?.trim().toLowerCase() ?? "";
+
+  return (
+    normalizedName === "ots" ||
+    /\bots\b/.test(normalizedName) ||
+    normalizedName.includes("one time") ||
+    normalizedName.includes("one-time") ||
+    normalizedName.includes("onetime")
+  );
+};
+
 const POForm = ({
   billingPlan,
   serviceType,
@@ -182,9 +195,9 @@ const POForm = ({
   const [selectedCycleIndex, setSelectedCycleIndex] = useState(0);
 
   // ---------------- WATCHERS ----------------
-  const [watchBillingPlan, watchPOAmount, startFrom, endDate] = useWatch({
+  const [watchBillingPlan, watchPOAmount, watchContractId, startFrom, endDate] = useWatch({
     control: form.control,
-    name: ["billingPlanId", "poAmount", "startFrom", "endDate"],
+    name: ["billingPlanId", "poAmount", "contractId", "startFrom", "endDate"],
   });
   const watchedBillingCycles =
     useWatch({
@@ -195,20 +208,91 @@ const POForm = ({
     fields.length === 0
       ? 0
       : Math.min(selectedCycleIndex, fields.length - 1);
+  const selectedContractType = React.useMemo(
+    () =>
+      contractType.find(
+        (value) => String(value.id) === String(watchContractId ?? ""),
+      ),
+    [contractType, watchContractId],
+  );
+  const isOTSSelected = React.useMemo(
+    () => isOTSContractType(selectedContractType?.name),
+    [selectedContractType?.name],
+  );
 
   const [isPending, startTransition] = React.useTransition();
+  const skipInitialAutoGenerationRef = React.useRef(update);
 
   useEffect(() => {
-    if (!update) {
-      if (startFrom && endDate) {
-        const days = moment(endDate).diff(moment(startFrom), "days") + 1;
+    if (startFrom && endDate) {
+      const days = moment(endDate).diff(moment(startFrom), "days") + 1;
 
-        form.setValue("ageingDays", days >= 0 ? days : 0);
-      } else {
-        form.setValue("ageingDays", 0);
-      }
+      form.setValue("ageingDays", days >= 0 ? days : 0);
+    } else {
+      form.setValue("ageingDays", 0);
     }
-  }, [endDate, form, startFrom, update]);
+  }, [endDate, form, startFrom]);
+
+  useEffect(() => {
+    if (!isOTSSelected) return;
+
+    const today = moment().startOf("day").toDate();
+
+    if (!startFrom) {
+      form.setValue("startFrom", today, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (!endDate) {
+      form.setValue("endDate", today, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    if (!startFrom) return;
+
+    const sameDay = moment(startFrom).startOf("day");
+
+    if (!sameDay.isValid()) return;
+
+    const sameDayDate = sameDay.toDate();
+
+    if (!endDate || !moment(endDate).isSame(sameDay, "day")) {
+      form.setValue("endDate", sameDayDate, {
+        shouldDirty: true,
+        shouldTouch: true,
+      });
+    }
+
+    const existingCycle = (form.getValues("billingCycles") ?? [])[0];
+
+    replace([
+      {
+        id: existingCycle?.id,
+        invoiceNumber: existingCycle?.invoiceNumber ?? "",
+        invoiceAmount: Number(watchPOAmount ?? 0),
+        collectedAmount: Number(existingCycle?.collectedAmount ?? 0),
+        invoiceDate: sameDayDate,
+        billingSubmittedDate: undefined,
+        paymentReceived: existingCycle?.paymentReceived ?? PaymentReceived.NO,
+        paymentReceivedDate: existingCycle?.paymentReceivedDate ?? null,
+        paymentDueDate: sameDayDate,
+        billingRemark: existingCycle?.billingRemark ?? "",
+        tds: Number(existingCycle?.tds ?? 0),
+      },
+    ]);
+
+  }, [
+    endDate,
+    form,
+    isOTSSelected,
+    replace,
+    startFrom,
+    watchPOAmount,
+  ]);
 
   // ---------------- SUBMIT ----------------
   const onSubmit: SubmitHandler<PurchaseOrderFormValues> = (values) => {
@@ -228,7 +312,7 @@ const POForm = ({
 
   // ---------------- AUTO BILLING CYCLES ----------------
   useEffect(() => {
-    if (update) return;
+    if (isOTSSelected) return;
     if (!watchBillingPlan || watchPOAmount == null || !startFrom || !endDate) {
       return;
     }
@@ -246,12 +330,24 @@ const POForm = ({
 
     if (!selectedPlan) return;
 
+    const planInterval = resolveBillingPlanInterval(
+      Number(selectedPlan.totalBillingCycles || 0),
+      selectedPlan.name,
+    );
+
+    if (!planInterval.autoGenerate) return;
+
+    if (skipInitialAutoGenerationRef.current) {
+      skipInitialAutoGenerationRef.current = false;
+      return;
+    }
+
     const generatedCycles = generatePurchaseOrderBillingCycles({
       startDate: start.toDate(),
       endDate: end.toDate(),
       totalBillingCycles: Number(selectedPlan.totalBillingCycles || 0),
       planName: selectedPlan.name,
-      type: selectedPlan.billingCycleType,
+      type: selectedPlan.billingCycleType ?? "START",
     });
     const perCycleAmount =
       generatedCycles.length > 0
@@ -301,12 +397,16 @@ const POForm = ({
     startFrom,
     update,
     watchBillingPlan,
+    watchContractId,
     watchPOAmount,
+    isOTSSelected,
   ]);
 
   // ---------------- UPDATE MODE ----------------
   useEffect(() => {
     if (!update || !data) return;
+
+    skipInitialAutoGenerationRef.current = true;
 
     const formattedCycles = (data.billingCycles ?? []).map((bc) => {
       return {
@@ -335,7 +435,7 @@ const POForm = ({
         }) ?? undefined,
         paymentReceived: bc.paymentReceived,
         billingRemark: bc.billingRemark ?? "",
-        tds: bc.tds ?? "",
+        tds: Number(bc.tds ?? 0),
       };
     });
 

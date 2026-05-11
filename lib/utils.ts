@@ -5,20 +5,44 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function formatError(error: any) {
+type ZodIssueLike = {
+  message?: string
+}
+
+type ErrorWithDetails = {
+  name?: string
+  message?: unknown
+  code?: string
+  meta?: { target?: string[] }
+  issues?: ZodIssueLike[]
+  errors?: ZodIssueLike[]
+}
+
+export function formatError(error: unknown) {
   try {
-    if (error.name === "ZodError") {
-      const filterErrors = Object.keys(error.errors).map((field: any) => error.errors[field].message);
+    const parsedError = error as ErrorWithDetails
+
+    if (parsedError.name === "ZodError") {
+      const issues = Array.isArray(parsedError.issues)
+        ? parsedError.issues
+        : Array.isArray(parsedError.errors)
+          ? parsedError.errors
+          : [];
+      const filterErrors = issues.map(
+        (issue) => issue.message,
+      );
 
       return filterErrors.join(". ")
-    } else if (error.name === "PrismaClientKnownRequestError" && error.code === "P2002") {
-      const field = error.meta?.target ? error.meta.target[0] : "Field"
+    } else if (parsedError.name === "PrismaClientKnownRequestError" && parsedError.code === "P2002") {
+      const field = parsedError.meta?.target ? parsedError.meta.target[0] : "Field"
       return `${field.charAt(0).toUpperCase() + field.slice(1)} already exists`;
     } else {
-      return typeof error.message === "string" ? error.message : JSON.stringify(error.message)
+      return typeof parsedError.message === "string"
+        ? parsedError.message
+        : JSON.stringify(parsedError.message)
     }
 
-  } catch (error) {
+  } catch {
     return "Something went wrong"
   }
 }

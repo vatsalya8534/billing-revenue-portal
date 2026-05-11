@@ -193,7 +193,7 @@ const PLForm = ({
       endDate: end.toDate(),
       totalBillingCycles: Number(selectedPlan.totalBillingCycles || 0),
       planName: selectedPlan.name,
-      type: selectedPlan.billingCycleType,
+      type: selectedPlan.billingCycleType ?? "START",
     });
     const amountPerCycle =
       generatedCycles.length > 0
