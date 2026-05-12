@@ -9,6 +9,8 @@ import { format } from "date-fns";
 import {
   CalendarIcon,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   IndianRupee,
   Layers3,
   SlidersHorizontal,
@@ -296,6 +298,8 @@ const PurchaseOrderDashboard = ({
   const [revenueDetails, setRevenueDetails] = useState<
     RevenueDetail[]
   >([]);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
 
   const updateFilter = <
     K extends keyof Filters,
@@ -347,6 +351,22 @@ const PurchaseOrderDashboard = ({
       active = false;
     };
   }, [filters]);
+
+  useEffect(() => {
+    setPageIndex(0);
+  }, [filters]);
+
+  useEffect(() => {
+    setPageIndex((prev) =>
+      Math.min(
+        prev,
+        Math.max(
+          0,
+          Math.ceil(revenueDetails.length / pageSize) - 1,
+        ),
+      ),
+    );
+  }, [pageSize, revenueDetails.length]);
 
   if (!hydrated) return null;
 
@@ -429,6 +449,27 @@ const PurchaseOrderDashboard = ({
       tone: "bg-indigo-500",
     },
   ];
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(revenueDetails.length / pageSize),
+  );
+  const safePageIndex = Math.min(
+    pageIndex,
+    totalPages - 1,
+  );
+  const startRow = safePageIndex * pageSize;
+  const endRow = startRow + pageSize;
+  const paginatedRevenueDetails = revenueDetails.slice(
+    startRow,
+    endRow,
+  );
+  const visibleStart =
+    revenueDetails.length === 0 ? 0 : startRow + 1;
+  const visibleEnd = Math.min(
+    endRow,
+    revenueDetails.length,
+  );
 
   return (
     <>
@@ -796,7 +837,10 @@ const PurchaseOrderDashboard = ({
                       </td>
                     </tr>
                   ) : (
-                    revenueDetails.map((item, index) => {
+                    paginatedRevenueDetails.map(
+                      (item, index) => {
+                        const rowIndex =
+                          startRow + index;
                       const pendingAmount = Math.max(
                         toNumber(item.overdueAmount) ||
                         toNumber(item.amount) -
@@ -810,7 +854,7 @@ const PurchaseOrderDashboard = ({
                         <tr
                           key={
                             item.id ??
-                            `${item.poNumber}-${index}`
+                            `${item.poNumber}-${rowIndex}`
                           }
                           className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                         >
@@ -857,10 +901,93 @@ const PurchaseOrderDashboard = ({
                           </td>
                         </tr>
                       );
-                    })
+                      },
+                    )
                   )}
                 </tbody>
               </table>
+            </div>
+
+            <div className="flex flex-col gap-4 border-t border-slate-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+              <div className="text-sm text-slate-500">
+                Showing {visibleStart}-{visibleEnd} of{" "}
+                {revenueDetails.length} records
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+                    Rows
+                  </Label>
+                  <Select
+                    value={pageSize.toString()}
+                    onValueChange={(value) => {
+                      setPageSize(Number(value));
+                      setPageIndex(0);
+                    }}
+                  >
+                    <SelectTrigger className="h-9 w-[88px] rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                      <SelectValue placeholder={pageSize} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      {[10, 20, 30, 50].map((size) => (
+                        <SelectItem
+                          key={size}
+                          value={size.toString()}
+                        >
+                          {size}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 sm:justify-start">
+                  <span className="text-sm font-medium text-slate-600">
+                    Page {safePageIndex + 1} of {totalPages}
+                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-2xl border-slate-200"
+                      onClick={() =>
+                        setPageIndex((prev) =>
+                          Math.max(prev - 1, 0),
+                        )
+                      }
+                      disabled={safePageIndex === 0}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      <span className="sr-only">
+                        Previous page
+                      </span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-2xl border-slate-200"
+                      onClick={() =>
+                        setPageIndex((prev) =>
+                          Math.min(
+                            prev + 1,
+                            totalPages - 1,
+                          ),
+                        )
+                      }
+                      disabled={
+                        safePageIndex >= totalPages - 1
+                      }
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="sr-only">
+                        Next page
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </section>
