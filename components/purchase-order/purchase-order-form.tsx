@@ -503,11 +503,40 @@ const POForm = ({
         className="space-y-6"
       >
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className={themedTabsListClassName}>
-            <TabsTrigger className={themedTabTriggerClassName} value="general">
+          <TabsList
+            className="
+            inline-flex h-14 items-center gap-2 rounded-2xl
+            bg-gradient-to-r from-sky-50 to-blue-100
+            p-2 shadow-sm border border-sky-200
+            "
+          >
+            <TabsTrigger
+              value="general"
+              className="
+              rounded-xl px-6 py-2.5 text-sm font-semibold
+              text-slate-600 transition-all duration-300
+              hover:bg-white hover:text-slate-900
+              data-[state=active]:bg-white
+              data-[state=active]:text-sky-600
+              data-[state=active]:shadow-md
+              data-[state=active]:scale-[1.02]
+              "
+            >
               General
             </TabsTrigger>
-            <TabsTrigger className={themedTabTriggerClassName} value="billing-cycle">
+
+            <TabsTrigger
+              value="billing-cycle"
+              className="
+              rounded-xl px-6 py-2.5 text-sm font-semibold
+              text-slate-600 transition-all duration-300
+              hover:bg-white hover:text-slate-900
+              data-[state=active]:bg-white
+              data-[state=active]:text-sky-600
+              data-[state=active]:shadow-md
+              data-[state=active]:scale-[1.02]
+              "
+            >
               Billing Cycle
             </TabsTrigger>
           </TabsList>

@@ -122,7 +122,8 @@ const PLForm = ({
       month: Number(value.month ?? 0),
       year: Number(value.year ?? new Date().getFullYear()),
       billedAmount: value.billedAmount == null ? 0 : Number(value.billedAmount),
-      billableAmount: value.billableAmount == null ? 0 : Number(value.billableAmount),
+      billableAmount:
+        value.billableAmount == null ? 0 : Number(value.billableAmount),
       fms: Number(value.fms ?? 0),
       spare: Number(value.spare ?? 0),
       resourceUsed: Number(value.resourceUsed ?? 0),
@@ -149,9 +150,10 @@ const PLForm = ({
 
   const onSubmit: SubmitHandler<ProjectFormValues> = (values) => {
     startTransition(async () => {
-      const res = update && id
-        ? await updateProject(values, id)
-        : await createProject(values);
+      const res =
+        update && id
+          ? await updateProject(values, id)
+          : await createProject(values);
 
       if (!res?.success) {
         toast.error("Error", { description: res?.message });
@@ -167,9 +169,7 @@ const PLForm = ({
       name: "billingCycle",
     }) ?? [];
   const activeCycleIndex =
-    fields.length === 0
-      ? 0
-      : Math.min(selectedCycleIndex, fields.length - 1);
+    fields.length === 0 ? 0 : Math.min(selectedCycleIndex, fields.length - 1);
 
   useEffect(() => {
     if (update) return;
@@ -182,9 +182,7 @@ const PLForm = ({
       return;
     }
 
-    const selectedPlan = billingPlans.find(
-      (item) => item.id === billingPlanId
-    );
+    const selectedPlan = billingPlans.find((item) => item.id === billingPlanId);
 
     if (!selectedPlan) return;
 
@@ -201,9 +199,10 @@ const PLForm = ({
         : 0;
     const existingCycles = form.getValues("billingCycle") ?? [];
     const cycles = generatedCycles.map((generatedCycle) => {
-      const existingCycle = existingCycles.find((cycle) =>
-        Number(cycle?.month ?? -1) === generatedCycle.month &&
-        Number(cycle?.year ?? -1) === generatedCycle.year
+      const existingCycle = existingCycles.find(
+        (cycle) =>
+          Number(cycle?.month ?? -1) === generatedCycle.month &&
+          Number(cycle?.year ?? -1) === generatedCycle.year,
       );
 
       return {
@@ -229,7 +228,14 @@ const PLForm = ({
   }, [fields.length, selectedCycleIndex]);
 
   if (!isHydrated) {
-    return <FormHydrationFallback fields={6} sections={1} hasTabs={true} submitWidthClassName="w-40" />;
+    return (
+      <FormHydrationFallback
+        fields={6}
+        sections={1}
+        hasTabs={true}
+        submitWidthClassName="w-40"
+      />
+    );
   }
 
   return (
@@ -239,35 +245,72 @@ const PLForm = ({
         className="space-y-6"
       >
         <Tabs defaultValue="general" className="w-full">
-          <TabsList>
-            <TabsTrigger value="general">
+          <TabsList
+            className="
+            inline-flex h-14 items-center gap-2 rounded-2xl
+            bg-gradient-to-r from-sky-50 to-blue-100
+            p-2 shadow-sm border border-sky-200
+            "
+          >
+            <TabsTrigger
+              value="general"
+              className="
+              rounded-xl px-6 py-2.5 text-sm font-semibold
+              text-slate-600 transition-all duration-300
+              hover:bg-white hover:text-slate-900
+              data-[state=active]:bg-white
+              data-[state=active]:text-sky-600
+              data-[state=active]:shadow-md
+              data-[state=active]:scale-[1.02]
+              "
+            >
               General
             </TabsTrigger>
-            <TabsTrigger value="billing-cycle">
+
+            <TabsTrigger
+              value="billing-cycle"
+              className="
+              rounded-xl px-6 py-2.5 text-sm font-semibold
+              text-slate-600 transition-all duration-300
+              hover:bg-white hover:text-slate-900
+              data-[state=active]:bg-white
+              data-[state=active]:text-sky-600
+              data-[state=active]:shadow-md
+              data-[state=active]:scale-[1.02]
+              "
+            >
               Billing Cycle
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="general" className="mt-6">
-            <ThemedFormSection
-              title="Project Details"
-            >
+            <ThemedFormSection title="Project Details">
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <FormField
                   control={form.control}
                   name="companyId"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Company Name</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Company Name
+                      </FormLabel>
                       <FormControl>
-                        <Select value={field.value ?? ""} onValueChange={field.onChange}>
-                          <SelectTrigger className={themedSelectTriggerClassName}>
+                        <Select
+                          value={field.value ?? ""}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger
+                            className={themedSelectTriggerClassName}
+                          >
                             <SelectValue placeholder="Company Name" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
                               {companies.map((company) => (
-                                <SelectItem value={company.id ?? ""} key={company.id}>
+                                <SelectItem
+                                  value={company.id ?? ""}
+                                  key={company.id}
+                                >
                                   {company.name}
                                 </SelectItem>
                               ))}
@@ -285,9 +328,15 @@ const PLForm = ({
                   name="projectName"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Project Name</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Project Name
+                      </FormLabel>
                       <FormControl>
-                        <Input className={themedInputClassName} placeholder="Enter project name" {...field} />
+                        <Input
+                          className={themedInputClassName}
+                          placeholder="Enter project name"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -299,13 +348,22 @@ const PLForm = ({
                   name="startDate"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Start Date</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Start Date
+                      </FormLabel>
                       <FormControl>
                         <Popover>
                           <PopoverTrigger disabled={update} asChild>
-                            <Button variant="outline" className={dateButtonClassName(!!field.value)}>
+                            <Button
+                              variant="outline"
+                              className={dateButtonClassName(!!field.value)}
+                            >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
@@ -334,13 +392,22 @@ const PLForm = ({
                   name="endDate"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>End Date</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        End Date
+                      </FormLabel>
                       <FormControl>
                         <Popover>
                           <PopoverTrigger disabled={update} asChild>
-                            <Button variant="outline" className={dateButtonClassName(!!field.value)}>
+                            <Button
+                              variant="outline"
+                              className={dateButtonClassName(!!field.value)}
+                            >
                               <CalendarIcon className="mr-2 h-4 w-4" />
-                              {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent
@@ -369,14 +436,18 @@ const PLForm = ({
                   name="poValue"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>PO Value</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        PO Value
+                      </FormLabel>
                       <FormControl>
                         <Input
                           className={themedInputClassName}
                           type="number"
                           placeholder="Enter PO Value"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -389,20 +460,27 @@ const PLForm = ({
                   name="billingPlanId"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Billing Plan</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Billing Plan
+                      </FormLabel>
                       <FormControl>
                         <Select
                           value={field.value ?? ""}
                           onValueChange={field.onChange}
                           disabled={update}
                         >
-                          <SelectTrigger className={themedSelectTriggerClassName}>
+                          <SelectTrigger
+                            className={themedSelectTriggerClassName}
+                          >
                             <SelectValue placeholder="Billing plan" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectGroup>
                               {billingPlans.map((billing) => (
-                                <SelectItem value={billing.id ?? ""} key={billing.id}>
+                                <SelectItem
+                                  value={billing.id ?? ""}
+                                  key={billing.id}
+                                >
                                   {billing.name}
                                 </SelectItem>
                               ))}
@@ -420,14 +498,18 @@ const PLForm = ({
                   name="resourceCount"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Resource Count</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Resource Count
+                      </FormLabel>
                       <FormControl>
                         <Input
                           className={themedInputClassName}
                           type="number"
                           placeholder="Enter Resource Count"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -440,14 +522,18 @@ const PLForm = ({
                   name="projectedProfit"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Projected Profit Percentage</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Projected Profit Percentage
+                      </FormLabel>
                       <FormControl>
                         <Input
                           className={themedInputClassName}
                           type="number"
                           placeholder="Enter Projected Profit"
                           {...field}
-                          onChange={(e) => field.onChange(Number(e.target.value))}
+                          onChange={(e) =>
+                            field.onChange(Number(e.target.value))
+                          }
                         />
                       </FormControl>
                       <FormMessage />
@@ -460,10 +546,17 @@ const PLForm = ({
                   name="orderType"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Order Type</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Order Type
+                      </FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className={themedSelectTriggerClassName}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger
+                            className={themedSelectTriggerClassName}
+                          >
                             <SelectValue placeholder="Order type" />
                           </SelectTrigger>
                           <SelectContent>
@@ -487,10 +580,17 @@ const PLForm = ({
                   name="status"
                   render={({ field }) => (
                     <FormItem className={themedFieldClassName}>
-                      <FormLabel className={themedLabelClassName}>Status</FormLabel>
+                      <FormLabel className={themedLabelClassName}>
+                        Status
+                      </FormLabel>
                       <FormControl>
-                        <Select value={field.value} onValueChange={field.onChange}>
-                          <SelectTrigger className={themedSelectTriggerClassName}>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectTrigger
+                            className={themedSelectTriggerClassName}
+                          >
                             <SelectValue placeholder="Status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -553,7 +653,10 @@ const PLForm = ({
                 <Card className="shadow-md rounded-xl border">
                   <CardContent>
                     <PLBillingCycle
-                      key={fields[activeCycleIndex]?.id ?? `${activeCycleIndex}-${watchedBillingCycles[activeCycleIndex]?.month}-${watchedBillingCycles[activeCycleIndex]?.year}`}
+                      key={
+                        fields[activeCycleIndex]?.id ??
+                        `${activeCycleIndex}-${watchedBillingCycles[activeCycleIndex]?.month}-${watchedBillingCycles[activeCycleIndex]?.year}`
+                      }
                       field={fields[activeCycleIndex]}
                       index={activeCycleIndex}
                       form={form}
@@ -572,8 +675,16 @@ const PLForm = ({
         </Tabs>
 
         <div className="flex gap-3">
-          <Button type="submit" disabled={isPending} className={themedSubmitButtonClassName}>
-            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowRight className="h-4 w-4" />}
+          <Button
+            type="submit"
+            disabled={isPending}
+            className={themedSubmitButtonClassName}
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <ArrowRight className="h-4 w-4" />
+            )}
             Save Project
           </Button>
         </div>
