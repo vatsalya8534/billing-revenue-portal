@@ -54,6 +54,7 @@ type CompanyOption = {
 
 type RevenueDetail = {
   id?: string | number | null;
+  period?: string | null;
   customerName?: string | null;
   companyName?: string | null;
   poNumber?: string | null;
@@ -799,14 +800,15 @@ const PurchaseOrderDashboard = ({
             </div>
 
             <div className="overflow-x-auto revenue-scroll">
-              <table className="min-w-[1280px] w-full">
+              <table className="min-w-[1400px] w-full">
                 <thead className="bg-slate-50">
                   <tr className="border-b border-slate-100">
                     {[
+                      "Period",
                       "Customer",
                       "Company",
                       "PO Number",
-                      "PO Amount",
+                      "Billed Amount",
                       "Amount Received",
                       "Amount Pending",
                       "Service Type",
@@ -828,7 +830,7 @@ const PurchaseOrderDashboard = ({
                   {revenueDetails.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={10}
+                        colSpan={11}
                         className="px-5 py-14 text-center text-sm font-medium text-slate-400"
                       >
                         {loading
@@ -858,6 +860,9 @@ const PurchaseOrderDashboard = ({
                           }
                           className="border-b border-slate-100 transition-colors hover:bg-slate-50"
                         >
+                          <td className="px-5 py-4 font-mono text-xs font-medium uppercase tracking-[0.14em] text-slate-500">
+                            {item.period || "-"}
+                          </td>
                           <td className="px-5 py-4 text-sm text-slate-700">
                             {item.customerName || "-"}
                           </td>
