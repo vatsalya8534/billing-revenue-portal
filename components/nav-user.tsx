@@ -118,14 +118,6 @@ export function NavUser({
                   Configuration
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconBell className="size-4" />
-                Notifications
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <IconUserCircle className="size-4" />
-                Admin Profile
-              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-red-600 focus:text-red-700">
