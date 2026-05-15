@@ -50,6 +50,24 @@ type RoleOption = {
   name: string;
 };
 
+function normalizeUserFormData(data?: User) {
+  if (!data) {
+    return userDefaultValues;
+  }
+
+  return {
+    ...userDefaultValues,
+    ...data,
+    username: data.username ?? "",
+    email: data.email ?? "",
+    firstName: data.firstName ?? "",
+    lastName: data.lastName ?? "",
+    remark: data.remark ?? "",
+    roleId: data.roleId ?? "",
+    status: data.status ?? userDefaultValues.status,
+  };
+}
+
 const UserForm = ({ data, update = false }: { data?: User; update: boolean }) => {
   const router = useRouter();
   const id = data?.id;
@@ -57,20 +75,12 @@ const UserForm = ({ data, update = false }: { data?: User; update: boolean }) =>
 
   const currentSchema = update ? userSchema : createUserSchema;
   const currentData = update
-    ? {
-        username: userDefaultValues.username,
-        email: userDefaultValues.email,
-        firstName: userDefaultValues.firstName,
-        lastName: userDefaultValues.lastName,
-        roleId: userDefaultValues.roleId,
-        status: userDefaultValues.status,
-        remark: userDefaultValues.remark,
-      }
+    ? normalizeUserFormData(data)
     : userDefaultValues;
 
   const form = useForm<z.infer<typeof currentSchema>>({
     resolver: zodResolver(currentSchema),
-    defaultValues: data || currentData,
+    defaultValues: currentData,
   });
 
   const [isPending, startTransition] = React.useTransition();
@@ -179,7 +189,7 @@ const UserForm = ({ data, update = false }: { data?: User; update: boolean }) =>
                 <FormItem className={themedFieldClassName}>
                   <FormLabel className={themedLabelClassName}>Last Name</FormLabel>
                   <FormControl>
-                    <Input className={themedInputClassName} placeholder="Enter last name" {...field} />
+                    <Input className={themedInputClassName} placeholder="Enter last name" {...field} value={field.value ?? ""} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -250,7 +260,7 @@ const UserForm = ({ data, update = false }: { data?: User; update: boolean }) =>
               <FormItem className={themedFieldClassName}>
                 <FormLabel className={themedLabelClassName}>Remark</FormLabel>
                 <FormControl>
-                  <Textarea className={themedTextareaClassName} placeholder="Additional notes" {...field} />
+                    <Textarea className={themedTextareaClassName} placeholder="Additional notes" {...field} value={field.value ?? ""} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

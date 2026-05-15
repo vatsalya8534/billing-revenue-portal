@@ -112,6 +112,13 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
+            <DropdownMenuItem asChild>
+            <Link href="/admin/profile" className="cursor-pointer">
+              <IconUserCircle className="size-4" />
+                Profile
+                </Link>
+              </DropdownMenuItem>
+
               <DropdownMenuItem asChild>
                 <Link href="/admin/configuration" className="cursor-pointer">
                   <IconSettings className="size-4" />

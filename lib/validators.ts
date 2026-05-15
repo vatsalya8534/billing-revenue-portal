@@ -49,13 +49,44 @@ export const userSchema = z.object({
   email: z.string().optional(),
   status: z.nativeEnum(Status).optional(),
   roleId: z.string().optional(),
-  remark: z.string().optional(),
+  remark: z.string().nullable().optional(),
   createdAt: z.date().nullable().optional(),
   updatedAt: z.date().nullable().optional(),
 });
 
 export const createUserSchema = userSchema.extend({
   password: z.string().optional(),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z
+      .string()
+      .trim()
+      .min(1, "Current password is required"),
+    newPassword: z
+      .string()
+      .trim()
+      .min(6, "New password must be at least 6 characters"),
+    confirmPassword: z
+      .string()
+      .trim()
+      .min(1, "Confirm password is required"),
+  })
+  .refine(
+    (data) => data.newPassword === data.confirmPassword,
+    {
+      message: "New password and confirm password must match",
+      path: ["confirmPassword"],
+    },
+  );
+
+export const updateCurrentUserProfileSchema = z.object({
+  firstName: z
+    .string()
+    .trim()
+    .min(1, "First name is required"),
+  lastName: z.string().trim().optional(),
 });
 
 /* ---------------- BILLING CYCLE ---------------- */

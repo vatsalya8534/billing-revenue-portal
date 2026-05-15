@@ -97,7 +97,25 @@ export function AppSidebar({ user, configuration, ...props }: AppSidebarProps) {
           <SidebarMenuItem>
             <SidebarMenuButton
               asChild
-              className="h-auto rounded-2xl bg-white/6 p-3 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] hover:bg-white/10 hover:text-white data-[active=true]:bg-white/10 data-[active=true]:text-white group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-xl group-data-[collapsible=icon]:p-2"
+              className="
+h-auto rounded-2xl
+bg-white/6
+p-3
+text-white
+shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]
+hover:bg-sky-500/15
+hover:text-white
+focus:bg-sky-500/15
+focus:text-white
+active:bg-sky-500/20
+data-[active=true]:bg-sky-500/20
+data-[active=true]:text-white
+outline-none
+border border-white/10
+group-data-[collapsible=icon]:justify-center
+group-data-[collapsible=icon]:rounded-xl
+group-data-[collapsible=icon]:p-2
+"
             >
               <Link href="/admin/home">
                 <div className="flex w-full items-center gap-3">
