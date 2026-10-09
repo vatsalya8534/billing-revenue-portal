@@ -325,3 +325,27 @@ model Configuration {
   email    String?
   password String?
 }
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+}
+
+model AuditLog {
+  id        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  createdAt DateTime    @default(now())
+  userId    String?     @db.Uuid
+  userName  String?
+  action    AuditAction
+  model     String
+  recordId  String?
+  before    Json?
+  after     Json?
+  changes   Json?
+
+  @@index([createdAt])
+  @@index([model, createdAt])
+  @@index([action, createdAt])
+  @@index([userId])
+}

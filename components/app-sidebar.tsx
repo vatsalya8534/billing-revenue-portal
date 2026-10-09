@@ -6,6 +6,7 @@ import {
   IconBuilding,
   IconContract,
   IconHome,
+  IconHistory,
   IconPackage,
   IconReceipt,
   IconTrendingUp,
@@ -116,6 +117,12 @@ const data = {
       title: "Module",
       url: "/admin/module",
       icon: IconPackage,
+    },
+
+    {
+      title: "Activity Log",
+      url: "/admin/activity-log",
+      icon: IconHistory,
     },
   ],
 

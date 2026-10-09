@@ -2,25 +2,65 @@ import { PrismaClient } from "@prisma/client"
 import { PrismaPg } from "@prisma/adapter-pg"
 import { Pool } from "pg"
 import { assertSafeDatabaseTarget } from "./database-guard"
+import { auditQuery, runInAuditBuffer } from "./audit"
 
 assertSafeDatabaseTarget(process.env.DATABASE_URL)
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-})
+function createPrismaClient() {
+  const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+  })
 
-const adapter = new PrismaPg(pool)
-
-const globalForPrisma = global as unknown as {
-  prisma: PrismaClient | undefined
-}
-
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
+  const adapter = new PrismaPg(pool)
+  const base = new PrismaClient({
     adapter,
     log: ["error"],
   })
 
-if (process.env.NODE_ENV !== "production")
-  globalForPrisma.prisma = prisma
+  const extended = base.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ model, operation, args, query }) {
+          return auditQuery({
+            base,
+            model,
+            operation,
+            args,
+            query,
+          })
+        },
+      },
+    },
+  })
+
+  return new Proxy(extended, {
+    get(target, property, receiver) {
+      if (property === "$transaction") {
+        const original = target.$transaction
+
+        return (first: unknown, ...rest: unknown[]) =>
+          runInAuditBuffer(base, () =>
+            original.call(target, first as never, ...(rest as never[])),
+          )
+      }
+
+      return Reflect.get(target, property, receiver)
+    },
+  }) as typeof extended
+}
+
+type AppPrisma = ReturnType<typeof createPrismaClient>
+
+const globalForPrisma = global as unknown as {
+  billingPrisma?: AppPrisma
+}
+
+const client = globalForPrisma.billingPrisma ?? createPrismaClient()
+
+// Keep the public type as PrismaClient so transaction callbacks stay compatible
+// with existing actions. The runtime client is still the auditing proxy.
+export const prisma = client as unknown as PrismaClient
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.billingPrisma = client
+}

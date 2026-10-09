@@ -22,6 +22,7 @@ async function main() {
         { name: "MonthPLs", route: "/admin/monthly-pl" },
         { name: "Revenue", route: "/admin/revenue" },
         { name: "Configuration", route: "/admin/configuration" },
+        { name: "Activity Log", route: "/admin/activity-log" },
     ];
 
     const createdModules = [];
