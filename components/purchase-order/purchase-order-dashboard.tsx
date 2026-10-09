@@ -41,6 +41,7 @@ type Filters = {
   startDate?: Date;
   endDate?: Date;
   month: string;
+  quarter: string;
   year: string;
 };
 
@@ -90,6 +91,13 @@ const financialYearMonths = [
   "Mar",
 ];
 
+const financialYearQuarters = [
+  { value: "1", label: "Q1 · Apr–Jun", months: [0, 1, 2] },
+  { value: "2", label: "Q2 · Jul–Sep", months: [3, 4, 5] },
+  { value: "3", label: "Q3 · Oct–Dec", months: [6, 7, 8] },
+  { value: "4", label: "Q4 · Jan–Mar", months: [9, 10, 11] },
+];
+
 const now = new Date();
 const currentFY =
   now.getMonth() < 3 ? now.getFullYear() - 1 : now.getFullYear();
@@ -106,6 +114,7 @@ function getDefaultFilters(): Filters {
     startDate: undefined,
     endDate: undefined,
     month: "all",
+    quarter: "all",
     year: currentFY.toString(),
   };
 }
@@ -144,8 +153,31 @@ function getMonthDisplay(month: string) {
   return financialYearMonths[Number(month)] ?? "Selected Month";
 }
 
+function getQuarterDisplay(quarter: string) {
+  if (quarter === "all") return "All Quarters";
+
+  return (
+    financialYearQuarters.find((item) => item.value === quarter)?.label ??
+    "Selected Quarter"
+  );
+}
+
+function quarterContainsMonth(quarter: string, month: string) {
+  if (quarter === "all" || month === "all") return true;
+
+  return (
+    financialYearQuarters
+      .find((item) => item.value === quarter)
+      ?.months.includes(Number(month)) ?? false
+  );
+}
+
 function getActiveFilterSummary(filters: Filters) {
   const parts = [formatFinancialYearLabel(filters.year)];
+
+  if (filters.quarter !== "all") {
+    parts.push(getQuarterDisplay(filters.quarter));
+  }
 
   if (filters.month !== "all") {
     parts.push(financialYearMonths[Number(filters.month)] ?? "Selected Month");
@@ -315,10 +347,22 @@ const PurchaseOrderDashboard = ({
   const [pageSize, setPageSize] = useState(10);
 
   const updateFilter = <K extends keyof Filters>(key: K, value: Filters[K]) => {
-    setFilters((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+    setFilters((prev) => {
+      const next = {
+        ...prev,
+        [key]: value,
+      };
+
+      if (key === "quarter" && !quarterContainsMonth(String(value), next.month)) {
+        next.month = "all";
+      }
+
+      if (key === "month" && !quarterContainsMonth(next.quarter, String(value))) {
+        next.quarter = "all";
+      }
+
+      return next;
+    });
   };
 
   const resetFilters = () => {
@@ -392,11 +436,17 @@ const PurchaseOrderDashboard = ({
     filters.company !== "all",
     filters.customer !== "all",
     filters.month !== "all",
+    filters.quarter !== "all",
     filters.year !== currentFY.toString(),
     Boolean(filters.startDate),
     Boolean(filters.endDate),
   ].filter(Boolean).length;
-  const metricMonthLabel = getMonthDisplay(filters.month);
+  const metricMonthLabel =
+    filters.month !== "all"
+      ? getMonthDisplay(filters.month)
+      : filters.quarter !== "all"
+        ? getQuarterDisplay(filters.quarter)
+        : "All Months";
   const metricYearLabel = formatFinancialYearLabel(filters.year);
 
   const metrics = [
@@ -526,7 +576,7 @@ const PurchaseOrderDashboard = ({
               <div>
                 <p className="text-sm font-semibold text-slate-900">Filters</p>
                 <p className="text-xs text-slate-500">
-                  Refine by company, customer, date, month, and year
+                  Refine by company, customer, date, quarter, month, and year
                 </p>
               </div>
 
@@ -547,7 +597,7 @@ const PurchaseOrderDashboard = ({
 
           {filtersOpen ? (
             <div className="border-t border-slate-100 px-6 py-6 sm:px-7">
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-7 2xl:items-end">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:items-end">
                 <div className="min-w-0 space-y-2">
                   <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Company
@@ -680,6 +730,28 @@ const PurchaseOrderDashboard = ({
 
                 <div className="min-w-0 space-y-2">
                   <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+                    Quarter
+                  </Label>
+                  <Select
+                    value={filters.quarter}
+                    onValueChange={(value) => updateFilter("quarter", value)}
+                  >
+                    <SelectTrigger className="h-10 w-full min-w-0 rounded-2xl border-slate-200 bg-slate-50 text-sm">
+                      <SelectValue placeholder="All Quarters" />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-2xl">
+                      <SelectItem value="all">All Quarters</SelectItem>
+                      {financialYearQuarters.map((quarter) => (
+                        <SelectItem key={quarter.value} value={quarter.value}>
+                          {quarter.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="min-w-0 space-y-2">
+                  <Label className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
                     Year
                   </Label>
                   <Select
@@ -715,6 +787,10 @@ const PurchaseOrderDashboard = ({
               <div className="mt-5 flex flex-wrap gap-3">
                 <div className="rounded-full border border-blue-900 bg-blue-900 px-4 py-2 text-sm font-bold text-white">
                   Viewing {revenueDetails.length} records
+                </div>
+
+                <div className="rounded-full border border-blue-900 bg-blue-900 px-4 py-2 text-sm font-bold text-white">
+                  Quarter: {getQuarterDisplay(filters.quarter)}
                 </div>
 
                 <div className="rounded-full border border-blue-900 bg-blue-900 px-4 py-2 text-sm font-bold text-white">

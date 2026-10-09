@@ -30,6 +30,7 @@ interface BillingStatusFilters {
   startDate?: Date;
   endDate?: Date;
   month?: string;
+  quarter?: string;
 }
 
 type GroupedRevenueDetail = {
@@ -358,12 +359,31 @@ function getPurchaseOrderFilter(filters?: BillingStatusFilters) {
     : undefined;
 }
 
+const FINANCIAL_QUARTER_MONTHS: number[][] = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [9, 10, 11],
+];
+
 function matchesFilterMonth(date: Date, filters?: BillingStatusFilters) {
-  if (!filters?.month || filters.month === "all") {
-    return true;
+  const financialMonth = getFinancialMonth(date);
+
+  if (filters?.month && filters.month !== "all") {
+    if (financialMonth !== Number(filters.month)) {
+      return false;
+    }
   }
 
-  return getFinancialMonth(date) === Number(filters.month);
+  if (filters?.quarter && filters.quarter !== "all") {
+    const quarterMonths = FINANCIAL_QUARTER_MONTHS[Number(filters.quarter) - 1];
+
+    if (!quarterMonths?.includes(financialMonth)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function isWithinFilterDateRange(date: Date, filters?: BillingStatusFilters) {
@@ -842,7 +862,8 @@ export async function getBillingStatusDetails(
     const financialYear = getFinancialYearForDate(normalizedDate);
     const financialMonth = getFinancialMonth(normalizedDate);
     const shouldSplitByMonth =
-      Boolean(filters?.month) && filters?.month !== "all";
+      (Boolean(filters?.month) && filters?.month !== "all") ||
+      (Boolean(filters?.quarter) && filters?.quarter !== "all");
     const period = shouldSplitByMonth
       ? `${MONTHS[financialMonth]} · ${formatFinancialYearLabel(financialYear)}`
       : formatFinancialYearLabel(financialYear);
