@@ -15,8 +15,9 @@ beforeEach(() => vi.resetAllMocks())
 
 function form() {
   const data = new FormData()
-  data.set("username", "ada")
+  data.set("email", "ada@example.com")
   data.set("password", "test-password")
+  data.set("companyId", "22222222-2222-4222-8222-222222222222")
   return data
 }
 
@@ -32,7 +33,7 @@ describe("login form feedback", () => {
     await loginFormUser(null, form())
 
     expect(signIn).toHaveBeenCalledWith("credentials", expect.objectContaining({
-      username: "ada",
+      username: "ada@example.com",
       redirectTo: "/admin/home?showPoRenewals=1",
     }))
   })
